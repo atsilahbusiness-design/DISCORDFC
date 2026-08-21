@@ -5,6 +5,7 @@ RUN corepack enable && pnpm install --frozen-lockfile
 COPY tsconfig.json .env.example ./
 COPY src ./src
 RUN pnpm build
+RUN mkdir -p dist/storage && cp src/storage/schema.sql dist/storage/schema.sql
 
 FROM node:22-bookworm-slim AS runtime
 WORKDIR /app

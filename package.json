@@ -9,17 +9,21 @@
     "start": "node dist/index.js",
     "dev": "tsx src/index.ts",
     "test": "tsx --test test/**/*.test.ts",
-    "commands:register": "tsx src/discord/register-commands.ts"
+    "commands:register": "tsx src/discord/register-commands.ts",
+    "db:migrate": "tsx src/storage/migrate.ts",
+    "db:import-json": "tsx src/storage/import-json.ts"
   },
   "engines": {
     "node": ">=22"
   },
   "dependencies": {
     "discord.js": "^14.21.0",
-    "dotenv": "^16.6.1"
+    "dotenv": "^16.6.1",
+    "pg": "^8.16.3"
   },
   "devDependencies": {
     "@types/node": "^22.15.21",
+    "@types/pg": "^8.15.5",
     "tsx": "^4.19.4",
     "typescript": "^5.8.3"
   }

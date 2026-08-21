@@ -1,13 +1,33 @@
 services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: football_rising_star
+      POSTGRES_USER: frs
+      POSTGRES_PASSWORD: change_me_in_local_env
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U frs -d football_rising_star"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
   bot:
     build: .
     restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
     env_file:
       - .env
     environment:
+      DATABASE_URL: postgresql://frs:change_me_in_local_env@db:5432/football_rising_star
       DATA_FILE: /app/data/players.json
     volumes:
       - bot-data:/app/data
 
 volumes:
   bot-data:
+  postgres-data:
