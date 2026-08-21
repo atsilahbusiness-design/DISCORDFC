@@ -37,6 +37,8 @@ export const commandDefinitions = [
   new SlashCommandBuilder().setName('match').setDescription('Simulasikan pertandingan karier pemain'),
   new SlashCommandBuilder().setName('league').setDescription('Lihat progres musim dan klasemen pribadi'),
   new SlashCommandBuilder().setName('club').setDescription('Lihat kondisi klub, rating, formasi, dan taktik'),
+  new SlashCommandBuilder().setName('clubs').setDescription('Lihat official clubs dari client data').addIntegerOption((option) => option.setName('league').setDescription('League code, contoh 1011').setRequired(false)),
+  new SlashCommandBuilder().setName('join-club').setDescription('Pindah ke official club').addIntegerOption((option) => option.setName('club_id').setDescription('Official club ID dari /clubs').setRequired(true).setMinValue(100000).setMaxValue(999999)),
   new SlashCommandBuilder().setName('squad').setDescription('Lihat roster klub dan kemampuan pemain'),
   new SlashCommandBuilder()
     .setName('formation')

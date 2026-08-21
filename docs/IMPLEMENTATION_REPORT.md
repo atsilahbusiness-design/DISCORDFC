@@ -1,52 +1,51 @@
-# Laporan Implementasi Expanded
+# Laporan Implementasi Expanded + Client Data Audit
 
 ## Ringkasan
 
-Repository `DISCORDFC` telah dikembangkan dari bot MVP menjadi rebuild Football Rising Star berbasis Discord yang memiliki career loop, club loop, kompetisi, ekonomi, progression, persistence production, maintenance scheduler, admin tools, dan deployment assets.
+Repository `DISCORDFC` kini memiliki rebuild Football Rising Star berbasis Discord dengan career loop, club loop, kompetisi, ekonomi, progression, PostgreSQL production persistence, maintenance scheduler, admin tools, dan data client 2.8.0 yang telah diparse secara statis dan diberi provenance.
 
-Paket recovery yang tersedia adalah Unity IL2CPP recovery. Karena source C# dan backend internal tidak tersedia, hasil ini adalah implementasi ulang berbasis kontrak domain dan struktur field/method yang terlihat, bukan binary port atau klaim kesamaan formula numerik 1:1.
+## Client data yang berhasil diintegrasikan
 
-## Fitur yang selesai
+| Dataset | Coverage | Status |
+|---|---:|---|
+| `cfg_club_202603` | 332/332 record | `RECOVERY_VERIFIED_BINARY_SCHEMA` |
+| `cfg_player_202603` fixed fields | 5.133 record valid dari header 9.395 | `RECOVERY_VERIFIED_FIXED_FIELDS` |
+| Position mapping | FW 1–5, MF 6–9, DF 10–12, GK 13 | Verified dari `PositionId` dump |
+| Official league 1011 clubs | Digunakan untuk fixture utama | Recovery verified |
+| Ability dictionary | Belum dipakai sebagai overall resmi | Variable-length parser lanjutan diperlukan |
+
+Profile baru akan memulai karier di Arsenal bila folder `data/recovery/` tersedia. Roster klub memakai nama client seperti David Raya, Timber, Saliba, Gabriel, Kepa, dan pemain lain dari club ID yang sesuai. Command baru `/clubs` menampilkan official club ID, league, grade, dan prestige. `/join-club club_id:<id>` memungkinkan perpindahan ke club client dengan biaya transfer sederhana.
+
+## Fitur game
 
 | Domain | Implementasi |
-| --- | --- |
+|---|---|
 | Career player | GK/DF/MF/FW, ability, level, EXP, training, HP/energy recovery, player match, reward, career stats |
-| Club management | Roster 16 pemain, club rating, formation 4-4-2/4-3-3/3-5-2/5-3-2, four tactics, assets, prestige |
-| League | Fixtures, matchday, standings, points, season reset, league tier, promotion/degradation |
+| Club management | Roster recovery, club rating, formation, tactics, assets, prestige, official club ID, provenance |
+| League | Fixture, standings, matchday, season reset, league tier, promotion/degradation |
 | Competition | Champions League qualification, round, aggregate, eliminated/champion state |
-| Economy | Money, atomic ledger, salary, contract, expiry, renewal, transfer market, buy/sell |
-| Progression | Daily reward streak, daily event choices, achievements and claimable rewards |
-| Operations | PostgreSQL store, SQL schema, migration, JSON import, scheduled maintenance, structured logs, rate limiter, admin stats/market refresh |
-| Delivery | Dockerfile, Compose PostgreSQL stack, GitHub Actions CI, README, operations runbook, porting map, Trae A.I. handoff |
-
-## Commands Discord
-
-`/start`, `/profile`, `/train`, `/match`, `/league`, `/club`, `/squad`, `/formation`, `/tactic`, `/club-match`, `/standings`, `/season-end`, `/contract`, `/daily`, `/event`, `/market`, `/buy-player`, `/sell-player`, `/champions`, `/achievements`, `/claim-achievement`, `/admin`, dan `/help` telah disediakan pada command registration.
+| Economy | Money, atomic ledger, salary, contract expiry/renewal, market, buy/sell transfer |
+| Progression | Daily reward streak, event choices, achievements, maintenance scheduler |
+| Operations | PostgreSQL, migration, JSON import, rate limiter, admin, structured logger, Docker, Compose, CI |
 
 ## QA
 
-Perintah `pnpm build` berhasil. Perintah `pnpm test` berhasil dengan **16 test lulus dan 0 gagal**. Suite mencakup engine balance, contract, Champions League, achievements, rate limiter, club state, fixture, standings, daily streak, event, market, transfer, career MVP, JSON persistence, dan maintenance scheduler.
+`pnpm build` berhasil. `pnpm test` berhasil dengan **18 test lulus dan 0 gagal**, termasuk test resmi club listing/transfer, recovery club seed, roster names, career, club, competition, economy, contract, achievement, maintenance, dan JSON persistence.
 
-Build output telah diperbaiki agar entry point production benar berada pada `dist/index.js`. Docker image juga membawa `dist/storage/schema.sql` untuk migration runtime.
+## Provenance dan batasan
 
-## Persistence dan deployment
+Nama klub, metadata klub, nama player, club ID, league, position, age, salary base, prestige, grade, formations, dan tactics ID diparse langsung sesuai field schema client. Overall/stat runtime dari fixed numeric player value masih diberi label `RECOVERY_INFERRED` karena ability dictionary variable-length dan body method `GetAbilityScoreByPosition` belum diurai penuh.
 
-Tanpa `DATABASE_URL`, bot memakai JSON fallback untuk development. Dengan `DATABASE_URL`, bot memakai PostgreSQL dan menyimpan profile serta economy ledger secara transaksional. Jalankan `pnpm db:migrate` sebelum bot, kemudian gunakan `pnpm db:import-json` bila perlu memindahkan state JSON lama.
+Audit menemukan dependency Firebase App/Analytics, tetapi tidak mengonfirmasi Remote Config aktif atau endpoint backend produksi. Bot tidak melakukan panggilan jaringan atau meniru endpoint berdasarkan tebakan. Event activation, live status, leaderboard, inventory, backend synchronization, dan update roster setelah build 2.8.0 tetap `BACKEND_REQUIRED`.
 
-Compose menjalankan PostgreSQL dan bot secara persisten. GitHub Actions menjalankan install lockfile, build, dan test pada push/pull request ke `main`. Structured log mencatat startup, shutdown, maintenance, dan command error tanpa token.
+## Cara menjalankan
 
-## Commit utama
+```bash
+pnpm install
+cp .env.example .env
+# isi DISCORD_TOKEN, DISCORD_CLIENT_ID, DISCORD_GUILD_ID
+pnpm commands:register
+pnpm dev
+```
 
-| Commit | Isi |
-| --- | --- |
-| `79e7f4f` | MVP career/player bot |
-| `5108de3` | Club, competition, economy, PostgreSQL persistence |
-| `3b5a3b2` | Champions, contract, achievement, balance config |
-| `b8551b3` | Maintenance scheduler dan structured logger |
-| `4044316` | Seed data, CI, operations runbook |
-
-## Batasan yang masih tersisa
-
-Bot belum diuji pada guild Discord live karena token, application ID, guild ID, dan admin user ID belum diberikan dalam environment. Roster resmi, club IDs, event payload, contract rules, market backend, exact goal formula, detailed battle statistics, honor/reincarnation, dan backend synchronization masih perlu source/config/data perusahaan yang berwenang.
-
-Untuk mencapai parity 1:1, langkah engineering berikutnya adalah memasukkan source atau configuration resmi, membuat golden test dari output game asli, dan mengganti semua balance `RECOVERY_INFERRED` dengan calibration version yang disetujui product/engineering.
+Untuk production, gunakan PostgreSQL dan migration sesuai `README.md` serta `docs/OPERATIONS.md`. Docker image membawa `data/recovery/` agar seed resmi tersedia di runtime. Docker build tidak dijalankan di sandbox karena Docker CLI tidak terpasang, tetapi TypeScript build dan test berhasil.

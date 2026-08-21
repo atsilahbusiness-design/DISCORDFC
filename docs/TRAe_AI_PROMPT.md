@@ -1,33 +1,37 @@
-# Handoff Prompt — Football Rising Star Discord Bot Expanded
+# Handoff Prompt — Football Rising Star Discord Bot + Client Data Audit
 
-## Tujuan
+## Status repository
 
-Lanjutkan repository `https://github.com/atsilahbusiness-design/DISCORDFC` sebagai rebuild Football Rising Star di Discord. Jangan mengklaim parity numerik 1:1 karena source C# dan backend asli belum tersedia; gunakan konfigurasi modular dan golden tests ketika data resmi diberikan.
+Repository target adalah `https://github.com/atsilahbusiness-design/DISCORDFC`. Commit integrasi client data terbaru adalah `7fb256e`. Branch `main` sudah dipush.
 
-## Perubahan yang sudah dibuat
+## Data client yang telah diparse
 
-Repository sebelumnya kosong. Codebase sekarang menggunakan Node.js 22, TypeScript, discord.js v14, PostgreSQL optional, dan JSON fallback development. Career player memiliki GK/DF/MF/FW, abilities, level/EXP, training, HP/energy recovery, player match, reward, dan career statistics.
+Arsip `FootballRisingStar_2.8.0_Client_Data_Audit.zip` berisi 207 TextAsset payload. Parser berbasis schema binary berhasil membaca seluruh **332/332 record** dari `cfg_club_202603`, termasuk ID, name multilingual, icon, league, country, type, captain, coach, salary base, coach salary base, prestige, grade, formations, dan tactics ID.
 
-Club loop memiliki 16-player roster, rating, formation 4-4-2/4-3-3/3-5-2/5-3-2, tactics balanced/attacking/defensive/counter, assets, prestige, fixtures, standings, league tier, promotion/degradation, season reset, dan Champions League state.
+Parser fixed-field PlayerConfig berhasil membaca **5.133 record valid** dari header 9.395 pada `cfg_player_202603`: name CN/EN, Num, club, position, price, init age, normal value, auction value, dan grow type. Position mapping mengikuti `PositionId`: FW 1–5, MF 6–9, DF 10–12, GK 13. Ability dictionary variable-length belum dianggap sebagai stat resmi.
 
-Economy/progression memiliki money, atomic economy ledger, daily reward streak, event choice, market listing, buy/sell transfer, player contract salary/expiry/renewal, achievements, dan claim reward. Maintenance job otomatis melakukan time recovery, event daily, achievement sync, dan contract expiry setiap 15 menit. Admin command dibatasi `ADMIN_USER_IDS`, rate limiter default 12 request per 60 detik per user per process, dan structured logger mencatat operasi tanpa secret.
+Derived data yang masuk repository adalah `data/recovery/club_202603.json` dan `data/recovery/player_202603_fixed_fields.json`. Jangan menyalin binary client mentah ke repository.
 
-PostgreSQL adapter memakai transaksi untuk profile + economy ledger. `src/storage/schema.sql`, `pnpm db:migrate`, dan `pnpm db:import-json` tersedia. Dockerfile dan `compose.yaml` menyediakan bot + PostgreSQL. GitHub Actions memvalidasi install lockfile, build, dan test.
+## Integrasi runtime
 
-## Verifikasi terakhir
+`src/config/recovery-data.ts` membaca derived JSON dengan fallback aman. `createInitialProfile` memilih Arsenal dari league 1011 jika recovery data ada. `ensureClubState` membangun roster dengan nama player client berdasarkan official club ID. `src/domain/official-club-engine.ts` menyediakan `listOfficialClubs` dan `joinOfficialClub`. Discord commands baru adalah `/clubs` dan `/join-club`.
 
-`pnpm build` lulus. `pnpm test` lulus dengan **16 test, 0 gagal**. Branch `main` telah dipush ke remote. Commit milestone terbaru `4044316`.
+Overall runtime untuk player recovery masih `RECOVERY_INFERRED`, dibentuk dari fixed numeric value karena `GetAbilityScoreByPosition` dan ability dictionary belum diparse penuh. Jangan mengubah label provenance ini tanpa golden test atau data resmi.
 
-## File penting
+## Verifikasi
 
-`src/domain/engine.ts` adalah career player engine. `src/domain/club-engine.ts` adalah club/league engine. `src/domain/competition-engine.ts` adalah Champions League dan achievements. `src/domain/progression-engine.ts` adalah daily/event/market/economy. `src/domain/contract-engine.ts` adalah contract. `src/jobs/maintenance.ts` adalah time-based maintenance. `src/config/game-balance.ts` adalah formula configuration dengan `source: RECOVERY_INFERRED`. `src/config/seed-data.ts` adalah seed klub/player/market. `src/discord/handlers.ts` adalah Discord adapter. `src/storage/postgres-store.ts` adalah production persistence.
+`pnpm build` lulus. `pnpm test` lulus dengan **18 test, 0 gagal**. Test mencakup official club listing/transfer, recovery club seed, roster names, career, club, competition, economy, contract, achievements, rate limiting, maintenance, dan persistence JSON.
 
-## Yang harus dilakukan berikutnya
+## Tugas lanjutan untuk parity lebih tinggi
 
-Buat Discord Application dan bot, isi secret pada `.env` atau secret manager, jalankan `pnpm commands:register`, dan lakukan live guild test. Migrasikan JSON ke PostgreSQL bila diperlukan. Periksa embed, error handling, permissions, dan rate limit pada guild staging.
+1. Parse `cfg_ability`, `cfg_abilityLevel`, dan variable-length `_abilityDic/_allAbilitydic` pada PlayerConfig.
+2. Parse `PositionConfig` payload untuk hpConsume, goal/assist/card/injury ratios, initAbility, dan user ratios.
+3. Parse `cfg_league`, `cfg_round`, `cfg_roundBattleRule`, `cfg_coachFormation`, dan `cfg_coachTactics` agar fixture/formula tidak lagi inferred.
+4. Parse `cfg_coachGameEventUserChoose` cost/reward lists dan localization IDs untuk event yang lebih mirip client.
+5. Buat golden tests dari output game asli untuk overall, growth, goal, reward, standings, contract, event, dan market.
+6. Lakukan live guild test setelah secret Discord diberikan melalui environment aman.
+7. Jangan menghubungkan Firebase/backend endpoint berdasarkan tebakan; audit hanya mengonfirmasi dependency Firebase App/Analytics, bukan Remote Config atau endpoint produksi.
 
-Setelah perusahaan memberikan source/config/backend resmi atau hasil pengukuran yang berwenang, ganti seed data dan formula inferred, masukkan club/player IDs resmi, buat golden tests untuk goal calculation/rewards/standings, dan dokumentasikan setiap calibration version. Tambahkan detail honor, reincarnation/retirement, coach statistics, official events, server synchronization, dan backup/restore drill sebelum public launch.
+## Security
 
-## Batasan keamanan
-
-Jangan memasukkan token Discord, credential database, binary game, atau asset berlisensi ke repository tanpa otorisasi. Jangan menyalin binary IL2CPP ke bot; gunakan kontrak domain dan data resmi yang berwenang.
+Jangan memasukkan token Discord, credential database, binary game, atau asset berlisensi ke commit tanpa otorisasi. Gunakan source/config internal yang berwenang untuk parity final.

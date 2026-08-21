@@ -2,7 +2,19 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createInitialProfile, SeededRandom } from '../src/domain/engine.js';
 import { ensureClubState, getClubRating, playClubMatch, setClubFormation, setClubTactic } from '../src/domain/club-engine.js';
+import { joinOfficialClub, listOfficialClubs } from '../src/domain/official-club-engine.js';
 import { buyMarketPlayer, claimDailyReward, generateDailyEvent, refreshMarket, resolveDailyEvent, sellClubPlayer } from '../src/domain/progression-engine.js';
+
+test('official club data exposes league 1011 and supports club transfer', () => {
+  const clubs = listOfficialClubs(1011);
+  assert.equal(clubs.length >= 10, true);
+  let profile = ensureClubState(createInitialProfile('transfer-1', 'Transfer', 'FW'));
+  profile.money = 20_000;
+  const target = clubs.find((club) => club.nameEn !== profile.club)!;
+  profile = joinOfficialClub(profile, target.id, new Date('2026-01-01T00:00:00.000Z'));
+  assert.equal(profile.clubState?.officialId, target.id);
+  assert.equal(profile.clubState?.provenance, 'RECOVERY_VERIFIED');
+});
 
 test('recovery data seeds an official club and roster names', () => {
   const profile = ensureClubState(createInitialProfile('recovery-1', 'Recovery', 'FW'), new Date('2026-01-01T00:00:00.000Z'), new SeededRandom(5));

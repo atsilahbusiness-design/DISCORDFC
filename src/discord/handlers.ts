@@ -4,6 +4,7 @@ import { ensureClubState, finishSeason, formatClubStanding, getClubRating, getNe
 import { buyMarketPlayer, claimDailyReward, formatMoney, generateDailyEvent, refreshMarket, resolveDailyEvent, sellClubPlayer } from '../domain/progression-engine.js';
 import { claimAchievement, formatAchievements, playChampionsLeague, startChampionsLeague, syncAchievements } from '../domain/competition-engine.js';
 import { formatContract, getContractStatus, renewContract, signContract } from '../domain/contract-engine.js';
+import { joinOfficialClub, listOfficialClubs } from '../domain/official-club-engine.js';
 import { ABILITY_LABELS, FORMATIONS, POSITION_LABELS, TACTICS, type AbilityId, type PlayerProfile, type Position } from '../domain/types.js';
 import type { PlayerStore } from '../storage/json-store.js';
 import { log } from '../observability/logger.js';
@@ -106,6 +107,24 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
       const club = enriched.clubState!;
       const fixture = getNextClubFixture(enriched);
       await interaction.reply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`${club.name} · Club Office`).setDescription(`Club rating **${getClubRating(enriched)}** · Level **${club.level}**`).addFields({ name: 'Resources', value: `Prestige **${club.prestige}**\nAssets **${formatMoney(club.assets)}**\nSalary budget **${formatMoney(club.salaryBudget)}**`, inline: true }, { name: 'Strategy', value: `Formation **${club.formation}**\nTactic **${TACTICS[club.tactic].name}**\n${TACTICS[club.tactic].description}`, inline: true }, { name: 'Next fixture', value: fixture ? `Matchday ${fixture.matchday}: ${fixture.homeClub} vs ${fixture.awayClub}\n${fixture.playedAt}` : 'Tidak ada fixture tersisa.' })] });
+      return;
+    }
+
+    if (command === 'clubs') {
+      const league = interaction.options.getInteger('league') ?? undefined;
+      const clubs = listOfficialClubs(league).slice(0, 40);
+      const description = clubs.map((club) => `**${club.id}** · ${club.nameEn} · league ${club.league} · grade ${club.grade} · prestige ${club.prestige.toFixed(2)}`).join('\n');
+      await interaction.reply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`Official Clubs${league ? ` · League ${league}` : ''}`).setDescription(description || 'Tidak ada club untuk filter ini.').setFooter({ text: 'Gunakan /join-club club_id:<id> untuk pindah klub.' })] });
+      return;
+    }
+
+    if (command === 'join-club') {
+      const profile = await requireProfile(interaction, store);
+      if (!profile) return;
+      const clubId = interaction.options.getInteger('club_id', true);
+      const updated = joinOfficialClub(profile, clubId);
+      await store.save(updated);
+      await interaction.reply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`Transfer · ${updated.club}`).setDescription(`Anda bergabung dengan **${updated.club}**.\nOfficial club ID: **${updated.clubState?.officialId}**\nProvenance: **${updated.clubState?.provenance}**\nSaldo: **${formatMoney(updated.money)}**`)] });
       return;
     }
 
