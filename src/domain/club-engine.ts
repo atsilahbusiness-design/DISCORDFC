@@ -1,9 +1,10 @@
 import { createInitialProfile, getRating, MathRandomSource, type RandomSource } from './engine.js';
 import { FORMATIONS, TACTICS, type ClubFixture, type ClubMatchResult, type ClubPlayer, type FormationId, type MatchOutcome, type PlayerProfile, type Position, type TacticId } from './types.js';
+import { SEED_CLUB_NAMES, SEED_PLAYER_NAMES, SEED_ROSTER_POSITIONS } from '../config/seed-data.js';
 
-const CLUB_NAMES = ['Rising City FC', 'Harbor Athletic', 'Northbridge United', 'Metro Stars', 'Royal County', 'Eastlake Rovers', 'Mountain Eleven', 'Capital Sporting', 'Golden Valley', 'Blue River FC'];
-const POSITIONS: Position[] = ['GK', 'DF', 'DF', 'DF', 'DF', 'MF', 'MF', 'MF', 'MF', 'FW', 'FW', 'FW', 'DF', 'MF', 'FW'];
-const PLAYER_NAMES = ['Arga Pratama', 'Bima Nugraha', 'Cakra Wibowo', 'Dimas Mahesa', 'Eka Putra', 'Fajar Ramadhan', 'Gilang Aditya', 'Hadi Kusuma', 'Indra Saputra', 'Jaka Wirawan', 'Krisna Wijaya', 'Lukman Hakim', 'Miko Ananta', 'Nanda Surya', 'Oki Firmansyah'];
+const CLUB_NAMES = SEED_CLUB_NAMES;
+const POSITIONS: Position[] = SEED_ROSTER_POSITIONS;
+const PLAYER_NAMES = SEED_PLAYER_NAMES;
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));

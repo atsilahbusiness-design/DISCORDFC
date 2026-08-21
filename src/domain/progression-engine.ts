@@ -1,6 +1,7 @@
 import { ensureClubState } from './club-engine.js';
 import { createInitialProfile, MathRandomSource, type RandomSource } from './engine.js';
 import type { ClubPlayer, EconomyLedgerEntry, EventState, ListingStatus, MarketListing, PlayerProfile } from './types.js';
+import { SEED_MARKET_PLAYERS } from '../config/seed-data.js';
 
 function clone<T>(value: T): T {
   return structuredClone(value);
@@ -120,12 +121,7 @@ function marketPlayer(id: string, name: string, position: ClubPlayer['position']
 
 export function refreshMarket(profileInput: PlayerProfile, now = new Date()): PlayerProfile {
   const profile = clone(profileInput);
-  profile.market = [
-    marketPlayer('market-1', 'Rafi Alvaro', 'FW', 68, 1_200, now),
-    marketPlayer('market-2', 'Satria Malik', 'MF', 65, 950, now),
-    marketPlayer('market-3', 'Tio Baskara', 'DF', 70, 1_350, now),
-    marketPlayer('market-4', 'Yusuf Hendra', 'GK', 67, 1_100, now)
-  ];
+  profile.market = SEED_MARKET_PLAYERS.map((player) => marketPlayer(player.id, player.name, player.position, player.overall, player.price, now));
   profile.updatedAt = now.toISOString();
   return profile;
 }
