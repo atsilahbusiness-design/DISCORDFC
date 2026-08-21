@@ -1,0 +1,1682 @@
+public class CoachUserTrainManagerSaveData : SaveBase // TypeDefIndex: 966
+{
+	// Fields
+	[CompilerGenerated]
+	private int <TacticsPT>k__BackingField; // 0x10
+	[CompilerGenerated]
+	private long <TacticsPTSettleTime>k__BackingField; // 0x18
+	[CompilerGenerated]
+	private int <PowerPT>k__BackingField; // 0x20
+	[CompilerGenerated]
+	private long <PowerPTSettleTime>k__BackingField; // 0x28
+	[CompilerGenerated]
+	private bool <RedPointNotice>k__BackingField; // 0x30
+
+	// Properties
+	[Key(0)]
+	public int TacticsPT { get; set; }
+	[Key(1)]
+	public long TacticsPTSettleTime { get; set; }
+	[Key(2)]
+	public int PowerPT { get; set; }
+	[Key(3)]
+	public long PowerPTSettleTime { get; set; }
+	[Key(4)]
+	public bool RedPointNotice { get; set; }
+
+	// Methods
+
+	[CompilerGenerated]
+	// RVA: 0x16A76E8 Offset: 0x16A36E8 VA: 0x16A76E8
+	public int get_TacticsPT() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A76F0 Offset: 0x16A36F0 VA: 0x16A76F0
+	public void set_TacticsPT(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A76F8 Offset: 0x16A36F8 VA: 0x16A76F8
+	public long get_TacticsPTSettleTime() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A7700 Offset: 0x16A3700 VA: 0x16A7700
+	public void set_TacticsPTSettleTime(long value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A7708 Offset: 0x16A3708 VA: 0x16A7708
+	public int get_PowerPT() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A7710 Offset: 0x16A3710 VA: 0x16A7710
+	public void set_PowerPT(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A7718 Offset: 0x16A3718 VA: 0x16A7718
+	public long get_PowerPTSettleTime() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A7720 Offset: 0x16A3720 VA: 0x16A7720
+	public void set_PowerPTSettleTime(long value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A7728 Offset: 0x16A3728 VA: 0x16A7728
+	public bool get_RedPointNotice() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A7730 Offset: 0x16A3730 VA: 0x16A7730
+	public void set_RedPointNotice(bool value) { }
+
+	// RVA: 0x16A773C Offset: 0x16A373C VA: 0x16A773C Slot: 6
+	public override string GetFileName() { }
+
+	// RVA: 0x16A7794 Offset: 0x16A3794 VA: 0x16A7794
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+[MessagePackObject(False)]
+public class MarketManagerSaveData : SaveBase // TypeDefIndex: 967
+{
+	// Fields
+	[CompilerGenerated]
+	private int <DealIndex>k__BackingField; // 0x10
+	[CompilerGenerated]
+	private List<PlayerDeal> <List>k__BackingField; // 0x18
+	[CompilerGenerated]
+	private List<PlayerDeal> <ScoutsList>k__BackingField; // 0x20
+
+	// Properties
+	[Key(0)]
+	public int DealIndex { get; set; }
+	[Key(1)]
+	public List<PlayerDeal> List { get; set; }
+	[Key(2)]
+	public List<PlayerDeal> ScoutsList { get; set; }
+
+	// Methods
+
+	[CompilerGenerated]
+	// RVA: 0x16A779C Offset: 0x16A379C VA: 0x16A779C
+	public int get_DealIndex() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A77A4 Offset: 0x16A37A4 VA: 0x16A77A4
+	public void set_DealIndex(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A77AC Offset: 0x16A37AC VA: 0x16A77AC
+	public List<PlayerDeal> get_List() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A77B4 Offset: 0x16A37B4 VA: 0x16A77B4
+	public void set_List(List<PlayerDeal> value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A77BC Offset: 0x16A37BC VA: 0x16A77BC
+	public List<PlayerDeal> get_ScoutsList() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A77C4 Offset: 0x16A37C4 VA: 0x16A77C4
+	public void set_ScoutsList(List<PlayerDeal> value) { }
+
+	// RVA: 0x16A77CC Offset: 0x16A37CC VA: 0x16A77CC Slot: 6
+	public override string GetFileName() { }
+
+	// RVA: 0x16A7824 Offset: 0x16A3824 VA: 0x16A7824
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+[MessagePackObject(False)]
+public class CourseRoundSaveData // TypeDefIndex: 968
+{
+	// Fields
+	[CompilerGenerated]
+	private int <State>k__BackingField; // 0x10
+	[CompilerGenerated]
+	private List<CourseRoundBattleMiniSaveData> <BattleList>k__BackingField; // 0x18
+
+	// Properties
+	[Key(0)]
+	public int State { get; set; }
+	[Key(1)]
+	public List<CourseRoundBattleMiniSaveData> BattleList { get; set; }
+
+	// Methods
+
+	[CompilerGenerated]
+	// RVA: 0x16A78D0 Offset: 0x16A38D0 VA: 0x16A78D0
+	public int get_State() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A78D8 Offset: 0x16A38D8 VA: 0x16A78D8
+	public void set_State(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A78E0 Offset: 0x16A38E0 VA: 0x16A78E0
+	public List<CourseRoundBattleMiniSaveData> get_BattleList() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A78E8 Offset: 0x16A38E8 VA: 0x16A78E8
+	public void set_BattleList(List<CourseRoundBattleMiniSaveData> value) { }
+
+	// RVA: 0x16A78F0 Offset: 0x16A38F0 VA: 0x16A78F0
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+[MessagePackObject(False)]
+public class CourseRoundBattleMiniSaveData // TypeDefIndex: 969
+{
+	// Fields
+	[CompilerGenerated]
+	private int <BattleId>k__BackingField; // 0x10
+	[CompilerGenerated]
+	private int <HomeGoal>k__BackingField; // 0x14
+	[CompilerGenerated]
+	private int <AwayGoal>k__BackingField; // 0x18
+
+	// Properties
+	[Key(0)]
+	public int BattleId { get; set; }
+	[Key(1)]
+	public int HomeGoal { get; set; }
+	[Key(2)]
+	public int AwayGoal { get; set; }
+
+	// Methods
+
+	[CompilerGenerated]
+	// RVA: 0x16A7978 Offset: 0x16A3978 VA: 0x16A7978
+	public int get_BattleId() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A7980 Offset: 0x16A3980 VA: 0x16A7980
+	public void set_BattleId(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A7988 Offset: 0x16A3988 VA: 0x16A7988
+	public int get_HomeGoal() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A7990 Offset: 0x16A3990 VA: 0x16A7990
+	public void set_HomeGoal(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A7998 Offset: 0x16A3998 VA: 0x16A7998
+	public int get_AwayGoal() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A79A0 Offset: 0x16A39A0 VA: 0x16A79A0
+	public void set_AwayGoal(int value) { }
+
+	// RVA: 0x16A79A8 Offset: 0x16A39A8 VA: 0x16A79A8
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+[MessagePackObject(False)]
+public class CLCourseRoundSaveData // TypeDefIndex: 970
+{
+	// Fields
+	[CompilerGenerated]
+	private int <State>k__BackingField; // 0x10
+	[CompilerGenerated]
+	private int <RoundID>k__BackingField; // 0x14
+	[CompilerGenerated]
+	private int <RoundName>k__BackingField; // 0x18
+	[CompilerGenerated]
+	private long <Time>k__BackingField; // 0x20
+	[CompilerGenerated]
+	private int <RoundType>k__BackingField; // 0x28
+	[CompilerGenerated]
+	private string <RoundTitle>k__BackingField; // 0x30
+	[CompilerGenerated]
+	private List<CLCourseRoundBattleMiniSaveData> <BattleList>k__BackingField; // 0x38
+
+	// Properties
+	[Key(0)]
+	public int State { get; set; }
+	[Key(1)]
+	public int RoundID { get; set; }
+	[Key(2)]
+	public int RoundName { get; set; }
+	[Key(3)]
+	public long Time { get; set; }
+	[Key(4)]
+	public int RoundType { get; set; }
+	[Key(5)]
+	public string RoundTitle { get; set; }
+	[Key(6)]
+	public List<CLCourseRoundBattleMiniSaveData> BattleList { get; set; }
+
+	// Methods
+
+	[CompilerGenerated]
+	// RVA: 0x16A79B0 Offset: 0x16A39B0 VA: 0x16A79B0
+	public int get_State() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A79B8 Offset: 0x16A39B8 VA: 0x16A79B8
+	public void set_State(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A79C0 Offset: 0x16A39C0 VA: 0x16A79C0
+	public int get_RoundID() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A79C8 Offset: 0x16A39C8 VA: 0x16A79C8
+	public void set_RoundID(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A79D0 Offset: 0x16A39D0 VA: 0x16A79D0
+	public int get_RoundName() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A79D8 Offset: 0x16A39D8 VA: 0x16A79D8
+	public void set_RoundName(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A79E0 Offset: 0x16A39E0 VA: 0x16A79E0
+	public long get_Time() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A79E8 Offset: 0x16A39E8 VA: 0x16A79E8
+	public void set_Time(long value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A79F0 Offset: 0x16A39F0 VA: 0x16A79F0
+	public int get_RoundType() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A79F8 Offset: 0x16A39F8 VA: 0x16A79F8
+	public void set_RoundType(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A7A00 Offset: 0x16A3A00 VA: 0x16A7A00
+	public string get_RoundTitle() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A7A08 Offset: 0x16A3A08 VA: 0x16A7A08
+	public void set_RoundTitle(string value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A7A10 Offset: 0x16A3A10 VA: 0x16A7A10
+	public List<CLCourseRoundBattleMiniSaveData> get_BattleList() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A7A18 Offset: 0x16A3A18 VA: 0x16A7A18
+	public void set_BattleList(List<CLCourseRoundBattleMiniSaveData> value) { }
+
+	// RVA: 0x16A7A20 Offset: 0x16A3A20 VA: 0x16A7A20
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+[MessagePackObject(False)]
+public class CLCourseRoundBattleMiniSaveData // TypeDefIndex: 971
+{
+	// Fields
+	[CompilerGenerated]
+	private int <BattleId>k__BackingField; // 0x10
+	[CompilerGenerated]
+	private int <HomeGoal>k__BackingField; // 0x14
+	[CompilerGenerated]
+	private int <AwayGoal>k__BackingField; // 0x18
+	[CompilerGenerated]
+	private int <HomeId>k__BackingField; // 0x1C
+	[CompilerGenerated]
+	private int <AwayId>k__BackingField; // 0x20
+	[CompilerGenerated]
+	private int <State>k__BackingField; // 0x24
+
+	// Properties
+	[Key(0)]
+	public int BattleId { get; set; }
+	[Key(1)]
+	public int HomeGoal { get; set; }
+	[Key(2)]
+	public int AwayGoal { get; set; }
+	[Key(3)]
+	public int HomeId { get; set; }
+	[Key(4)]
+	public int AwayId { get; set; }
+	[Key(5)]
+	public int State { get; set; }
+
+	// Methods
+
+	[CompilerGenerated]
+	// RVA: 0x16A7AA8 Offset: 0x16A3AA8 VA: 0x16A7AA8
+	public int get_BattleId() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A7AB0 Offset: 0x16A3AB0 VA: 0x16A7AB0
+	public void set_BattleId(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A7AB8 Offset: 0x16A3AB8 VA: 0x16A7AB8
+	public int get_HomeGoal() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A7AC0 Offset: 0x16A3AC0 VA: 0x16A7AC0
+	public void set_HomeGoal(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A7AC8 Offset: 0x16A3AC8 VA: 0x16A7AC8
+	public int get_AwayGoal() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A7AD0 Offset: 0x16A3AD0 VA: 0x16A7AD0
+	public void set_AwayGoal(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A7AD8 Offset: 0x16A3AD8 VA: 0x16A7AD8
+	public int get_HomeId() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A7AE0 Offset: 0x16A3AE0 VA: 0x16A7AE0
+	public void set_HomeId(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A7AE8 Offset: 0x16A3AE8 VA: 0x16A7AE8
+	public int get_AwayId() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A7AF0 Offset: 0x16A3AF0 VA: 0x16A7AF0
+	public void set_AwayId(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A7AF8 Offset: 0x16A3AF8 VA: 0x16A7AF8
+	public int get_State() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A7B00 Offset: 0x16A3B00 VA: 0x16A7B00
+	public void set_State(int value) { }
+
+	// RVA: 0x16A7B08 Offset: 0x16A3B08 VA: 0x16A7B08
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+[MessagePackObject(False)]
+public class WCLCourseRoundSaveData // TypeDefIndex: 972
+{
+	// Fields
+	[CompilerGenerated]
+	private int <State>k__BackingField; // 0x10
+	[CompilerGenerated]
+	private int <RoundID>k__BackingField; // 0x14
+	[CompilerGenerated]
+	private int <RoundName>k__BackingField; // 0x18
+	[CompilerGenerated]
+	private long <Time>k__BackingField; // 0x20
+	[CompilerGenerated]
+	private int <RoundType>k__BackingField; // 0x28
+	[CompilerGenerated]
+	private List<WCLCourseRoundBattleMiniSaveData> <BattleList>k__BackingField; // 0x30
+
+	// Properties
+	[Key(0)]
+	public int State { get; set; }
+	[Key(1)]
+	public int RoundID { get; set; }
+	[Key(2)]
+	public int RoundName { get; set; }
+	[Key(3)]
+	public long Time { get; set; }
+	[Key(4)]
+	public int RoundType { get; set; }
+	[Key(5)]
+	public List<WCLCourseRoundBattleMiniSaveData> BattleList { get; set; }
+
+	// Methods
+
+	[CompilerGenerated]
+	// RVA: 0x16A7B10 Offset: 0x16A3B10 VA: 0x16A7B10
+	public int get_State() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A7B18 Offset: 0x16A3B18 VA: 0x16A7B18
+	public void set_State(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A7B20 Offset: 0x16A3B20 VA: 0x16A7B20
+	public int get_RoundID() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A7B28 Offset: 0x16A3B28 VA: 0x16A7B28
+	public void set_RoundID(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A7B30 Offset: 0x16A3B30 VA: 0x16A7B30
+	public int get_RoundName() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A7B38 Offset: 0x16A3B38 VA: 0x16A7B38
+	public void set_RoundName(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A7B40 Offset: 0x16A3B40 VA: 0x16A7B40
+	public long get_Time() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A7B48 Offset: 0x16A3B48 VA: 0x16A7B48
+	public void set_Time(long value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A7B50 Offset: 0x16A3B50 VA: 0x16A7B50
+	public int get_RoundType() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A7B58 Offset: 0x16A3B58 VA: 0x16A7B58
+	public void set_RoundType(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A7B60 Offset: 0x16A3B60 VA: 0x16A7B60
+	public List<WCLCourseRoundBattleMiniSaveData> get_BattleList() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A7B68 Offset: 0x16A3B68 VA: 0x16A7B68
+	public void set_BattleList(List<WCLCourseRoundBattleMiniSaveData> value) { }
+
+	// RVA: 0x16A7B70 Offset: 0x16A3B70 VA: 0x16A7B70
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+[MessagePackObject(False)]
+public class WCLCourseRoundBattleMiniSaveData // TypeDefIndex: 973
+{
+	// Fields
+	[CompilerGenerated]
+	private int <BattleId>k__BackingField; // 0x10
+	[CompilerGenerated]
+	private int <HomeGoal>k__BackingField; // 0x14
+	[CompilerGenerated]
+	private int <AwayGoal>k__BackingField; // 0x18
+	[CompilerGenerated]
+	private int <HomeId>k__BackingField; // 0x1C
+	[CompilerGenerated]
+	private int <AwayId>k__BackingField; // 0x20
+	[CompilerGenerated]
+	private int <State>k__BackingField; // 0x24
+
+	// Properties
+	[Key(0)]
+	public int BattleId { get; set; }
+	[Key(1)]
+	public int HomeGoal { get; set; }
+	[Key(2)]
+	public int AwayGoal { get; set; }
+	[Key(3)]
+	public int HomeId { get; set; }
+	[Key(4)]
+	public int AwayId { get; set; }
+	[Key(5)]
+	public int State { get; set; }
+
+	// Methods
+
+	[CompilerGenerated]
+	// RVA: 0x16A7BF8 Offset: 0x16A3BF8 VA: 0x16A7BF8
+	public int get_BattleId() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A7C00 Offset: 0x16A3C00 VA: 0x16A7C00
+	public void set_BattleId(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A7C08 Offset: 0x16A3C08 VA: 0x16A7C08
+	public int get_HomeGoal() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A7C10 Offset: 0x16A3C10 VA: 0x16A7C10
+	public void set_HomeGoal(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A7C18 Offset: 0x16A3C18 VA: 0x16A7C18
+	public int get_AwayGoal() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A7C20 Offset: 0x16A3C20 VA: 0x16A7C20
+	public void set_AwayGoal(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A7C28 Offset: 0x16A3C28 VA: 0x16A7C28
+	public int get_HomeId() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A7C30 Offset: 0x16A3C30 VA: 0x16A7C30
+	public void set_HomeId(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A7C38 Offset: 0x16A3C38 VA: 0x16A7C38
+	public int get_AwayId() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A7C40 Offset: 0x16A3C40 VA: 0x16A7C40
+	public void set_AwayId(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A7C48 Offset: 0x16A3C48 VA: 0x16A7C48
+	public int get_State() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A7C50 Offset: 0x16A3C50 VA: 0x16A7C50
+	public void set_State(int value) { }
+
+	// RVA: 0x16A7C58 Offset: 0x16A3C58 VA: 0x16A7C58
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+[MessagePackObject(False)]
+public class GameEventSaveData // TypeDefIndex: 974
+{
+	// Fields
+	[CompilerGenerated]
+	private int <EventIndex>k__BackingField; // 0x10
+	[CompilerGenerated]
+	private int <BattleEndTriggerRatio>k__BackingField; // 0x14
+	[CompilerGenerated]
+	private long <ClubEventTriggerTime>k__BackingField; // 0x18
+	[CompilerGenerated]
+	private Dictionary<int, int> <ClubLeagueDic>k__BackingField; // 0x20
+
+	// Properties
+	[Key(0)]
+	public int EventIndex { get; set; }
+	[Key(1)]
+	public int BattleEndTriggerRatio { get; set; }
+	[Key(2)]
+	public long ClubEventTriggerTime { get; set; }
+	[Key(3)]
+	public Dictionary<int, int> ClubLeagueDic { get; set; }
+
+	// Methods
+
+	[CompilerGenerated]
+	// RVA: 0x16A7C60 Offset: 0x16A3C60 VA: 0x16A7C60
+	public int get_EventIndex() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A7C68 Offset: 0x16A3C68 VA: 0x16A7C68
+	public void set_EventIndex(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A7C70 Offset: 0x16A3C70 VA: 0x16A7C70
+	public int get_BattleEndTriggerRatio() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A7C78 Offset: 0x16A3C78 VA: 0x16A7C78
+	public void set_BattleEndTriggerRatio(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A7C80 Offset: 0x16A3C80 VA: 0x16A7C80
+	public long get_ClubEventTriggerTime() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A7C88 Offset: 0x16A3C88 VA: 0x16A7C88
+	public void set_ClubEventTriggerTime(long value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A7C90 Offset: 0x16A3C90 VA: 0x16A7C90
+	public Dictionary<int, int> get_ClubLeagueDic() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16A7C98 Offset: 0x16A3C98 VA: 0x16A7C98
+	public void set_ClubLeagueDic(Dictionary<int, int> value) { }
+
+	// RVA: 0x16A7CA0 Offset: 0x16A3CA0 VA: 0x16A7CA0
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class GameSave : Singleton<GameSave> // TypeDefIndex: 975
+{
+	// Fields
+	private string dirPath; // 0x10
+	private string externalDirPath; // 0x18
+	private string configPath; // 0x20
+	private string filePath; // 0x28
+
+	// Methods
+
+	// RVA: 0x16A7D28 Offset: 0x16A3D28 VA: 0x16A7D28
+	public void .ctor() { }
+
+	// RVA: 0x16A7E3C Offset: 0x16A3E3C VA: 0x16A7E3C
+	private void _init() { }
+
+	// RVA: 0x16A7E40 Offset: 0x16A3E40 VA: 0x16A7E40
+	private void InitFile() { }
+
+	// RVA: 0x16A820C Offset: 0x16A420C VA: 0x16A820C
+	private void CreateDirectory(string dirName) { }
+
+	// RVA: 0x16A823C Offset: 0x16A423C VA: 0x16A823C
+	private void CreateFile(string fileName) { }
+
+	// RVA: 0x16A8284 Offset: 0x16A4284 VA: 0x16A8284
+	public void DeleteFile(string fileName) { }
+
+	// RVA: 0x16A830C Offset: 0x16A430C VA: 0x16A830C
+	public void SaveData(string filePath, object data) { }
+
+	// RVA: 0x16A83F4 Offset: 0x16A43F4 VA: 0x16A83F4
+	public void SaveEncryptedData(string filePath, object obj) { }
+
+	// RVA: -1 Offset: -1
+	public T GetData<T>(string path) { }
+	/* GenericInstMethod :
+	|
+	|-RVA: 0x1B678CC Offset: 0x1B638CC VA: 0x1B678CC
+	|-GameSave.GetData<__Il2CppFullySharedGenericType>
+	*/
+
+	// RVA: -1 Offset: -1
+	public T GetEncrptedData<T>(string path) { }
+	/* GenericInstMethod :
+	|
+	|-RVA: 0x1B67A20 Offset: 0x1B63A20 VA: 0x1B67A20
+	|-GameSave.GetEncrptedData<object>
+	|
+	|-RVA: 0x1B67D08 Offset: 0x1B63D08 VA: 0x1B67D08
+	|-GameSave.GetEncrptedData<__Il2CppFullySharedGenericType>
+	*/
+}
+
+// Namespace: FootballStar
+public interface IRecord : ISaveObject // TypeDefIndex: 976
+{
+	// Methods
+
+	// RVA: -1 Offset: -1 Slot: 0
+	public abstract SaveBase GetSave();
+
+	// RVA: -1 Offset: -1 Slot: 1
+	public abstract Task<bool> LoadData();
+
+	// RVA: -1 Offset: -1 Slot: 2
+	public abstract void SaveData();
+}
+
+// Namespace:
+[CompilerGenerated]
+private struct ILoadExtension.<LoadData>d__1<T> : IAsyncStateMachine // TypeDefIndex: 977
+{
+	// Fields
+	public int <>1__state; // 0x0
+	public AsyncTaskMethodBuilder<T> <>t__builder; // 0x0
+	public IRecord ext; // 0x0
+	private TaskAwaiter<T> <>u__1; // 0x0
+
+	// Methods
+
+	// RVA: -1 Offset: -1 Slot: 4
+	private void MoveNext() { }
+	/* GenericInstMethod :
+	|
+	|-RVA: 0x1D27080 Offset: 0x1D23080 VA: 0x1D27080
+	|-ILoadExtension.<LoadData>d__1<object>.MoveNext
+	*/
+
+	[DebuggerHidden]
+	// RVA: -1 Offset: -1 Slot: 5
+	private void SetStateMachine(IAsyncStateMachine stateMachine) { }
+	/* GenericInstMethod :
+	|
+	|-RVA: 0x1D27448 Offset: 0x1D23448 VA: 0x1D27448
+	|-ILoadExtension.<LoadData>d__1<object>.SetStateMachine
+	*/
+}
+
+// Namespace:
+[CompilerGenerated]
+private struct ILoadExtension.<LoadDataWithSaveBase>d__0<T> : IAsyncStateMachine // TypeDefIndex: 978
+{
+	// Fields
+	public int <>1__state; // 0x0
+	public AsyncTaskMethodBuilder<T> <>t__builder; // 0x0
+	public SaveBase s; // 0x0
+	private TaskAwaiter<T> <>u__1; // 0x0
+
+	// Methods
+
+	// RVA: -1 Offset: -1 Slot: 4
+	private void MoveNext() { }
+	/* GenericInstMethod :
+	|
+	|-RVA: 0x1D274C0 Offset: 0x1D234C0 VA: 0x1D274C0
+	|-ILoadExtension.<LoadDataWithSaveBase>d__0<object>.MoveNext
+	*/
+
+	[DebuggerHidden]
+	// RVA: -1 Offset: -1 Slot: 5
+	private void SetStateMachine(IAsyncStateMachine stateMachine) { }
+	/* GenericInstMethod :
+	|
+	|-RVA: 0x1D27810 Offset: 0x1D23810 VA: 0x1D27810
+	|-ILoadExtension.<LoadDataWithSaveBase>d__0<object>.SetStateMachine
+	*/
+}
+
+// Namespace: FootballStar
+[Extension]
+public static class ILoadExtension // TypeDefIndex: 979
+{
+	// Methods
+
+	[Extension]
+	[AsyncStateMachine(typeof(ILoadExtension.<LoadDataWithSaveBase>d__0<T>))]
+	// RVA: -1 Offset: -1
+	public static Task<T> LoadDataWithSaveBase<T>(IRecord ext, SaveBase s) { }
+	/* GenericInstMethod :
+	|
+	|-RVA: 0x1B6FAB4 Offset: 0x1B6BAB4 VA: 0x1B6FAB4
+	|-ILoadExtension.LoadDataWithSaveBase<object>
+	*/
+
+	[Extension]
+	[AsyncStateMachine(typeof(ILoadExtension.<LoadData>d__1<T>))]
+	// RVA: -1 Offset: -1
+	public static Task<T> LoadData<T>(IRecord ext) { }
+	/* GenericInstMethod :
+	|
+	|-RVA: 0x1B6F9DC Offset: 0x1B6B9DC VA: 0x1B6F9DC
+	|-ILoadExtension.LoadData<object>
+	*/
+
+	[Extension]
+	// RVA: -1 Offset: -1
+	public static void SaveData<T>(IRecord ext, T data, bool isUpload = True) { }
+	/* GenericInstMethod :
+	|
+	|-RVA: 0x1B6FB8C Offset: 0x1B6BB8C VA: 0x1B6FB8C
+	|-ILoadExtension.SaveData<object>
+	*/
+}
+
+// Namespace: FootballStar
+public interface ISave // TypeDefIndex: 980
+{
+	// Methods
+
+	// RVA: -1 Offset: -1 Slot: 0
+	public abstract void Save();
+}
+
+// Namespace: FootballStar
+public abstract class SaveBase : ISave // TypeDefIndex: 981
+{
+	// Methods
+
+	// RVA: 0x16A524C Offset: 0x16A124C VA: 0x16A524C
+	protected void .ctor() { }
+
+	// RVA: 0x16A5FDC Offset: 0x16A1FDC VA: 0x16A5FDC Slot: 5
+	public virtual string GetDir() { }
+
+	// RVA: -1 Offset: -1 Slot: 6
+	public abstract string GetFileName();
+
+	// RVA: 0x16A8570 Offset: 0x16A4570 VA: 0x16A8570 Slot: 7
+	public virtual void Save() { }
+}
+
+// Namespace: FootballStar
+[MessagePackObject(False)]
+public class LeagueManagerSaveData // TypeDefIndex: 982
+{
+	// Fields
+	[CompilerGenerated]
+	private ChampionsLeagueSaveData <ChampionsLeague>k__BackingField; // 0x10
+
+	// Properties
+	[Key(0)]
+	public ChampionsLeagueSaveData ChampionsLeague { get; set; }
+
+public class RoutineTrainSaveData // TypeDefIndex: 1002
+{
+	// Fields
+	[CompilerGenerated]
+	private int <Id>k__BackingField; // 0x10
+	[CompilerGenerated]
+	private int <UserAddLevel>k__BackingField; // 0x14
+	[CompilerGenerated]
+	private int <ClubAddLevel>k__BackingField; // 0x18
+
+	// Properties
+	[Key(0)]
+	public int Id { get; set; }
+	[Key(1)]
+	public int UserAddLevel { get; set; }
+	[Key(2)]
+	public int ClubAddLevel { get; set; }
+
+	// Methods
+
+	[CompilerGenerated]
+	// RVA: 0x16AD664 Offset: 0x16A9664 VA: 0x16AD664
+	public int get_Id() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16AD66C Offset: 0x16A966C VA: 0x16AD66C
+	public void set_Id(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16AD674 Offset: 0x16A9674 VA: 0x16AD674
+	public int get_UserAddLevel() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16AD67C Offset: 0x16A967C VA: 0x16AD67C
+	public void set_UserAddLevel(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16AD684 Offset: 0x16A9684 VA: 0x16AD684
+	public int get_ClubAddLevel() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16AD68C Offset: 0x16A968C VA: 0x16AD68C
+	public void set_ClubAddLevel(int value) { }
+
+	// RVA: 0x16AD694 Offset: 0x16A9694 VA: 0x16AD694
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+[MessagePackObject(False)]
+public class TrainSaveData // TypeDefIndex: 1003
+{
+	// Fields
+	[CompilerGenerated]
+	private int <RoutineTrainPoint>k__BackingField; // 0x10
+	[CompilerGenerated]
+	private Dictionary<int, RoutineTrainSaveData> <Routines>k__BackingField; // 0x18
+	[CompilerGenerated]
+	private Dictionary<int, SkillTrain> <Skills>k__BackingField; // 0x20
+	[CompilerGenerated]
+	private int <SkillPT>k__BackingField; // 0x28
+	[CompilerGenerated]
+	private long <SkillPTSettleTime>k__BackingField; // 0x30
+	[CompilerGenerated]
+	private int <PowerPT>k__BackingField; // 0x38
+	[CompilerGenerated]
+	private long <PowerPTSettleTime>k__BackingField; // 0x40
+	[CompilerGenerated]
+	private bool <RedPointNotice>k__BackingField; // 0x48
+	[CompilerGenerated]
+	private LosAngelesTrain <LosAngelesTrain>k__BackingField; // 0x50
+
+	// Properties
+	[Key(0)]
+	public int RoutineTrainPoint { get; set; }
+	[Key(1)]
+	public Dictionary<int, RoutineTrainSaveData> Routines { get; set; }
+	[Key(2)]
+	public Dictionary<int, SkillTrain> Skills { get; set; }
+	[Key(3)]
+	public int SkillPT { get; set; }
+	[Key(4)]
+	public long SkillPTSettleTime { get; set; }
+	[Key(5)]
+	public int PowerPT { get; set; }
+	[Key(6)]
+	public long PowerPTSettleTime { get; set; }
+	[Key(7)]
+	public bool RedPointNotice { get; set; }
+	[Key(8)]
+	public LosAngelesTrain LosAngelesTrain { get; set; }
+
+	// Methods
+
+	[CompilerGenerated]
+	// RVA: 0x16AD69C Offset: 0x16A969C VA: 0x16AD69C
+	public int get_RoutineTrainPoint() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16AD6A4 Offset: 0x16A96A4 VA: 0x16AD6A4
+	public void set_RoutineTrainPoint(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16AD6AC Offset: 0x16A96AC VA: 0x16AD6AC
+	public Dictionary<int, RoutineTrainSaveData> get_Routines() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16AD6B4 Offset: 0x16A96B4 VA: 0x16AD6B4
+	public void set_Routines(Dictionary<int, RoutineTrainSaveData> value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16AD6BC Offset: 0x16A96BC VA: 0x16AD6BC
+	public Dictionary<int, SkillTrain> get_Skills() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16AD6C4 Offset: 0x16A96C4 VA: 0x16AD6C4
+	public void set_Skills(Dictionary<int, SkillTrain> value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16AD6CC Offset: 0x16A96CC VA: 0x16AD6CC
+	public int get_SkillPT() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16AD6D4 Offset: 0x16A96D4 VA: 0x16AD6D4
+	public void set_SkillPT(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16AD6DC Offset: 0x16A96DC VA: 0x16AD6DC
+	public long get_SkillPTSettleTime() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16AD6E4 Offset: 0x16A96E4 VA: 0x16AD6E4
+	public void set_SkillPTSettleTime(long value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16AD6EC Offset: 0x16A96EC VA: 0x16AD6EC
+	public int get_PowerPT() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16AD6F4 Offset: 0x16A96F4 VA: 0x16AD6F4
+	public void set_PowerPT(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16AD6FC Offset: 0x16A96FC VA: 0x16AD6FC
+	public long get_PowerPTSettleTime() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16AD704 Offset: 0x16A9704 VA: 0x16AD704
+	public void set_PowerPTSettleTime(long value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16AD70C Offset: 0x16A970C VA: 0x16AD70C
+	public bool get_RedPointNotice() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16AD714 Offset: 0x16A9714 VA: 0x16AD714
+	public void set_RedPointNotice(bool value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16AD720 Offset: 0x16A9720 VA: 0x16AD720
+	public LosAngelesTrain get_LosAngelesTrain() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16AD728 Offset: 0x16A9728 VA: 0x16AD728
+	public void set_LosAngelesTrain(LosAngelesTrain value) { }
+
+	// RVA: 0x16AD730 Offset: 0x16A9730 VA: 0x16AD730
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+[MessagePackObject(False)]
+public class TutorialSaveData // TypeDefIndex: 1004
+{
+	// Fields
+	[CompilerGenerated]
+	private Dictionary<TutorialEnums.TutorialId, bool> <Tutorial>k__BackingField; // 0x10
+
+	// Properties
+	[Key(0)]
+	public Dictionary<TutorialEnums.TutorialId, bool> Tutorial { get; set; }
+
+	// Methods
+
+	[CompilerGenerated]
+	// RVA: 0x16AD844 Offset: 0x16A9844 VA: 0x16AD844
+	public Dictionary<TutorialEnums.TutorialId, bool> get_Tutorial() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16AD84C Offset: 0x16A984C VA: 0x16AD84C
+	public void set_Tutorial(Dictionary<TutorialEnums.TutorialId, bool> value) { }
+
+	// RVA: 0x16AD854 Offset: 0x16A9854 VA: 0x16AD854
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+[MessagePackObject(False)]
+public class UserClubSaveData // TypeDefIndex: 1005
+{
+	// Fields
+	[CompilerGenerated]
+	private int <ClubId>k__BackingField; // 0x10
+	[CompilerGenerated]
+	private int <ContractCount>k__BackingField; // 0x14
+	[CompilerGenerated]
+	private long <CurContractEndTime>k__BackingField; // 0x18
+	[CompilerGenerated]
+	private int <ClubGoodFeeling>k__BackingField; // 0x20
+	[CompilerGenerated]
+	private long <LastSalaryAdjustmentTime>k__BackingField; // 0x28
+	[CompilerGenerated]
+	private long <LastJobHoppingTime>k__BackingField; // 0x30
+	[CompilerGenerated]
+	private long <CurContractStartTime>k__BackingField; // 0x38
+	[CompilerGenerated]
+	private bool <RedPointNotice>k__BackingField; // 0x40
+	[CompilerGenerated]
+	private bool <RenewalContractFlag>k__BackingField; // 0x41
+	[CompilerGenerated]
+	private long <LastSalaryAdjustmentSuccessTime>k__BackingField; // 0x48
+	[CompilerGenerated]
+	private Dictionary<int, Contract> <ContractDic>k__BackingField; // 0x50
+	[CompilerGenerated]
+	private Dictionary<int, int> <ClubStayTime>k__BackingField; // 0x58
+	[CompilerGenerated]
+	private int <ContinuousWinCount>k__BackingField; // 0x60
+	[CompilerGenerated]
+	private int <ContinuousNoLoseCount>k__BackingField; // 0x64
+	[CompilerGenerated]
+	private int <NowClubTime>k__BackingField; // 0x68
+
+	// Properties
+	[Key(0)]
+	public int ClubId { get; set; }
+	[Key(1)]
+	public int ContractCount { get; set; }
+	[Key(2)]
+	public long CurContractEndTime { get; set; }
+	[Key(3)]
+	public int ClubGoodFeeling { get; set; }
+	[Key(4)]
+	public long LastSalaryAdjustmentTime { get; set; }
+	[Key(5)]
+	public long LastJobHoppingTime { get; set; }
+	[Key(6)]
+	public long CurContractStartTime { get; set; }
+	[Key(7)]
+	public bool RedPointNotice { get; set; }
+	[Key(8)]
+	public bool RenewalContractFlag { get; set; }
+	[Key(9)]
+	public long LastSalaryAdjustmentSuccessTime { get; set; }
+	[Key(10)]
+	public Dictionary<int, Contract> ContractDic { get; set; }
+	[Key(11)]
+	public Dictionary<int, int> ClubStayTime { get; set; }
+	[Key(12)]
+	public int ContinuousWinCount { get; set; }
+	[Key(13)]
+	public int ContinuousNoLoseCount { get; set; }
+	[Key(14)]
+	public int NowClubTime { get; set; }
+
+	// Methods
+
+	[CompilerGenerated]
+	// RVA: 0x16AD8DC Offset: 0x16A98DC VA: 0x16AD8DC
+	public int get_ClubId() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16AD8E4 Offset: 0x16A98E4 VA: 0x16AD8E4
+	public void set_ClubId(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16AD8EC Offset: 0x16A98EC VA: 0x16AD8EC
+	public int get_ContractCount() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16AD8F4 Offset: 0x16A98F4 VA: 0x16AD8F4
+	public void set_ContractCount(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16AD8FC Offset: 0x16A98FC VA: 0x16AD8FC
+	public long get_CurContractEndTime() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16AD904 Offset: 0x16A9904 VA: 0x16AD904
+	public void set_CurContractEndTime(long value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16AD90C Offset: 0x16A990C VA: 0x16AD90C
+	public int get_ClubGoodFeeling() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16AD914 Offset: 0x16A9914 VA: 0x16AD914
+	public void set_ClubGoodFeeling(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16AD91C Offset: 0x16A991C VA: 0x16AD91C
+	public long get_LastSalaryAdjustmentTime() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16AD924 Offset: 0x16A9924 VA: 0x16AD924
+	public void set_LastSalaryAdjustmentTime(long value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16AD92C Offset: 0x16A992C VA: 0x16AD92C
+	public long get_LastJobHoppingTime() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16AD934 Offset: 0x16A9934 VA: 0x16AD934
+	public void set_LastJobHoppingTime(long value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16AD93C Offset: 0x16A993C VA: 0x16AD93C
+	public long get_CurContractStartTime() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16AD944 Offset: 0x16A9944 VA: 0x16AD944
+	public void set_CurContractStartTime(long value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16AD94C Offset: 0x16A994C VA: 0x16AD94C
+	public bool get_RedPointNotice() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16AD954 Offset: 0x16A9954 VA: 0x16AD954
+	public void set_RedPointNotice(bool value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16AD960 Offset: 0x16A9960 VA: 0x16AD960
+	public bool get_RenewalContractFlag() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16AD968 Offset: 0x16A9968 VA: 0x16AD968
+	public void set_RenewalContractFlag(bool value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16AD974 Offset: 0x16A9974 VA: 0x16AD974
+	public long get_LastSalaryAdjustmentSuccessTime() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16AD97C Offset: 0x16A997C VA: 0x16AD97C
+	public void set_LastSalaryAdjustmentSuccessTime(long value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16AD984 Offset: 0x16A9984 VA: 0x16AD984
+	public Dictionary<int, Contract> get_ContractDic() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16AD98C Offset: 0x16A998C VA: 0x16AD98C
+	public void set_ContractDic(Dictionary<int, Contract> value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16AD994 Offset: 0x16A9994 VA: 0x16AD994
+	public Dictionary<int, int> get_ClubStayTime() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16AD99C Offset: 0x16A999C VA: 0x16AD99C
+	public void set_ClubStayTime(Dictionary<int, int> value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16AD9A4 Offset: 0x16A99A4 VA: 0x16AD9A4
+	public int get_ContinuousWinCount() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16AD9AC Offset: 0x16A99AC VA: 0x16AD9AC
+	public void set_ContinuousWinCount(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16AD9B4 Offset: 0x16A99B4 VA: 0x16AD9B4
+	public int get_ContinuousNoLoseCount() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16AD9BC Offset: 0x16A99BC VA: 0x16AD9BC
+	public void set_ContinuousNoLoseCount(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16AD9C4 Offset: 0x16A99C4 VA: 0x16AD9C4
+	public int get_NowClubTime() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16AD9CC Offset: 0x16A99CC VA: 0x16AD9CC
+	public void set_NowClubTime(int value) { }
+
+	// RVA: 0x16AD9D4 Offset: 0x16A99D4 VA: 0x16AD9D4
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+[MessagePackObject(False)]
+public class UserSaveData // TypeDefIndex: 1006
+{
+	// Fields
+	[Key(0)]
+	public int id; // 0x10
+	[Key(1)]
+	public string icon; // 0x18
+	[Key(2)]
+	public string sourceName; // 0x20
+	[Key(3)]
+	public string name; // 0x28
+	[Key(4)]
+	public int position; // 0x30
+	[Key(5)]
+	public int country; // 0x34
+	[Key(6)]
+	public double money; // 0x38
+	[Key(7)]
+	public int nationNum; // 0x40
+	[Key(8)]
+	public long injuredEndTime; // 0x48
+	[Key(9)]
+	public int injuredType; // 0x50
+	[Key(10)]
+	public double hp; // 0x58
+	[Key(11)]
+	public int fans; // 0x60
+	[Key(12)]
+	public int prestige; // 0x64
+	[Key(13)]
+	public int salary; // 0x68
+	[CompilerGenerated]
+	private bool <IsCaptain>k__BackingField; // 0x6C
+	[CompilerGenerated]
+	private int <YellowCard>k__BackingField; // 0x70
+	[CompilerGenerated]
+	private int <RedCardBanCount>k__BackingField; // 0x74
+	[CompilerGenerated]
+	private int <CLYellowCard>k__BackingField; // 0x78
+	[CompilerGenerated]
+	private int <CLRedCardBanCount>k__BackingField; // 0x7C
+	[CompilerGenerated]
+	private int <WCLYellowCard>k__BackingField; // 0x80
+	[CompilerGenerated]
+	private int <WCLRedCardBanCount>k__BackingField; // 0x84
+	[CompilerGenerated]
+	private long <Birthday>k__BackingField; // 0x88
+	[CompilerGenerated]
+	private long <CreateTime>k__BackingField; // 0x90
+	[CompilerGenerated]
+	private int <TreatedType>k__BackingField; // 0x98
+	[CompilerGenerated]
+	private bool <IsTreatedEnd>k__BackingField; // 0x9C
+	[CompilerGenerated]
+	private bool <IsRetire>k__BackingField; // 0x9D
+	[CompilerGenerated]
+	private bool <CreateCd>k__BackingField; // 0x9E
+	[CompilerGenerated]
+	private int <ExperienceBuff>k__BackingField; // 0xA0
+	[CompilerGenerated]
+	private int <ExperienceBuffCount>k__BackingField; // 0xA4
+	[CompilerGenerated]
+	private BattleSaveData <BattleData>k__BackingField; // 0xA8
+	[CompilerGenerated]
+	private AbilitySaveData <AbilityData>k__BackingField; // 0xB0
+	[CompilerGenerated]
+	private TrainSaveData <TrainData>k__BackingField; // 0xB8
+	[CompilerGenerated]
+	private UserClubSaveData <ClubData>k__BackingField; // 0xC0
+	[CompilerGenerated]
+	private MessageManagerSaveData <MessageData>k__BackingField; // 0xC8
+	[CompilerGenerated]
+	private StatisticsSaveData <StatisticsData>k__BackingField; // 0xD0
+	[CompilerGenerated]
+	private int <Reborn>k__BackingField; // 0xD8
+	[CompilerGenerated]
+	private int <WCLGoalCount>k__BackingField; // 0xDC
+	[CompilerGenerated]
+	private int <WCLAssistCount>k__BackingField; // 0xE0
+	[CompilerGenerated]
+	private int <WCLChampionCount>k__BackingField; // 0xE4
+	[CompilerGenerated]
+	private int <FirstAchievement>k__BackingField; // 0xE8
+	[CompilerGenerated]
+	private int <SecondAchievement>k__BackingField; // 0xEC
+	[CompilerGenerated]
+	private int <InnerScore>k__BackingField; // 0xF0
+	[CompilerGenerated]
+	private string <WCLPlayerName>k__BackingField; // 0xF8
+	[CompilerGenerated]
+	private string <ChinesePlayerName>k__BackingField; // 0x100
+	[CompilerGenerated]
+	private int <CLGoalCount>k__BackingField; // 0x108
+	[CompilerGenerated]
+	private int <CLAssistCount>k__BackingField; // 0x10C
+	[CompilerGenerated]
+	private int <CLChampionCount>k__BackingField; // 0x110
+	[CompilerGenerated]
+	private int <A>k__BackingField; // 0x114
+	[CompilerGenerated]
+	private int <IsUploadWorldCup>k__BackingField; // 0x118
+	[CompilerGenerated]
+	private int <CLScore>k__BackingField; // 0x11C
+	[CompilerGenerated]
+	private string <CLPlayerName>k__BackingField; // 0x120
+
+	// Properties
+	[Key(14)]
+	public bool IsCaptain { get; set; }
+	[Key(15)]
+	public int YellowCard { get; set; }
+	[Key(16)]
+	public int RedCardBanCount { get; set; }
+	[Key(17)]
+	public int CLYellowCard { get; set; }
+	[Key(18)]
+	public int CLRedCardBanCount { get; set; }
+	[Key(19)]
+	public int WCLYellowCard { get; set; }
+	[Key(20)]
+	public int WCLRedCardBanCount { get; set; }
+	[Key(21)]
+	public long Birthday { get; set; }
+	[Key(22)]
+	public long CreateTime { get; set; }
+	[Key(23)]
+	public int TreatedType { get; set; }
+	[Key(24)]
+	public bool IsTreatedEnd { get; set; }
+	[Key(25)]
+	public bool IsRetire { get; set; }
+	[Key(26)]
+	public bool CreateCd { get; set; }
+	[Key(27)]
+	public int ExperienceBuff { get; set; }
+	[Key(28)]
+	public int ExperienceBuffCount { get; set; }
+	[Key(29)]
+	public BattleSaveData BattleData { get; set; }
+	[Key(30)]
+	public AbilitySaveData AbilityData { get; set; }
+	[Key(31)]
+	public TrainSaveData TrainData { get; set; }
+	[Key(32)]
+	public UserClubSaveData ClubData { get; set; }
+	[Key(33)]
+	public MessageManagerSaveData MessageData { get; set; }
+	[Key(34)]
+	public StatisticsSaveData StatisticsData { get; set; }
+	[Key(35)]
+	public int Reborn { get; set; }
+	[Key(36)]
+	public int WCLGoalCount { get; set; }
+	[Key(37)]
+	public int WCLAssistCount { get; set; }
+	[Key(38)]
+	public int WCLChampionCount { get; set; }
+	[Key(39)]
+	public int FirstAchievement { get; set; }
+	[Key(40)]
+	public int SecondAchievement { get; set; }
+	[Key(41)]
+	public int InnerScore { get; set; }
+	[Key(42)]
+	public string WCLPlayerName { get; set; }
+	[Key(43)]
+	public string ChinesePlayerName { get; set; }
+	[Key(44)]
+	public int CLGoalCount { get; set; }
+	[Key(45)]
+	public int CLAssistCount { get; set; }
+	[Key(46)]
+	public int CLChampionCount { get; set; }
+	[Key(47)]
+	public int A { get; set; }
+	[Key(48)]
+	public int IsUploadWorldCup { get; set; }
+	[Key(49)]
+	public int CLScore { get; set; }
+	[Key(50)]
+	public string CLPlayerName { get; set; }
+
+	// Methods
+
+	[CompilerGenerated]
+	// RVA: 0x16ADAB0 Offset: 0x16A9AB0 VA: 0x16ADAB0
+	public bool get_IsCaptain() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16ADAB8 Offset: 0x16A9AB8 VA: 0x16ADAB8
+	public void set_IsCaptain(bool value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16ADAC4 Offset: 0x16A9AC4 VA: 0x16ADAC4
+	public int get_YellowCard() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16ADACC Offset: 0x16A9ACC VA: 0x16ADACC
+	public void set_YellowCard(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16ADAD4 Offset: 0x16A9AD4 VA: 0x16ADAD4
+	public int get_RedCardBanCount() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16ADADC Offset: 0x16A9ADC VA: 0x16ADADC
+	public void set_RedCardBanCount(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16ADAE4 Offset: 0x16A9AE4 VA: 0x16ADAE4
+	public int get_CLYellowCard() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16ADAEC Offset: 0x16A9AEC VA: 0x16ADAEC
+	public void set_CLYellowCard(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16ADAF4 Offset: 0x16A9AF4 VA: 0x16ADAF4
+	public int get_CLRedCardBanCount() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16ADAFC Offset: 0x16A9AFC VA: 0x16ADAFC
+	public void set_CLRedCardBanCount(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16ADB04 Offset: 0x16A9B04 VA: 0x16ADB04
+	public int get_WCLYellowCard() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16ADB0C Offset: 0x16A9B0C VA: 0x16ADB0C
+	public void set_WCLYellowCard(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16ADB14 Offset: 0x16A9B14 VA: 0x16ADB14
+	public int get_WCLRedCardBanCount() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16ADB1C Offset: 0x16A9B1C VA: 0x16ADB1C
+	public void set_WCLRedCardBanCount(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16ADB24 Offset: 0x16A9B24 VA: 0x16ADB24
+	public long get_Birthday() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16ADB2C Offset: 0x16A9B2C VA: 0x16ADB2C
+	public void set_Birthday(long value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16ADB34 Offset: 0x16A9B34 VA: 0x16ADB34
+	public long get_CreateTime() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16ADB3C Offset: 0x16A9B3C VA: 0x16ADB3C
+	public void set_CreateTime(long value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16ADB44 Offset: 0x16A9B44 VA: 0x16ADB44
+	public int get_TreatedType() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16ADB4C Offset: 0x16A9B4C VA: 0x16ADB4C
+	public void set_TreatedType(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16ADB54 Offset: 0x16A9B54 VA: 0x16ADB54
+	public bool get_IsTreatedEnd() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16ADB5C Offset: 0x16A9B5C VA: 0x16ADB5C
+	public void set_IsTreatedEnd(bool value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16ADB68 Offset: 0x16A9B68 VA: 0x16ADB68
+	public bool get_IsRetire() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16ADB70 Offset: 0x16A9B70 VA: 0x16ADB70
+	public void set_IsRetire(bool value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16ADB7C Offset: 0x16A9B7C VA: 0x16ADB7C
+	public bool get_CreateCd() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16ADB84 Offset: 0x16A9B84 VA: 0x16ADB84
+	public void set_CreateCd(bool value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16ADB90 Offset: 0x16A9B90 VA: 0x16ADB90
+	public int get_ExperienceBuff() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16ADB98 Offset: 0x16A9B98 VA: 0x16ADB98
+	public void set_ExperienceBuff(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16ADBA0 Offset: 0x16A9BA0 VA: 0x16ADBA0
+	public int get_ExperienceBuffCount() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16ADBA8 Offset: 0x16A9BA8 VA: 0x16ADBA8
+	public void set_ExperienceBuffCount(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16ADBB0 Offset: 0x16A9BB0 VA: 0x16ADBB0
+	public BattleSaveData get_BattleData() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16ADBB8 Offset: 0x16A9BB8 VA: 0x16ADBB8
+	public void set_BattleData(BattleSaveData value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16ADBC0 Offset: 0x16A9BC0 VA: 0x16ADBC0
+	public AbilitySaveData get_AbilityData() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16ADBC8 Offset: 0x16A9BC8 VA: 0x16ADBC8
+	public void set_AbilityData(AbilitySaveData value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16ADBD0 Offset: 0x16A9BD0 VA: 0x16ADBD0
+	public TrainSaveData get_TrainData() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16ADBD8 Offset: 0x16A9BD8 VA: 0x16ADBD8
+	public void set_TrainData(TrainSaveData value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16ADBE0 Offset: 0x16A9BE0 VA: 0x16ADBE0
+	public UserClubSaveData get_ClubData() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16ADBE8 Offset: 0x16A9BE8 VA: 0x16ADBE8
+	public void set_ClubData(UserClubSaveData value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16ADBF0 Offset: 0x16A9BF0 VA: 0x16ADBF0
+	public MessageManagerSaveData get_MessageData() { }
+
+	[CompilerGenerated]
+	// RVA: 0x16ADBF8 Offset: 0x16A9BF8 VA: 0x16ADBF8
+	public void set_MessageData(MessageManagerSaveData value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x16ADC00 Offset: 0x16A9C00 VA: 0x16ADC00
+public class PlayerRebornData // TypeDefIndex: 1417
+{
+	// Fields
+	public int countryId; // 0x10
+	public string portrait; // 0x18
+	public int position; // 0x20
+	public string name; // 0x28
+	public string sourceName; // 0x30
+	public double money; // 0x38
+	public Dictionary<int, int> abilities; // 0x40
+	public int reborn; // 0x48
+
+	// Methods
+
+	// RVA: 0x175A7B4 Offset: 0x17567B4 VA: 0x175A7B4
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+[Serializable]
+public class CreateProperties : PanelProperties // TypeDefIndex: 1418
+{
+	// Fields
+	[CompilerGenerated]
+	private PlayerRebornData <data>k__BackingField; // 0x18
+
+	// Properties
+	public PlayerRebornData data { get; set; }
+
+	// Methods
+
+	[CompilerGenerated]
+	// RVA: 0x175A83C Offset: 0x175683C VA: 0x175A83C
+	public PlayerRebornData get_data() { }
+
+	[CompilerGenerated]
+	// RVA: 0x175A844 Offset: 0x1756844 VA: 0x175A844
+	public void set_data(PlayerRebornData value) { }
+
+	// RVA: 0x175A84C Offset: 0x175684C VA: 0x175A84C
+	public void .ctor(PlayerRebornData data) { }
+}
+
+// Namespace: FootballStar
+public class CreateUI : APanelController<CreateProperties> // TypeDefIndex: 1419
+{
+	// Fields
+	[SerializeField]
+	private Button returnBtn; // 0x68
+	[SerializeField]
+	private Button createBtn; // 0x70
+	[SerializeField]
+	private InputField nameInputField; // 0x78
+	[SerializeField]
+	private Button rdNameBtn; // 0x80
+	[SerializeField]
+	private ToggleGroup positionToggleGroup; // 0x88
+	[SerializeField]
+	private NationalToggleGroup nationalGroup; // 0x90
+	[SerializeField]
+	private ToggleGroup portraitToggleGroup; // 0x98
+	[SerializeField]
+	private ScrollRect portraitScroll; // 0xA0
+	[SerializeField]
+	private GameObject portraitToggle; // 0xA8
+	private RectTransform portraitContent; // 0xB0
+	private Vector2 portraitItemSize; // 0xB8
+	private string username; // 0xC0
+	private int selectedRoleId; // 0xC8
+	private int selectedPortraitId; // 0xCC
+	private int portraitCount; // 0xD0
+
+	// Methods
+
+	// RVA: 0x175A87C Offset: 0x175687C VA: 0x175A87C Slot: 17
+	protected override void Awake() { }
+
+	// RVA: 0x175AB04 Offset: 0x1756B04 VA: 0x175AB04 Slot: 19
+	protected override void AddListeners() { }
+
+	// RVA: 0x175AD7C Offset: 0x1756D7C VA: 0x175AD7C Slot: 20
+	protected override void RemoveListeners() { }
+
+	// RVA: 0x175AFF4 Offset: 0x1756FF4 VA: 0x175AFF4 Slot: 22
+	protected override void WhileHiding() { }
+
+	// RVA: 0x175B134 Offset: 0x1757134 VA: 0x175B134 Slot: 21
+	protected override void OnPropertiesSet() { }
+
+	// RVA: 0x175B150 Offset: 0x1757150 VA: 0x175B150
+	private void Show(IUIScreenController controller) { }
+
+	// RVA: 0x175A980 Offset: 0x1756980 VA: 0x175A980
+	private void InitPortraitScroll() { }
+
+	// RVA: 0x175B860 Offset: 0x1757860 VA: 0x175B860
+	private void RdPortrait() { }
+
+	// RVA: 0x175B904 Offset: 0x1757904 VA: 0x175B904
+	private void OnCreate() { }
+
+	// RVA: 0x175BD7C Offset: 0x1757D7C VA: 0x175BD7C
+	private void OnRdUserName() { }
+
+	// RVA: 0x175BE44 Offset: 0x1757E44 VA: 0x175BE44

@@ -3,11 +3,12 @@ import { createInitialProfile, formatAbility, getRating, playMatch, recoverPlaye
 import { ensureClubState, finishSeason, formatClubStanding, getClubRating, getNextClubFixture, playClubMatch, setClubFormation, setClubTactic } from '../domain/club-engine.js';
 import { buyMarketPlayer, claimDailyReward, formatMoney, generateDailyEvent, refreshMarket, resolveDailyEvent, sellClubPlayer } from '../domain/progression-engine.js';
 import { claimAchievement, formatAchievements, playChampionsLeague, startChampionsLeague, syncAchievements } from '../domain/competition-engine.js';
+import { advanceWeek, assignMatchExp, ensureGameplayState, formatDetailedSkills, formatGameplayStatus, hireTrainer, listTrainerCatalog, rebirthPlayer, releaseTrainer, retirePlayer, startCultureStudy, startTrickTraining, trainDetailedSkill, treatInjury } from '../domain/gameplay-engine.js';
 import { formatContract, getContractStatus, renewContract, signContract } from '../domain/contract-engine.js';
 import { joinOfficialClub, listOfficialClubs } from '../domain/official-club-engine.js';
-import { ABILITY_LABELS, FORMATIONS, POSITION_LABELS, TACTICS, type AbilityId, type PlayerProfile, type Position } from '../domain/types.js';
+import { ABILITY_LABELS, DETAILED_SKILL_LABELS, DETAILED_SKILLS, FORMATIONS, HONOR_CATEGORY_LABELS, POSITION_LABELS, TACTICS, TRAINER_CATALOG, TRICK_CATALOG, type AbilityId, type CultureSubject, type DetailedSkillId, type PlayerProfile, type Position } from '../domain/types.js';
 import type { PlayerStore } from '../storage/json-store.js';
-import { careerControls, trainingControls } from './components.js';
+import { careerControls, detailedTrainingControls, trainingControls } from './components.js';
 import { log } from '../observability/logger.js';
 
 const BRAND_COLOR: ColorResolvable = '#1f8b4c';
@@ -17,6 +18,8 @@ function profileEmbed(profile: PlayerProfile): EmbedBuilder {
   const abilities = Object.entries(profile.abilities)
     .map(([id, state]) => `${ABILITY_LABELS[id as AbilityId]}: **${profile.stats[id as AbilityId]}** (Lv ${state.level}, ${state.exp} EXP)`)
     .join('\n');
+  const detailed = profile.detailedSkills ? formatDetailedSkills(profile) : 'Jalankan `/skills` untuk menginisialisasi detailed skill state.';
+  const gameplay = profile.detailedSkills ? formatGameplayStatus(profile) : 'Legacy profile; gameplay state akan dimigrasikan saat `/skills` atau `/next-week`.';
   const club = profile.clubState;
   return new EmbedBuilder()
     .setColor(BRAND_COLOR)
@@ -26,7 +29,9 @@ function profileEmbed(profile: PlayerProfile): EmbedBuilder {
       { name: 'Condition', value: `HP **${profile.hp}/${profile.maxHp}**\nEnergy **${profile.energy}/${profile.maxEnergy}**\nMoney **${formatMoney(profile.money)}**`, inline: true },
       { name: 'Career', value: `Level **${profile.level}**\nEXP **${profile.totalExp}**\nAge **${profile.age}**`, inline: true },
       { name: 'Club', value: club ? `Club rating **${getClubRating(profile)}**\nPrestige **${club.prestige}**\nAssets **${formatMoney(club.assets)}**\n${club.formation} · ${TACTICS[club.tactic].name}` : 'Gunakan `/club` untuk membuat state klub.', inline: true },
-      { name: 'Abilities', value: abilities || 'Belum ada ability.' },
+      { name: 'Macro abilities', value: abilities || 'Belum ada ability.' },
+      { name: 'Detailed skills', value: detailed },
+      { name: 'Gameplay state', value: gameplay },
       { name: 'Career statistics', value: `Appearances **${profile.career.appearances}** · W-D-L **${profile.career.wins}-${profile.career.draws}-${profile.career.losses}**\nGoals **${profile.career.goals}** · Assists **${profile.career.assists}** · Clean sheets **${profile.career.cleanSheets}**` }
     )
     .setFooter({ text: 'Football Rising Star Discord · Formula pertandingan modular untuk kalibrasi internal.' });
@@ -79,6 +84,157 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
       await store.save(result.profile);
       const levelText = result.levelUp ? '\n**Level ability naik.**' : '';
       await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle('Training selesai').setDescription(`**${formatAbility(result.ability)}** bertambah dari **${result.statBefore}** menjadi **${result.statAfter}**. EXP diperoleh: **${result.expGained}**.${levelText}`).addFields({ name: 'Sisa energi', value: `${result.profile.energy}/${result.profile.maxEnergy}`, inline: true }, { name: 'Player rating', value: `${getRating(result.profile)}`, inline: true })] });
+      return;
+    }
+
+    if (command === 'skills') {
+      const profile = await requireProfile(interaction, store);
+      if (!profile) return;
+      const enriched = ensureGameplayState(profile);
+      await store.save(enriched);
+      const tricks = Object.values(TRICK_CATALOG).map((trick) => `${enriched.unlockedTricks?.includes(trick.id) ? 'UNLOCKED' : 'LOCKED'} · **${trick.name}** · requires ${Object.entries(trick.requires).map(([skill, level]) => `${DETAILED_SKILL_LABELS[skill as DetailedSkillId]} ${level}`).join(', ')}`).join('\n');
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`${enriched.displayName} · Detailed Skills`).setDescription(formatDetailedSkills(enriched)).addFields({ name: 'Gameplay state', value: formatGameplayStatus(enriched) }, { name: 'Tricks', value: tricks || 'Belum ada trick catalog.' })] });
+      return;
+    }
+
+    if (command === 'train-skill') {
+      const profile = await requireProfile(interaction, store);
+      if (!profile) return;
+      const skill = interaction.options.getString('skill', true) as DetailedSkillId;
+      const result = trainDetailedSkill(profile, skill);
+      await store.save(result.profile);
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle('Detailed training selesai').setDescription(`**${DETAILED_SKILL_LABELS[result.skill]}**: Lv ${result.levelBefore} → **${result.levelAfter}** · +${result.expGained} EXP`).addFields({ name: 'Condition', value: `Energy ${result.profile.energy}/${result.profile.maxEnergy}`, inline: true }, { name: 'Macro rating', value: `${getRating(result.profile)}`, inline: true })] });
+      return;
+    }
+
+    if (command === 'assign-exp') {
+      const profile = await requireProfile(interaction, store);
+      if (!profile) return;
+      const skill = interaction.options.getString('skill', true) as DetailedSkillId;
+      const amount = interaction.options.getInteger('amount', true);
+      const result = assignMatchExp(profile, { [skill]: amount });
+      await store.save(result.profile);
+      await interaction.editReply(`EXP dialokasikan ke **${DETAILED_SKILL_LABELS[skill]}**: **${result.allocated}**. Sisa pending EXP: **${result.remaining}**.`);
+      return;
+    }
+
+    if (command === 'next-week') {
+      const profile = await requireProfile(interaction, store);
+      if (!profile) return;
+      const result = advanceWeek(profile);
+      await store.save(result.profile);
+      const matchText = result.match ? `Match: ${result.match.outcome} ${result.match.playerGoals}-${result.match.opponentGoals} vs ${result.match.opponent}` : 'Tidak ada match yang dimainkan minggu ini.';
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`Week ${result.week} selesai`).setDescription(result.narrative.join('\n')).addFields({ name: 'Match', value: matchText }, { name: 'Pending EXP', value: `${result.expAwaitingAssignment}`, inline: true }, { name: 'Status', value: `${result.profile.careerStatus} · age ${result.profile.age} · year ${result.profile.careerYear} · week ${result.profile.careerWeek}`, inline: true }).setFooter({ text: result.retired ? 'Gunakan /rebirth setelah retirement.' : result.expAwaitingAssignment > 0 ? 'Gunakan /assign-exp sebelum /next-week berikutnya.' : 'Gunakan /skills untuk melihat progression.' })] });
+      return;
+    }
+
+    if (command === 'injury') {
+      const profile = await requireProfile(interaction, store);
+      if (!profile) return;
+      const action = interaction.options.getString('action') ?? 'view';
+      if (action === 'view') {
+        const enriched = ensureGameplayState(profile);
+        await store.save(enriched);
+        await interaction.editReply(enriched.injury ? `Cedera **${enriched.injury.severity}** · tersisa **${enriched.injury.weeksRemaining} minggu** · source ${enriched.injury.source}. Treatment used: ${enriched.injury.treatmentUsed ? 'yes' : 'no'}.` : 'Pemain sedang sehat.');
+      } else {
+        const treatment = action === 'expert-treatment' ? 'EXPERT' : 'BASIC';
+        const result = treatInjury(profile, treatment);
+        await store.save(result.profile);
+        await interaction.editReply(`Treatment **${result.treatment}** selesai. Durasi dikurangi **${result.weeksRemoved} minggu**; biaya **${formatMoney(result.moneySpent)}**. ${result.profile.injury ? `Sisa cedera: ${result.profile.injury.weeksRemaining} minggu.` : 'Cedera sudah pulih.'}`);
+      }
+      return;
+    }
+
+    if (command === 'trick') {
+      const profile = await requireProfile(interaction, store);
+      if (!profile) return;
+      const action = interaction.options.getString('action') ?? 'list';
+      if (action === 'train') {
+        const trickId = interaction.options.getString('trick_id');
+        if (!trickId) throw new Error('Masukkan trick_id, contoh `bicycle-kick`.');
+        const result = startTrickTraining(profile, trickId);
+        await store.save(result.profile);
+        await interaction.editReply(result.message);
+      } else {
+        const enriched = ensureGameplayState(profile);
+        await store.save(enriched);
+        const list = Object.values(TRICK_CATALOG).map((trick) => `${enriched.unlockedTricks?.includes(trick.id) ? 'UNLOCKED' : 'LOCKED'} · **${trick.id}** — ${trick.name}; requires ${Object.entries(trick.requires).map(([skill, level]) => `${DETAILED_SKILL_LABELS[skill as DetailedSkillId]} ${level}`).join(', ')}`).join('\n');
+        await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle('Trick Training').setDescription(list)] });
+      }
+      return;
+    }
+
+    if (command === 'trainer') {
+      const profile = await requireProfile(interaction, store);
+      if (!profile) return;
+      const action = interaction.options.getString('action') ?? 'list';
+      if (action === 'hire') {
+        const trainerId = interaction.options.getString('trainer_id');
+        if (!trainerId) throw new Error('Masukkan trainer_id, contoh `junior-physical`.');
+        const result = hireTrainer(profile, trainerId);
+        await store.save(result.profile);
+        await interaction.editReply(result.message);
+      } else if (action === 'release') {
+        const result = releaseTrainer(profile);
+        await store.save(result.profile);
+        await interaction.editReply(result.message);
+      } else {
+        const enriched = ensureGameplayState(profile);
+        await store.save(enriched);
+        const list = listTrainerCatalog().map((trainer) => `${enriched.trainer?.id === trainer.id && enriched.trainer.active ? 'ACTIVE' : 'AVAILABLE'} · **${trainer.id}** · ${trainer.tier} · ${trainer.type} · ratio ${(trainer.ratio * 100).toFixed(0)}% · ${formatMoney(trainer.weeklyCost)}/week`).join('\n');
+        await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle('Personal Trainers').setDescription(list)] });
+      }
+      return;
+    }
+
+    if (command === 'culture') {
+      const profile = await requireProfile(interaction, store);
+      if (!profile) return;
+      const subject = interaction.options.getString('subject', true) as CultureSubject;
+      const result = startCultureStudy(profile, subject);
+      await store.save(result.profile);
+      await interaction.editReply(result.message);
+      return;
+    }
+
+    if (command === 'honors') {
+      const profile = await requireProfile(interaction, store);
+      if (!profile) return;
+      const enriched = ensureGameplayState(profile);
+      await store.save(enriched);
+      const categories = (['PERSONAL', 'TEAM', 'NATIONAL'] as const).map((category) => {
+        const honors = enriched.honors!.filter((honor) => honor.category === category);
+        return `**${HONOR_CATEGORY_LABELS[category]}**\n${honors.length ? honors.map((honor) => `${honor.title} · season ${honor.season}`).join('\n') : 'Belum ada honor.'}`;
+      }).join('\n\n');
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle('Hall of Honor').setDescription(categories)] });
+      return;
+    }
+
+    if (command === 'world-footballer') {
+      const profile = await requireProfile(interaction, store);
+      if (!profile) return;
+      const enriched = ensureGameplayState(profile);
+      await store.save(enriched);
+      const award = enriched.worldFootballer;
+      await interaction.editReply(award ? `World Footballer season **${award.season}**: **${award.winner}**. User score: **${award.userScore}**. Result: **${award.userWon ? 'WIN' : 'candidate'}**.` : 'Belum ada hasil World Footballer. Selesaikan satu season melalui /next-week.');
+      return;
+    }
+
+    if (command === 'retire') {
+      const profile = await requireProfile(interaction, store);
+      if (!profile) return;
+      const result = retirePlayer(profile);
+      await store.save(result.profile);
+      await interaction.editReply(result.message);
+      return;
+    }
+
+    if (command === 'rebirth') {
+      const profile = await requireProfile(interaction, store);
+      if (!profile) return;
+      const result = rebirthPlayer(profile);
+      await store.save(result.profile);
+      await interaction.editReply(result.message);
       return;
     }
 
@@ -305,7 +461,7 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
     }
 
     if (command === 'help') {
-      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle('Football Rising Star — Panduan').setDescription('Bangun karier pemain dan kelola klub melalui dua loop gameplay.').addFields({ name: 'Career', value: '`/start`, `/profile`, `/train`, `/match`, `/league`' }, { name: 'Club', value: '`/club`, `/squad`, `/formation`, `/tactic`, `/club-match`, `/standings`, `/season-end`' }, { name: 'Economy & events', value: '`/daily`, `/event`, `/market`, `/buy-player`, `/sell-player`' }, { name: 'Production roadmap', value: 'Tinggal menambahkan database production, admin seed, Champions League detail, achievements, contracts, dan kalibrasi formula resmi.' })] });
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle('Football Rising Star — Panduan').setDescription('Bangun karier pemain dan kelola klub melalui loop mingguan yang terinspirasi dari gameplay publik dan client recovery.').addFields({ name: 'Career', value: '`/start`, `/profile`, `/skills`, `/train-skill`, `/assign-exp`, `/match`, `/next-week`, `/league`' }, { name: 'Progression', value: '`/injury`, `/trick`, `/trainer`, `/culture`, `/honors`, `/world-footballer`, `/retire`, `/rebirth`' }, { name: 'Club', value: '`/club`, `/squad`, `/formation`, `/tactic`, `/club-match`, `/standings`, `/season-end`' }, { name: 'Economy & events', value: '`/daily`, `/event`, `/market`, `/buy-player`, `/sell-player`, `/contract`' })] });
       return;
     }
 
@@ -339,8 +495,27 @@ export async function handleComponent(interaction: ButtonInteraction | StringSel
       return;
     }
 
+    if (action === 'skills') {
+      const enriched = ensureGameplayState(profile);
+      await store.save(enriched);
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`${enriched.displayName} · Detailed Skills`).setDescription(formatDetailedSkills(enriched)).addFields({ name: 'Gameplay state', value: formatGameplayStatus(enriched) })], components: careerControls(interaction.user.id) });
+      return;
+    }
+
+    if (action === 'next-week') {
+      const result = advanceWeek(profile);
+      await store.save(result.profile);
+      await interaction.editReply({ content: `Week ${result.week} selesai.\\n${result.narrative.join('\\n')}\\nPending EXP: ${result.expAwaitingAssignment}.`, components: careerControls(interaction.user.id) });
+      return;
+    }
+
     if (action === 'train') {
-      await interaction.editReply({ content: 'Pilih ability yang ingin dilatih.', components: trainingControls(interaction.user.id) });
+      await interaction.editReply({ content: 'Pilih macro ability atau gunakan detailed skill selector.', components: trainingControls(interaction.user.id) });
+      return;
+    }
+
+    if (action === 'detailed-train') {
+      await interaction.editReply({ content: 'Pilih detailed skill yang ingin dilatih.', components: detailedTrainingControls(interaction.user.id) });
       return;
     }
 
@@ -349,6 +524,14 @@ export async function handleComponent(interaction: ButtonInteraction | StringSel
       const result = trainPlayer(profile, ability);
       await store.save(result.profile);
       await interaction.editReply({ content: `**${formatAbility(result.ability)}** naik dari **${result.statBefore}** menjadi **${result.statAfter}**. EXP: **${result.expGained}**.`, components: careerControls(interaction.user.id) });
+      return;
+    }
+
+    if (action === 'detailed-train-select' && interaction.isStringSelectMenu()) {
+      const skill = interaction.values[0] as DetailedSkillId;
+      const result = trainDetailedSkill(profile, skill);
+      await store.save(result.profile);
+      await interaction.editReply({ content: `**${DETAILED_SKILL_LABELS[result.skill]}** naik dari Lv ${result.levelBefore} menjadi **${result.levelAfter}**. EXP: **${result.expGained}**.`, components: careerControls(interaction.user.id) });
       return;
     }
 

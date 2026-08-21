@@ -34,7 +34,41 @@ export const commandDefinitions = [
           { name: 'Technique', value: 'technique' }
         )
     ),
-  new SlashCommandBuilder().setName('match').setDescription('Simulasikan pertandingan karier pemain'),
+  new SlashCommandBuilder().setName('skills').setDescription('Lihat detailed skills, EXP pending, injury, trainer, culture, tricks, dan honors'),
+  new SlashCommandBuilder()
+    .setName('train-skill')
+    .setDescription('Latih satu detailed skill')
+    .addStringOption((option) => option.setName('skill').setDescription('Detailed skill').setRequired(true).addChoices(
+      { name: 'Shots', value: 'shots' },
+      { name: 'Penalty', value: 'penalty' },
+      { name: 'Header', value: 'header' },
+      { name: 'Pass', value: 'pass' },
+      { name: 'Dribbling', value: 'dribbling' },
+      { name: 'Free Kick', value: 'freeKick' },
+      { name: 'Off-ball Running', value: 'offBallRunning' },
+      { name: 'Hold Off Defenders', value: 'holdOffDefenders' },
+      { name: 'Teamwork', value: 'teamwork' },
+      { name: 'Endurance', value: 'endurance' },
+      { name: 'Speed', value: 'speed' },
+      { name: 'Willpower', value: 'willpower' }
+    )),
+  new SlashCommandBuilder()
+    .setName('assign-exp')
+    .setDescription('Alokasikan EXP pertandingan secara manual')
+    .addStringOption((option) => option.setName('skill').setDescription('Skill tujuan').setRequired(true).addChoices(
+      { name: 'Shots', value: 'shots' }, { name: 'Penalty', value: 'penalty' }, { name: 'Header', value: 'header' }, { name: 'Pass', value: 'pass' }, { name: 'Dribbling', value: 'dribbling' }, { name: 'Free Kick', value: 'freeKick' }, { name: 'Off-ball Running', value: 'offBallRunning' }, { name: 'Hold Off Defenders', value: 'holdOffDefenders' }, { name: 'Teamwork', value: 'teamwork' }, { name: 'Endurance', value: 'endurance' }, { name: 'Speed', value: 'speed' }, { name: 'Willpower', value: 'willpower' }
+    ))
+    .addIntegerOption((option) => option.setName('amount').setDescription('Jumlah EXP').setRequired(true).setMinValue(1)),
+  new SlashCommandBuilder().setName('next-week').setDescription('Majukan satu minggu karier dan simulasikan loop mingguan'),
+  new SlashCommandBuilder().setName('injury').setDescription('Lihat atau tangani cedera').addStringOption((option) => option.setName('action').setDescription('Aksi cedera').setRequired(false).addChoices({ name: 'View', value: 'view' }, { name: 'Basic treatment', value: 'basic-treatment' }, { name: 'Expert treatment', value: 'expert-treatment' })),
+  new SlashCommandBuilder().setName('trick').setDescription('Lihat atau unlock trick training').addStringOption((option) => option.setName('action').setDescription('Aksi trick').setRequired(false).addChoices({ name: 'List', value: 'list' }, { name: 'Train', value: 'train' })).addStringOption((option) => option.setName('trick_id').setDescription('ID trick, contoh bicycle-kick').setRequired(false)),
+  new SlashCommandBuilder().setName('trainer').setDescription('Lihat atau kelola personal trainer').addStringOption((option) => option.setName('action').setDescription('Aksi trainer').setRequired(false).addChoices({ name: 'List', value: 'list' }, { name: 'Hire', value: 'hire' }, { name: 'Release', value: 'release' })).addStringOption((option) => option.setName('trainer_id').setDescription('ID trainer').setRequired(false)),
+  new SlashCommandBuilder().setName('culture').setDescription('Mulai culture study').addStringOption((option) => option.setName('subject').setDescription('Subject').setRequired(true).addChoices({ name: 'Science', value: 'science' }, { name: 'Arts', value: 'arts' }, { name: 'History', value: 'history' })),
+  new SlashCommandBuilder().setName('honors').setDescription('Lihat Hall of Honor personal, team, dan national'),
+  new SlashCommandBuilder().setName('world-footballer').setDescription('Lihat hasil World Footballer tahunan'),
+  new SlashCommandBuilder().setName('retire').setDescription('Pensiun setelah mencapai batas karier'),
+  new SlashCommandBuilder().setName('rebirth').setDescription('Mulai ulang karier setelah retirement'),
+  new SlashCommandBuilder().setName('match').setDescription('Simulasikan pertandingan karier'),
   new SlashCommandBuilder().setName('league').setDescription('Lihat progres musim dan klasemen pribadi'),
   new SlashCommandBuilder().setName('club').setDescription('Lihat kondisi klub, rating, formasi, dan taktik'),
   new SlashCommandBuilder().setName('clubs').setDescription('Lihat official clubs dari client data').addIntegerOption((option) => option.setName('league').setDescription('League code, contoh 1011').setRequired(false)),

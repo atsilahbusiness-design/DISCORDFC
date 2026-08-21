@@ -1,0 +1,44 @@
+Starting video analysis...
+Submitting video analysis task...
+Task submitted (ID: video-analysis-50f68e3c-3c99-4273-985e-b40fe7319190)
+[8s] Status: Analyzing video content with AI...
+[28s] Status: Analysis completed
+[28s] Analysis completed!
+Full analysis result saved to: /home/ubuntu/video_sS5T8E43LQI_analysis_20260821_152626.md
+Note: This tool performs AI-based visual and audio analysis, not verbatim transcription. For detailed speech transcription, use `manus-speech-to-text` instead.
+Analysis result:
+
+Based on the gameplay walkthrough of **Football Rising Star**, here is an analysis of the observable gameplay systems:
+
+### Onboarding and Player Profile
+*   **Initial Setup:** The game begins with a "Welcome" screen where the player character is introduced as a 15-year-old striker (ST) named "khalifa02dz".
+*   **Profile Attributes:** The player profile tracks several core stats: **PHY** (Physical), **SPD** (Speed), **DEF** (Defense), **TEC** (Technique), and **STA** (Stamina).
+*   **Detailed Skills:** A more granular list of skills includes **Shots, Penalty, Header, Pass, Dribbling, Free Kick, Off-ball Running, Hold Off Defenders, Teamwork, Endurance, Speed,** and **Willpower**. Each skill has a level that can be increased.
+
+### Training Systems
+*   **Regular Training:** Players can manually increase attributes like Shots, Pass, Dribbling, etc., using available training points.
+*   **Trick Training:** This system allows players to learn specific moves (e.g., "Bicycle Kick"). These are unlocked once certain attribute levels are reached.
+*   **Personal Training:** Players can hire Junior, Senior, or Expert trainers for both physical and skill-based improvements, which likely provide passive or accelerated attribute gains.
+*   **Culture Study:** An unconventional training system where players choose to learn **Science, Arts,** or **History**. This is observed to increase "charm" and specific attributes like "Imagination".
+
+### Stamina, Energy, and Injuries
+*   **Energy Management:** A lightning bolt icon represents the player's energy. It depletes when performing actions like training or playing matches.
+*   **Recovery:** When energy is low, the player must choose to "Rest at home" or use items/currency to recover.
+*   **Injury Treatment:** If a player is injured, a UI pop-up appears offering treatment options: "Basic Treat" or "Expert Surgery," the latter costing premium currency (diamonds).
+
+### Match Flow and Decisions
+*   **Simulation:** Matches are simulated rather than played manually. The UI displays the starting lineups for both teams along with individual player performance ratings (e.g., 8.8, 7.5).
+*   **Post-Match Exp:** After a match, players receive "Assign Exp" points based on their performance. These points are then manually distributed across the detailed skill list to level up the character.
+*   **In-Game Events:** Random narrative events occur between matches. Players are presented with choices that affect their attributes or standing. Examples include:
+    *   **Windfall:** Choosing to "Collect into your pocket" or "Call police" when finding money.
+    *   **Tactical Discussions:** Choosing how to respond to a coach's experimental formation (e.g., "Be creative" vs. "Doesn't make sense").
+    *   **King of Soccer:** Interacting with legendary players during holidays to gain attribute boosts.
+
+### Progression and Rewards
+*   **Club and League Progression:** The game advances week-by-week. League tables track the team's standing (Played, Won, Drawn, Lost, Goal Difference, Points).
+*   **Transfers and Contracts:** Players can view their current contract details, including salary and their rank within the squad. They can initiate "Negotiations" to join new clubs (e.g., moving from Triumphal Arch to Sandhausen).
+*   **Achievements and Hall of Honor:** A dedicated UI tracks long-term goals like "My First MVP" or "First Place". The "Hall of Honor" displays trophies won across Personal, Team, and National categories.
+*   **World Footballer:** An annual event where the player is compared against top-tier candidates (e.g., Lewandowski, De Bruyne) for the "World Player of the Year" award.
+
+### User Interface (UI) Sequence
+*   The typical gameplay loop follows a sequence: **Main Status Screen (Events/Logs) -> Training/Personal Management -> "Next Week" (Time Progression) -> Match Simulation -> Exp Allocation -> League Standings Update.** The bottom navigation bar provides quick access to the Player Profile, Training, Match, and Achievement menus.

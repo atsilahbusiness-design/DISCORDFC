@@ -1,0 +1,2121 @@
+	private string _message; // 0x30
+	private List<ThingBase> _costList; // 0x38
+	private List<ThingBase> _rewardList; // 0x40
+
+	// Properties
+	public string desc { get; set; }
+	public string message { get; set; }
+
+	// Methods
+
+	// RVA: 0x190FBEC Offset: 0x190BBEC VA: 0x190FBEC
+	public string get_desc() { }
+
+	// RVA: 0x190FC6C Offset: 0x190BC6C VA: 0x190FC6C
+	public void set_desc(string value) { }
+
+	// RVA: 0x190FC74 Offset: 0x190BC74 VA: 0x190FC74
+	public string get_message() { }
+
+	// RVA: 0x190FCF4 Offset: 0x190BCF4 VA: 0x190FCF4
+	public void set_message(string value) { }
+
+	// RVA: 0x190FCFC Offset: 0x190BCFC VA: 0x190FCFC
+	public List<ThingBase> GetCostList() { }
+
+	// RVA: 0x190FD6C Offset: 0x190BD6C VA: 0x190FD6C
+	public List<ThingBase> GetRewardList() { }
+
+	// RVA: 0x190FDDC Offset: 0x190BDDC VA: 0x190FDDC
+	public string GetMessage() { }
+
+	// RVA: 0x190FF14 Offset: 0x190BF14 VA: 0x190FF14
+	private string GetRewardEnergy() { }
+
+	// RVA: 0x19102FC Offset: 0x190C2FC VA: 0x19102FC
+	private string GetAddMoney() { }
+
+	// RVA: 0x19104A8 Offset: 0x190C4A8 VA: 0x19104A8
+	private string GetCostMoney() { }
+
+	// RVA: 0x19100C0 Offset: 0x190C0C0 VA: 0x19100C0
+	private string GetAbilityName() { }
+
+	// RVA: 0x1910654 Offset: 0x190C654 VA: 0x1910654
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class CoachGameEventUserChooseConfigTable : IdentityConfigTable<CoachGameEventUserChooseConfig> // TypeDefIndex: 394
+{
+	// Methods
+
+	// RVA: 0x1910700 Offset: 0x190C700 VA: 0x1910700
+	public List<CoachGameEventUserChooseConfig> GetChooseList(int gameEventId) { }
+
+	// RVA: 0x191092C Offset: 0x190C92C VA: 0x191092C
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class CoachGameEventUserConfig : BaseConfig // TypeDefIndex: 395
+{
+	// Fields
+	private string _name; // 0x18
+	[CompilerGenerated]
+	private string <Icon>k__BackingField; // 0x20
+	private string _desc; // 0x28
+	[CompilerGenerated]
+	private int <Library>k__BackingField; // 0x30
+	[CompilerGenerated]
+	private int <MINAge>k__BackingField; // 0x34
+	[CompilerGenerated]
+	private int <MAXAge>k__BackingField; // 0x38
+
+	// Properties
+	public string Name { get; set; }
+	public string Icon { get; set; }
+	public string Desc { get; set; }
+	public int Library { get; set; }
+	public int MINAge { get; set; }
+	public int MAXAge { get; set; }
+
+	// Methods
+
+	// RVA: 0x1910974 Offset: 0x190C974 VA: 0x1910974
+	public string get_Name() { }
+
+	// RVA: 0x19109F4 Offset: 0x190C9F4 VA: 0x19109F4
+	public void set_Name(string value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x19109FC Offset: 0x190C9FC VA: 0x19109FC
+	public string get_Icon() { }
+
+	[CompilerGenerated]
+	// RVA: 0x1910A04 Offset: 0x190CA04 VA: 0x1910A04
+	public void set_Icon(string value) { }
+
+	// RVA: 0x1910A0C Offset: 0x190CA0C VA: 0x1910A0C
+	public string get_Desc() { }
+
+	// RVA: 0x1910A8C Offset: 0x190CA8C VA: 0x1910A8C
+	public void set_Desc(string value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x1910A94 Offset: 0x190CA94 VA: 0x1910A94
+	public int get_Library() { }
+
+	[CompilerGenerated]
+	// RVA: 0x1910A9C Offset: 0x190CA9C VA: 0x1910A9C
+	public void set_Library(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x1910AA4 Offset: 0x190CAA4 VA: 0x1910AA4
+	public int get_MINAge() { }
+
+	[CompilerGenerated]
+	// RVA: 0x1910AAC Offset: 0x190CAAC VA: 0x1910AAC
+	public void set_MINAge(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x1910AB4 Offset: 0x190CAB4 VA: 0x1910AB4
+	public int get_MAXAge() { }
+
+	[CompilerGenerated]
+	// RVA: 0x1910ABC Offset: 0x190CABC VA: 0x1910ABC
+	public void set_MAXAge(int value) { }
+
+	// RVA: 0x1910AC4 Offset: 0x190CAC4 VA: 0x1910AC4
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class CoachGameEventUserConfigTable : IdentityConfigTable<CoachGameEventUserConfig> // TypeDefIndex: 396
+{
+	// Methods
+
+	// RVA: 0x1910ACC Offset: 0x190CACC VA: 0x1910ACC
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class CoachHonorConfig : BaseConfig // TypeDefIndex: 397
+{
+	// Fields
+	private string _name; // 0x18
+	public string title; // 0x20
+	private string _desc; // 0x28
+	[CompilerGenerated]
+	private string <GainIcon>k__BackingField; // 0x30
+	[CompilerGenerated]
+	private string <TitleIcon>k__BackingField; // 0x38
+	[CompilerGenerated]
+	private int <Type>k__BackingField; // 0x40
+	[CompilerGenerated]
+	private int <ConditionType>k__BackingField; // 0x44
+	[CompilerGenerated]
+	private int <ConditionCount>k__BackingField; // 0x48
+	[CompilerGenerated]
+	private int <Param>k__BackingField; // 0x4C
+
+	// Properties
+	public string Name { get; set; }
+	public string Desc { get; set; }
+	public string GainIcon { get; set; }
+	public string TitleIcon { get; set; }
+	public int Type { get; set; }
+	public int ConditionType { get; set; }
+	public int ConditionCount { get; set; }
+	public int Param { get; set; }
+
+	// Methods
+
+	// RVA: 0x1910B14 Offset: 0x190CB14 VA: 0x1910B14
+	public string get_Name() { }
+
+	// RVA: 0x1910B94 Offset: 0x190CB94 VA: 0x1910B94
+	public void set_Name(string value) { }
+
+	// RVA: 0x1910B9C Offset: 0x190CB9C VA: 0x1910B9C
+	public string get_Desc() { }
+
+	// RVA: 0x1910C1C Offset: 0x190CC1C VA: 0x1910C1C
+	public void set_Desc(string value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x1910C24 Offset: 0x190CC24 VA: 0x1910C24
+	public string get_GainIcon() { }
+
+	[CompilerGenerated]
+	// RVA: 0x1910C2C Offset: 0x190CC2C VA: 0x1910C2C
+	public void set_GainIcon(string value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x1910C34 Offset: 0x190CC34 VA: 0x1910C34
+	public string get_TitleIcon() { }
+
+	[CompilerGenerated]
+	// RVA: 0x1910C3C Offset: 0x190CC3C VA: 0x1910C3C
+	public void set_TitleIcon(string value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x1910C44 Offset: 0x190CC44 VA: 0x1910C44
+	public int get_Type() { }
+
+	[CompilerGenerated]
+	// RVA: 0x1910C4C Offset: 0x190CC4C VA: 0x1910C4C
+	public void set_Type(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x1910C54 Offset: 0x190CC54 VA: 0x1910C54
+	public int get_ConditionType() { }
+
+	[CompilerGenerated]
+	// RVA: 0x1910C5C Offset: 0x190CC5C VA: 0x1910C5C
+	public void set_ConditionType(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x1910C64 Offset: 0x190CC64 VA: 0x1910C64
+	public int get_ConditionCount() { }
+
+	[CompilerGenerated]
+	// RVA: 0x1910C6C Offset: 0x190CC6C VA: 0x1910C6C
+	public void set_ConditionCount(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x1910C74 Offset: 0x190CC74 VA: 0x1910C74
+	public int get_Param() { }
+
+	[CompilerGenerated]
+	// RVA: 0x1910C7C Offset: 0x190CC7C VA: 0x1910C7C
+	public void set_Param(int value) { }
+
+	// RVA: 0x1910C84 Offset: 0x190CC84 VA: 0x1910C84
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class CoachHonorConfigTable : IdentityConfigTable<CoachHonorConfig> // TypeDefIndex: 398
+{
+	// Methods
+
+	// RVA: 0x1910C8C Offset: 0x190CC8C VA: 0x1910C8C
+	public List<CoachHonorConfig> GetHonorListByType(int type) { }
+
+	// RVA: 0x1910EB8 Offset: 0x190CEB8 VA: 0x1910EB8
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class CoachMatchClubGradeConfig : BaseConfig // TypeDefIndex: 399
+{
+	// Fields
+	[CompilerGenerated]
+	private int <MinLevel>k__BackingField; // 0x14
+	[CompilerGenerated]
+	private int <MaxLevel>k__BackingField; // 0x18
+	[CompilerGenerated]
+	private int <Grade>k__BackingField; // 0x1C
+
+	// Properties
+	public int MinLevel { get; set; }
+	public int MaxLevel { get; set; }
+	public int Grade { get; set; }
+
+	// Methods
+
+	[CompilerGenerated]
+	// RVA: 0x1910F00 Offset: 0x190CF00 VA: 0x1910F00
+	public int get_MinLevel() { }
+
+	[CompilerGenerated]
+	// RVA: 0x1910F08 Offset: 0x190CF08 VA: 0x1910F08
+	public void set_MinLevel(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x1910F10 Offset: 0x190CF10 VA: 0x1910F10
+	public int get_MaxLevel() { }
+
+	[CompilerGenerated]
+	// RVA: 0x1910F18 Offset: 0x190CF18 VA: 0x1910F18
+	public void set_MaxLevel(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x1910F20 Offset: 0x190CF20 VA: 0x1910F20
+	public int get_Grade() { }
+
+	[CompilerGenerated]
+	// RVA: 0x1910F28 Offset: 0x190CF28 VA: 0x1910F28
+	public void set_Grade(int value) { }
+
+	// RVA: 0x1910F30 Offset: 0x190CF30 VA: 0x1910F30
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class CoachMatchClubGradeConfigTable : IdentityConfigTable<CoachMatchClubGradeConfig> // TypeDefIndex: 400
+{
+	// Methods
+
+	// RVA: 0x1910F38 Offset: 0x190CF38 VA: 0x1910F38
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class CoachPersonalTrainerConfig : BaseConfig // TypeDefIndex: 401
+{
+	// Fields
+	private string _name; // 0x18
+	[CompilerGenerated]
+	private string <Icon>k__BackingField; // 0x20
+	[CompilerGenerated]
+	private string <IconBack>k__BackingField; // 0x28
+	private string _desc; // 0x30
+	[CompilerGenerated]
+	private int <Type>k__BackingField; // 0x38
+	[CompilerGenerated]
+	private int <Ratio>k__BackingField; // 0x3C
+	[CompilerGenerated]
+	private int <WeekCost>k__BackingField; // 0x40
+
+	// Properties
+	public string Name { get; set; }
+	public string Icon { get; set; }
+	public string IconBack { get; set; }
+	public string Desc { get; set; }
+	public int Type { get; set; }
+	public int Ratio { get; set; }
+	public int WeekCost { get; set; }
+
+	// Methods
+
+	// RVA: 0x1910F80 Offset: 0x190CF80 VA: 0x1910F80
+	public string get_Name() { }
+
+	// RVA: 0x1911000 Offset: 0x190D000 VA: 0x1911000
+	public void set_Name(string value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x1911008 Offset: 0x190D008 VA: 0x1911008
+	public string get_Icon() { }
+
+	[CompilerGenerated]
+	// RVA: 0x1911010 Offset: 0x190D010 VA: 0x1911010
+	public void set_Icon(string value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x1911018 Offset: 0x190D018 VA: 0x1911018
+	public string get_IconBack() { }
+
+	[CompilerGenerated]
+	// RVA: 0x1911020 Offset: 0x190D020 VA: 0x1911020
+	public void set_IconBack(string value) { }
+
+	// RVA: 0x1911028 Offset: 0x190D028 VA: 0x1911028
+	public string get_Desc() { }
+
+	// RVA: 0x19110A8 Offset: 0x190D0A8 VA: 0x19110A8
+	public void set_Desc(string value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x19110B0 Offset: 0x190D0B0 VA: 0x19110B0
+	public int get_Type() { }
+
+	[CompilerGenerated]
+	// RVA: 0x19110B8 Offset: 0x190D0B8 VA: 0x19110B8
+	public void set_Type(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x19110C0 Offset: 0x190D0C0 VA: 0x19110C0
+	public int get_Ratio() { }
+
+	[CompilerGenerated]
+	// RVA: 0x19110C8 Offset: 0x190D0C8 VA: 0x19110C8
+	public void set_Ratio(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x19110D0 Offset: 0x190D0D0 VA: 0x19110D0
+	public int get_WeekCost() { }
+
+	[CompilerGenerated]
+	// RVA: 0x19110D8 Offset: 0x190D0D8 VA: 0x19110D8
+	public void set_WeekCost(int value) { }
+
+	// RVA: 0x19110E0 Offset: 0x190D0E0 VA: 0x19110E0
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class CoachPersonalTrainerConfigTable : IdentityConfigTable<CoachPersonalTrainerConfig> // TypeDefIndex: 402
+{
+	// Methods
+
+	// RVA: 0x19110E8 Offset: 0x190D0E8 VA: 0x19110E8
+	public List<CoachPersonalTrainerConfig> GetTrainerListByType(int pttype) { }
+
+	// RVA: 0x1911314 Offset: 0x190D314 VA: 0x1911314
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class CoachRoundConfig : BaseConfig // TypeDefIndex: 403
+{
+	// Fields
+	private string _name; // 0x18
+	[CompilerGenerated]
+	private int <RoundName>k__BackingField; // 0x20
+	[CompilerGenerated]
+	private string <Date>k__BackingField; // 0x28
+	[CompilerGenerated]
+	private int <NextYear>k__BackingField; // 0x30
+
+	// Properties
+	public string Name { get; set; }
+	public int RoundName { get; set; }
+	public string Date { get; set; }
+	public int NextYear { get; set; }
+
+	// Methods
+
+	// RVA: 0x191135C Offset: 0x190D35C VA: 0x191135C
+	public string get_Name() { }
+
+	// RVA: 0x19113DC Offset: 0x190D3DC VA: 0x19113DC
+	public void set_Name(string value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x19113E4 Offset: 0x190D3E4 VA: 0x19113E4
+	public int get_RoundName() { }
+
+	[CompilerGenerated]
+	// RVA: 0x19113EC Offset: 0x190D3EC VA: 0x19113EC
+	public void set_RoundName(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x19113F4 Offset: 0x190D3F4 VA: 0x19113F4
+	public string get_Date() { }
+
+	[CompilerGenerated]
+	// RVA: 0x19113FC Offset: 0x190D3FC VA: 0x19113FC
+	public void set_Date(string value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x1911404 Offset: 0x190D404 VA: 0x1911404
+	public int get_NextYear() { }
+
+	[CompilerGenerated]
+	// RVA: 0x191140C Offset: 0x190D40C VA: 0x191140C
+	public void set_NextYear(int value) { }
+
+	// RVA: 0x1911414 Offset: 0x190D414 VA: 0x1911414
+	public long GetTime(long btime) { }
+
+	// RVA: 0x19114FC Offset: 0x190D4FC VA: 0x19114FC
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class CoachRoundConfigTable : IdentityConfigTable<CoachRoundConfig> // TypeDefIndex: 404
+{
+	// Methods
+
+	// RVA: 0x1911504 Offset: 0x190D504 VA: 0x1911504
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class CoachSeasonCDConfig : BaseConfig // TypeDefIndex: 405
+{
+	// Fields
+	private string _seasonName; // 0x18
+	private string _cdName; // 0x20
+	[CompilerGenerated]
+	private int <CD>k__BackingField; // 0x28
+	[CompilerGenerated]
+	private byte <CanClear>k__BackingField; // 0x2C
+
+	// Properties
+	public string SeasonName { get; set; }
+	public string CDName { get; set; }
+	public int CD { get; set; }
+	public byte CanClear { get; set; }
+
+	// Methods
+
+	// RVA: 0x191154C Offset: 0x190D54C VA: 0x191154C
+	public string get_SeasonName() { }
+
+	// RVA: 0x19115CC Offset: 0x190D5CC VA: 0x19115CC
+	public void set_SeasonName(string value) { }
+
+	// RVA: 0x19115D4 Offset: 0x190D5D4 VA: 0x19115D4
+	public string get_CDName() { }
+
+	// RVA: 0x1911654 Offset: 0x190D654 VA: 0x1911654
+	public void set_CDName(string value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x191165C Offset: 0x190D65C VA: 0x191165C
+	public int get_CD() { }
+
+	[CompilerGenerated]
+	// RVA: 0x1911664 Offset: 0x190D664 VA: 0x1911664
+	public void set_CD(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x191166C Offset: 0x190D66C VA: 0x191166C
+	public byte get_CanClear() { }
+
+	[CompilerGenerated]
+	// RVA: 0x1911674 Offset: 0x190D674 VA: 0x1911674
+	public void set_CanClear(byte value) { }
+
+	// RVA: 0x191167C Offset: 0x190D67C VA: 0x191167C Slot: 4
+	public override void LoadFromBinary(BinaryReader binaryReader) { }
+
+	// RVA: 0x191172C Offset: 0x190D72C VA: 0x191172C
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class CoachSeasonCDConfigTable : IdentityConfigTable<CoachSeasonCDConfig> // TypeDefIndex: 406
+{
+	// Methods
+
+	// RVA: 0x1911734 Offset: 0x190D734 VA: 0x1911734
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class CoachTacticsConfig : BaseConfig // TypeDefIndex: 407
+{
+	// Fields
+	private string _name; // 0x18
+	public float atk; // 0x20
+	public float def; // 0x24
+	public float ballControl; // 0x28
+	public string beRestrictTactics; // 0x30
+	private Dictionary<int, bool> tacticsDic; // 0x38
+	public string conflictFormation; // 0x40
+	private Dictionary<int, bool> formationDic; // 0x48
+	public float ballControlRate; // 0x50
+
+	// Properties
+	public string name { get; set; }
+
+	// Methods
+
+	// RVA: 0x191177C Offset: 0x190D77C VA: 0x191177C
+	public string get_name() { }
+
+	// RVA: 0x19117FC Offset: 0x190D7FC VA: 0x19117FC
+	public void set_name(string value) { }
+
+	// RVA: 0x1911804 Offset: 0x190D804 VA: 0x1911804
+	public Dictionary<int, bool> GetRestictTacticsDic() { }
+
+	// RVA: 0x1911964 Offset: 0x190D964 VA: 0x1911964
+	public Dictionary<int, bool> GetConflictFormationDic() { }
+
+	// RVA: 0x1911AC4 Offset: 0x190DAC4 VA: 0x1911AC4
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class CoachTacticsConfigTable : IdentityConfigTable<CoachTacticsConfig> // TypeDefIndex: 408
+{
+	// Methods
+
+	// RVA: 0x1911B70 Offset: 0x190DB70 VA: 0x1911B70
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class ContractMessageConfig : BaseConfig // TypeDefIndex: 409
+{
+	// Fields
+	[CompilerGenerated]
+	private int <TriggerType>k__BackingField; // 0x14
+	[CompilerGenerated]
+	private int <MinCount>k__BackingField; // 0x18
+	[CompilerGenerated]
+	private int <MaxCount>k__BackingField; // 0x1C
+	private string _lang; // 0x20
+
+	// Properties
+	public int TriggerType { get; set; }
+	public int MinCount { get; set; }
+	public int MaxCount { get; set; }
+	public string Lang { get; set; }
+
+	// Methods
+
+	[CompilerGenerated]
+	// RVA: 0x1911BB8 Offset: 0x190DBB8 VA: 0x1911BB8
+	public int get_TriggerType() { }
+
+	[CompilerGenerated]
+	// RVA: 0x1911BC0 Offset: 0x190DBC0 VA: 0x1911BC0
+	public void set_TriggerType(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x1911BC8 Offset: 0x190DBC8 VA: 0x1911BC8
+	public int get_MinCount() { }
+
+	[CompilerGenerated]
+	// RVA: 0x1911BD0 Offset: 0x190DBD0 VA: 0x1911BD0
+	public void set_MinCount(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x1911BD8 Offset: 0x190DBD8 VA: 0x1911BD8
+	public int get_MaxCount() { }
+
+	[CompilerGenerated]
+	// RVA: 0x1911BE0 Offset: 0x190DBE0 VA: 0x1911BE0
+	public void set_MaxCount(int value) { }
+
+	// RVA: 0x1911BE8 Offset: 0x190DBE8 VA: 0x1911BE8
+	public string get_Lang() { }
+
+	// RVA: 0x1911C68 Offset: 0x190DC68 VA: 0x1911C68
+	public void set_Lang(string value) { }
+
+	// RVA: 0x1911C70 Offset: 0x190DC70 VA: 0x1911C70
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class ContractMessageConfigTable : IdentityConfigTable<ContractMessageConfig> // TypeDefIndex: 410
+{
+	// Methods
+
+	// RVA: 0x1911C78 Offset: 0x190DC78 VA: 0x1911C78
+	public ContractMessageConfig GetRandConfigByTriggerType(int triggerType) { }
+
+	// RVA: 0x1911E78 Offset: 0x190DE78 VA: 0x1911E78
+	public ContractMessageConfig GetRandConfig(int triggerType, int count) { }
+
+	// RVA: 0x1912094 Offset: 0x190E094 VA: 0x1912094
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class CountryCodeConfig : BaseConfig // TypeDefIndex: 411
+{
+	// Fields
+	[CompilerGenerated]
+	private string <TwoCode>k__BackingField; // 0x18
+	[CompilerGenerated]
+	private string <ThreeCode>k__BackingField; // 0x20
+	private string _name; // 0x28
+
+	// Properties
+	public string TwoCode { get; set; }
+	public string ThreeCode { get; set; }
+	public string Name { get; set; }
+
+	// Methods
+
+	[CompilerGenerated]
+	// RVA: 0x19120DC Offset: 0x190E0DC VA: 0x19120DC
+	public string get_TwoCode() { }
+
+	[CompilerGenerated]
+	// RVA: 0x19120E4 Offset: 0x190E0E4 VA: 0x19120E4
+	public void set_TwoCode(string value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x19120EC Offset: 0x190E0EC VA: 0x19120EC
+	public string get_ThreeCode() { }
+
+	[CompilerGenerated]
+	// RVA: 0x19120F4 Offset: 0x190E0F4 VA: 0x19120F4
+	public void set_ThreeCode(string value) { }
+
+	// RVA: 0x19120FC Offset: 0x190E0FC VA: 0x19120FC
+	public string get_Name() { }
+
+	// RVA: 0x191217C Offset: 0x190E17C VA: 0x191217C
+	public void set_Name(string value) { }
+
+	// RVA: 0x1912184 Offset: 0x190E184 VA: 0x1912184
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class CountryCodeConfigTable : IdentityConfigTable<CountryCodeConfig> // TypeDefIndex: 412
+{
+	// Methods
+
+	// RVA: 0x191218C Offset: 0x190E18C VA: 0x191218C
+	public int GetCountryCodeId(string countryCode) { }
+
+	// RVA: 0x1912304 Offset: 0x190E304 VA: 0x1912304
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class CountryConfig : BaseConfig // TypeDefIndex: 413
+{
+	// Fields
+	private string _name; // 0x18
+	public string icon; // 0x20
+	[CompilerGenerated]
+	private string <Codes>k__BackingField; // 0x28
+
+	// Properties
+	public string name { get; set; }
+	public string Codes { get; set; }
+
+	// Methods
+
+	// RVA: 0x191234C Offset: 0x190E34C VA: 0x191234C
+	public string get_name() { }
+
+	// RVA: 0x19123CC Offset: 0x190E3CC VA: 0x19123CC
+	public void set_name(string value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x19123D4 Offset: 0x190E3D4 VA: 0x19123D4
+	public string get_Codes() { }
+
+	[CompilerGenerated]
+	// RVA: 0x19123DC Offset: 0x190E3DC VA: 0x19123DC
+	public void set_Codes(string value) { }
+
+	// RVA: 0x19123E4 Offset: 0x190E3E4 VA: 0x19123E4
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class CountryConfigTable : IdentityConfigTable<CountryConfig> // TypeDefIndex: 414
+{
+	// Methods
+
+	// RVA: 0x19123EC Offset: 0x190E3EC VA: 0x19123EC
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class FormationConfig : BaseConfig // TypeDefIndex: 415
+{
+	// Fields
+	private string _name; // 0x18
+	public int backField; // 0x20
+	public int midField; // 0x24
+	public int forwardField; // 0x28
+	public int goalKeeper; // 0x2C
+	public int weight; // 0x30
+	[CompilerGenerated]
+	private string <Formation>k__BackingField; // 0x38
+	[CompilerGenerated]
+	private int <CoachFormationId>k__BackingField; // 0x40
+	private Dictionary<int, int> dic; // 0x48
+
+	// Properties
+	public string name { get; set; }
+	public string Formation { get; set; }
+	public int CoachFormationId { get; set; }
+
+	// Methods
+
+	// RVA: 0x1912434 Offset: 0x190E434 VA: 0x1912434
+	public string get_name() { }
+
+	// RVA: 0x19124B4 Offset: 0x190E4B4 VA: 0x19124B4
+	public void set_name(string value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x19124BC Offset: 0x190E4BC VA: 0x19124BC
+	public string get_Formation() { }
+
+	[CompilerGenerated]
+	// RVA: 0x19124C4 Offset: 0x190E4C4 VA: 0x19124C4
+	public void set_Formation(string value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x19124CC Offset: 0x190E4CC VA: 0x19124CC
+	public int get_CoachFormationId() { }
+
+	[CompilerGenerated]
+	// RVA: 0x19124D4 Offset: 0x190E4D4 VA: 0x19124D4
+	public void set_CoachFormationId(int value) { }
+
+	// RVA: 0x19124DC Offset: 0x190E4DC VA: 0x19124DC
+	public Dictionary<int, int> GetFormation() { }
+
+	// RVA: 0x1912648 Offset: 0x190E648 VA: 0x1912648
+	public int GetPositionCount(int positionId) { }
+
+	// RVA: 0x19126E0 Offset: 0x190E6E0 VA: 0x19126E0
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class FormationConfigTable : IdentityConfigTable<FormationConfig> // TypeDefIndex: 416
+{
+	// Methods
+
+	// RVA: 0x1912768 Offset: 0x190E768 VA: 0x1912768
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class GameEventUserChooseConfig : BaseConfig // TypeDefIndex: 417
+{
+	// Fields
+	public int gameEventId; // 0x14
+	private string _desc; // 0x18
+	public string cost; // 0x20
+	public string reward; // 0x28
+	private string _message; // 0x30
+	private List<ThingBase> _costList; // 0x38
+	private List<ThingBase> _rewardList; // 0x40
+
+	// Properties
+	public string desc { get; set; }
+	public string message { get; set; }
+
+	// Methods
+
+	// RVA: 0x19127B0 Offset: 0x190E7B0 VA: 0x19127B0
+	public string get_desc() { }
+
+	// RVA: 0x1912830 Offset: 0x190E830 VA: 0x1912830
+	public void set_desc(string value) { }
+
+	// RVA: 0x1912838 Offset: 0x190E838 VA: 0x1912838
+	public string get_message() { }
+
+	// RVA: 0x19128B8 Offset: 0x190E8B8 VA: 0x19128B8
+	public void set_message(string value) { }
+
+	// RVA: 0x19128C0 Offset: 0x190E8C0 VA: 0x19128C0
+	public List<ThingBase> GetCostList() { }
+
+	// RVA: 0x1912930 Offset: 0x190E930 VA: 0x1912930
+	public List<ThingBase> GetRewardList() { }
+
+	// RVA: 0x19129A0 Offset: 0x190E9A0 VA: 0x19129A0
+	public string GetMessage() { }
+
+	// RVA: 0x1912B70 Offset: 0x190EB70 VA: 0x1912B70
+	private string GetRewardEnergy() { }
+
+	// RVA: 0x1912D1C Offset: 0x190ED1C VA: 0x1912D1C
+	private string GetAddMoney() { }
+
+	// RVA: 0x1912EC8 Offset: 0x190EEC8 VA: 0x1912EC8
+	private string GetCostMoney() { }
+
+	// RVA: 0x1913074 Offset: 0x190F074 VA: 0x1913074
+	private string GetAbilityName() { }
+
+	// RVA: 0x1913258 Offset: 0x190F258 VA: 0x1913258
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class GameEventUserChooseConfigTable : IdentityConfigTable<GameEventUserChooseConfig> // TypeDefIndex: 418
+{
+	// Methods
+
+	// RVA: 0x1913304 Offset: 0x190F304 VA: 0x1913304
+	public List<GameEventUserChooseConfig> GetChooseList(int gameEventId) { }
+
+	// RVA: 0x1913530 Offset: 0x190F530 VA: 0x1913530
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class GameEventUserConfig : BaseConfig // TypeDefIndex: 419
+{
+	// Fields
+	private string _name; // 0x18
+	[CompilerGenerated]
+	private string <Icon>k__BackingField; // 0x20
+	private string _desc; // 0x28
+	[CompilerGenerated]
+	private int <Library>k__BackingField; // 0x30
+	[CompilerGenerated]
+	private int <MINAge>k__BackingField; // 0x34
+	[CompilerGenerated]
+	private int <MAXAge>k__BackingField; // 0x38
+
+	// Properties
+	public string Name { get; set; }
+	public string Icon { get; set; }
+	public string Desc { get; set; }
+	public int Library { get; set; }
+	public int MINAge { get; set; }
+	public int MAXAge { get; set; }
+
+	// Methods
+
+	// RVA: 0x1913578 Offset: 0x190F578 VA: 0x1913578
+	public string get_Name() { }
+
+	// RVA: 0x19135F8 Offset: 0x190F5F8 VA: 0x19135F8
+	public void set_Name(string value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x1913600 Offset: 0x190F600 VA: 0x1913600
+	public string get_Icon() { }
+
+	[CompilerGenerated]
+	// RVA: 0x1913608 Offset: 0x190F608 VA: 0x1913608
+	public void set_Icon(string value) { }
+
+	// RVA: 0x1913610 Offset: 0x190F610 VA: 0x1913610
+	public string get_Desc() { }
+
+	// RVA: 0x1913690 Offset: 0x190F690 VA: 0x1913690
+	public void set_Desc(string value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x1913698 Offset: 0x190F698 VA: 0x1913698
+	public int get_Library() { }
+
+	[CompilerGenerated]
+	// RVA: 0x19136A0 Offset: 0x190F6A0 VA: 0x19136A0
+	public void set_Library(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x19136A8 Offset: 0x190F6A8 VA: 0x19136A8
+	public int get_MINAge() { }
+
+	[CompilerGenerated]
+	// RVA: 0x19136B0 Offset: 0x190F6B0 VA: 0x19136B0
+	public void set_MINAge(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x19136B8 Offset: 0x190F6B8 VA: 0x19136B8
+	public int get_MAXAge() { }
+
+	[CompilerGenerated]
+	// RVA: 0x19136C0 Offset: 0x190F6C0 VA: 0x19136C0
+	public void set_MAXAge(int value) { }
+
+	// RVA: 0x19136C8 Offset: 0x190F6C8 VA: 0x19136C8
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class GameEventUserConfigTable : IdentityConfigTable<GameEventUserConfig> // TypeDefIndex: 420
+{
+	// Methods
+
+	// RVA: 0x19136D0 Offset: 0x190F6D0 VA: 0x19136D0
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class HelpTipsConfig : BaseConfig // TypeDefIndex: 421
+{
+	// Fields
+	private string _title; // 0x18
+	private string _content; // 0x20
+
+	// Properties
+	public string Title { get; set; }
+	public string Content { get; set; }
+
+	// Methods
+
+	// RVA: 0x1913718 Offset: 0x190F718 VA: 0x1913718
+	public string get_Title() { }
+
+	// RVA: 0x1913798 Offset: 0x190F798 VA: 0x1913798
+	public void set_Title(string value) { }
+
+	// RVA: 0x19137A0 Offset: 0x190F7A0 VA: 0x19137A0
+	public string get_Content() { }
+
+	// RVA: 0x1913820 Offset: 0x190F820 VA: 0x1913820
+	public void set_Content(string value) { }
+
+	// RVA: 0x1913828 Offset: 0x190F828 VA: 0x1913828
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class HelpTipsConfigTable : IdentityConfigTable<HelpTipsConfig> // TypeDefIndex: 422
+{
+	// Methods
+
+	// RVA: 0x1913830 Offset: 0x190F830 VA: 0x1913830
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class HonorConfig : BaseConfig // TypeDefIndex: 423
+{
+	// Fields
+	private string _name; // 0x18
+	public string title; // 0x20
+	private string _desc; // 0x28
+	[CompilerGenerated]
+	private string <GainIcon>k__BackingField; // 0x30
+	[CompilerGenerated]
+	private string <TitleIcon>k__BackingField; // 0x38
+	[CompilerGenerated]
+	private int <Type>k__BackingField; // 0x40
+	[CompilerGenerated]
+	private int <Position>k__BackingField; // 0x44
+	[CompilerGenerated]
+	private int <ConditionType>k__BackingField; // 0x48
+	[CompilerGenerated]
+	private int <ConditionCount>k__BackingField; // 0x4C
+	[CompilerGenerated]
+	private int <Param>k__BackingField; // 0x50
+	[CompilerGenerated]
+	private int <Diamond>k__BackingField; // 0x54
+	[CompilerGenerated]
+	private int <DiamondDailyMax>k__BackingField; // 0x58
+	[CompilerGenerated]
+	private int <DiamondTotalMax>k__BackingField; // 0x5C
+	private string _congratulationsMsgc; // 0x60
+	[CompilerGenerated]
+	private float <coachPrestige>k__BackingField; // 0x68
+
+	// Properties
+	public string Name { get; set; }
+	public string Desc { get; set; }
+	public string GainIcon { get; set; }
+	public string TitleIcon { get; set; }
+	public int Type { get; set; }
+	public int Position { get; set; }
+	public int ConditionType { get; set; }
+	public int ConditionCount { get; set; }
+	public int Param { get; set; }
+	public int Diamond { get; set; }
+	public int DiamondDailyMax { get; set; }
+	public int DiamondTotalMax { get; set; }
+	public string CongratulationsMsg { get; set; }
+	public float coachPrestige { get; set; }
+
+	// Methods
+
+	// RVA: 0x1913878 Offset: 0x190F878 VA: 0x1913878
+	public string get_Name() { }
+
+	// RVA: 0x19138F8 Offset: 0x190F8F8 VA: 0x19138F8
+	public void set_Name(string value) { }
+
+	// RVA: 0x1913900 Offset: 0x190F900 VA: 0x1913900
+	public string get_Desc() { }
+
+	// RVA: 0x1913980 Offset: 0x190F980 VA: 0x1913980
+	public void set_Desc(string value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x1913988 Offset: 0x190F988 VA: 0x1913988
+	public string get_GainIcon() { }
+
+	[CompilerGenerated]
+	// RVA: 0x1913990 Offset: 0x190F990 VA: 0x1913990
+	public void set_GainIcon(string value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x1913998 Offset: 0x190F998 VA: 0x1913998
+	public string get_TitleIcon() { }
+
+	[CompilerGenerated]
+	// RVA: 0x19139A0 Offset: 0x190F9A0 VA: 0x19139A0
+	public void set_TitleIcon(string value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x19139A8 Offset: 0x190F9A8 VA: 0x19139A8
+	public int get_Type() { }
+
+	[CompilerGenerated]
+	// RVA: 0x19139B0 Offset: 0x190F9B0 VA: 0x19139B0
+	public void set_Type(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x19139B8 Offset: 0x190F9B8 VA: 0x19139B8
+	public int get_Position() { }
+
+	[CompilerGenerated]
+	// RVA: 0x19139C0 Offset: 0x190F9C0 VA: 0x19139C0
+	public void set_Position(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x19139C8 Offset: 0x190F9C8 VA: 0x19139C8
+	public int get_ConditionType() { }
+
+	[CompilerGenerated]
+	// RVA: 0x19139D0 Offset: 0x190F9D0 VA: 0x19139D0
+	public void set_ConditionType(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x19139D8 Offset: 0x190F9D8 VA: 0x19139D8
+	public int get_ConditionCount() { }
+
+	[CompilerGenerated]
+	// RVA: 0x19139E0 Offset: 0x190F9E0 VA: 0x19139E0
+	public void set_ConditionCount(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x19139E8 Offset: 0x190F9E8 VA: 0x19139E8
+	public int get_Param() { }
+
+	[CompilerGenerated]
+	// RVA: 0x19139F0 Offset: 0x190F9F0 VA: 0x19139F0
+	public void set_Param(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x19139F8 Offset: 0x190F9F8 VA: 0x19139F8
+	public int get_Diamond() { }
+
+	[CompilerGenerated]
+	// RVA: 0x1913A00 Offset: 0x190FA00 VA: 0x1913A00
+	public void set_Diamond(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x1913A08 Offset: 0x190FA08 VA: 0x1913A08
+	public int get_DiamondDailyMax() { }
+
+	[CompilerGenerated]
+	// RVA: 0x1913A10 Offset: 0x190FA10 VA: 0x1913A10
+	public void set_DiamondDailyMax(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x1913A18 Offset: 0x190FA18 VA: 0x1913A18
+	public int get_DiamondTotalMax() { }
+
+	[CompilerGenerated]
+	// RVA: 0x1913A20 Offset: 0x190FA20 VA: 0x1913A20
+	public void set_DiamondTotalMax(int value) { }
+
+	// RVA: 0x1913A28 Offset: 0x190FA28 VA: 0x1913A28
+	public string get_CongratulationsMsg() { }
+
+	// RVA: 0x1913AA8 Offset: 0x190FAA8 VA: 0x1913AA8
+	public void set_CongratulationsMsg(string value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x1913AB0 Offset: 0x190FAB0 VA: 0x1913AB0
+	public float get_coachPrestige() { }
+
+	[CompilerGenerated]
+	// RVA: 0x1913AB8 Offset: 0x190FAB8 VA: 0x1913AB8
+	public void set_coachPrestige(float value) { }
+
+	// RVA: 0x1913AC0 Offset: 0x190FAC0 VA: 0x1913AC0
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class HonorConfigTable : IdentityConfigTable<HonorConfig> // TypeDefIndex: 424
+{
+	// Methods
+
+	// RVA: 0x1913AC8 Offset: 0x190FAC8 VA: 0x1913AC8
+	public List<HonorConfig> GetHonorListByType(int type) { }
+
+	// RVA: 0x1913CF4 Offset: 0x190FCF4 VA: 0x1913CF4
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class LangConfig : BaseConfig // TypeDefIndex: 425
+{
+	// Fields
+	[CompilerGenerated]
+	private string <Name>k__BackingField; // 0x18
+	private string _lang; // 0x20
+
+	// Properties
+	public string Name { get; set; }
+	public string Lang { get; set; }
+
+	// Methods
+
+	[CompilerGenerated]
+	// RVA: 0x1913D3C Offset: 0x190FD3C VA: 0x1913D3C
+	public string get_Name() { }
+
+	[CompilerGenerated]
+	// RVA: 0x1913D44 Offset: 0x190FD44 VA: 0x1913D44
+	public void set_Name(string value) { }
+
+	// RVA: 0x1913D4C Offset: 0x190FD4C VA: 0x1913D4C
+	public string get_Lang() { }
+
+	// RVA: 0x1913DCC Offset: 0x190FDCC VA: 0x1913DCC
+	public void set_Lang(string value) { }
+
+	// RVA: 0x1913DD4 Offset: 0x190FDD4 VA: 0x1913DD4
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class LangConfigTable : IdentityConfigTable<LangConfig> // TypeDefIndex: 426
+{
+	// Methods
+
+	// RVA: 0x1913DDC Offset: 0x190FDDC VA: 0x1913DDC
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class LeagueConfig : BaseConfig // TypeDefIndex: 427
+{
+	// Fields
+	private string _name; // 0x18
+	private string _shortName; // 0x20
+	[CompilerGenerated]
+	private int <Type>k__BackingField; // 0x28
+	[CompilerGenerated]
+	private int <RoundBattleRule>k__BackingField; // 0x2C
+	[CompilerGenerated]
+	private int <HomeTeamAddRatio>k__BackingField; // 0x30
+	[CompilerGenerated]
+	private double <Prestige>k__BackingField; // 0x38
+	[CompilerGenerated]
+	private int <SpectatorBase>k__BackingField; // 0x40
+	[CompilerGenerated]
+	private string <SpectatorRound>k__BackingField; // 0x48
+	[CompilerGenerated]
+	private int <Level>k__BackingField; // 0x50
+	[CompilerGenerated]
+	private int <ChampionsLeaguePlaces>k__BackingField; // 0x54
+
+	// Properties
+	public string Name { get; set; }
+	public string ShortName { get; set; }
+	public int Type { get; set; }
+	public int RoundBattleRule { get; set; }
+	public int HomeTeamAddRatio { get; set; }
+	public double Prestige { get; set; }
+	public int SpectatorBase { get; set; }
+	public string SpectatorRound { get; set; }
+	public int Level { get; set; }
+	public int ChampionsLeaguePlaces { get; set; }
+
+	// Methods
+
+	// RVA: 0x1913E24 Offset: 0x190FE24 VA: 0x1913E24
+	public string get_Name() { }
+
+	// RVA: 0x1913EA4 Offset: 0x190FEA4 VA: 0x1913EA4
+	public void set_Name(string value) { }
+
+	// RVA: 0x1913EAC Offset: 0x190FEAC VA: 0x1913EAC
+	public string get_ShortName() { }
+
+	// RVA: 0x1913F2C Offset: 0x190FF2C VA: 0x1913F2C
+	public void set_ShortName(string value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x1913F34 Offset: 0x190FF34 VA: 0x1913F34
+	public int get_Type() { }
+
+	[CompilerGenerated]
+	// RVA: 0x1913F3C Offset: 0x190FF3C VA: 0x1913F3C
+	public void set_Type(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x1913F44 Offset: 0x190FF44 VA: 0x1913F44
+	public int get_RoundBattleRule() { }
+
+	[CompilerGenerated]
+	// RVA: 0x1913F4C Offset: 0x190FF4C VA: 0x1913F4C
+	public void set_RoundBattleRule(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x1913F54 Offset: 0x190FF54 VA: 0x1913F54
+	public int get_HomeTeamAddRatio() { }
+
+	[CompilerGenerated]
+	// RVA: 0x1913F5C Offset: 0x190FF5C VA: 0x1913F5C
+	public void set_HomeTeamAddRatio(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x1913F64 Offset: 0x190FF64 VA: 0x1913F64
+	public double get_Prestige() { }
+
+	[CompilerGenerated]
+	// RVA: 0x1913F6C Offset: 0x190FF6C VA: 0x1913F6C
+	public void set_Prestige(double value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x1913F74 Offset: 0x190FF74 VA: 0x1913F74
+	public int get_SpectatorBase() { }
+
+	[CompilerGenerated]
+	// RVA: 0x1913F7C Offset: 0x190FF7C VA: 0x1913F7C
+	public void set_SpectatorBase(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x1913F84 Offset: 0x190FF84 VA: 0x1913F84
+	public string get_SpectatorRound() { }
+
+	[CompilerGenerated]
+	// RVA: 0x1913F8C Offset: 0x190FF8C VA: 0x1913F8C
+	public void set_SpectatorRound(string value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x1913F94 Offset: 0x190FF94 VA: 0x1913F94
+	public int get_Level() { }
+
+	[CompilerGenerated]
+	// RVA: 0x1913F9C Offset: 0x190FF9C VA: 0x1913F9C
+	public void set_Level(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x1913FA4 Offset: 0x190FFA4 VA: 0x1913FA4
+	public int get_ChampionsLeaguePlaces() { }
+
+	[CompilerGenerated]
+	// RVA: 0x1913FAC Offset: 0x190FFAC VA: 0x1913FAC
+	public void set_ChampionsLeaguePlaces(int value) { }
+
+	// RVA: 0x1913FB4 Offset: 0x190FFB4 VA: 0x1913FB4
+	public int GetSpectatorRound() { }
+
+	// RVA: 0x191402C Offset: 0x191002C VA: 0x191402C
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class LeagueConfigTable : IdentityConfigTable<LeagueConfig> // TypeDefIndex: 428
+{
+	// Methods
+
+	// RVA: 0x1914034 Offset: 0x1910034 VA: 0x1914034
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class LoadingBGConfig : BaseConfig // TypeDefIndex: 429
+{
+	// Fields
+	public string Country; // 0x18
+	public string BG; // 0x20
+
+	// Methods
+
+	// RVA: 0x191407C Offset: 0x191007C VA: 0x191407C
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class LoadingBGConfigTable : IdentityConfigTable<LoadingBGConfig> // TypeDefIndex: 430
+{
+	// Methods
+
+	// RVA: 0x1914084 Offset: 0x1910084 VA: 0x1914084
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class MatchClubGradeConfig : BaseConfig // TypeDefIndex: 431
+{
+	// Fields
+	[CompilerGenerated]
+	private int <MinLevel>k__BackingField; // 0x14
+	[CompilerGenerated]
+	private int <MaxLevel>k__BackingField; // 0x18
+	[CompilerGenerated]
+	private int <Grade>k__BackingField; // 0x1C
+
+	// Properties
+	public int MinLevel { get; set; }
+	public int MaxLevel { get; set; }
+	public int Grade { get; set; }
+
+	// Methods
+
+	[CompilerGenerated]
+	// RVA: 0x19140CC Offset: 0x19100CC VA: 0x19140CC
+	public int get_MinLevel() { }
+
+	[CompilerGenerated]
+	// RVA: 0x19140D4 Offset: 0x19100D4 VA: 0x19140D4
+	public void set_MinLevel(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x19140DC Offset: 0x19100DC VA: 0x19140DC
+	public int get_MaxLevel() { }
+
+	[CompilerGenerated]
+	// RVA: 0x19140E4 Offset: 0x19100E4 VA: 0x19140E4
+	public void set_MaxLevel(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x19140EC Offset: 0x19100EC VA: 0x19140EC
+	public int get_Grade() { }
+
+	[CompilerGenerated]
+	// RVA: 0x19140F4 Offset: 0x19100F4 VA: 0x19140F4
+	public void set_Grade(int value) { }
+
+	// RVA: 0x19140FC Offset: 0x19100FC VA: 0x19140FC
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class MatchClubGradeConfigTable : IdentityConfigTable<MatchClubGradeConfig> // TypeDefIndex: 432
+{
+	// Methods
+
+	// RVA: 0x1914104 Offset: 0x1910104 VA: 0x1914104
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class NameConfig : BaseConfig // TypeDefIndex: 433
+{
+	// Fields
+	public string firstName; // 0x18
+	public string lastName; // 0x20
+
+	// Methods
+
+	// RVA: 0x191414C Offset: 0x191014C VA: 0x191414C
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class NameConfigTable : IdentityConfigTable<NameConfig> // TypeDefIndex: 434
+{
+	// Fields
+	private int _firstNameCount; // 0x20
+	private int _lastNameCount; // 0x24
+
+	// Methods
+
+	// RVA: 0x1914154 Offset: 0x1910154 VA: 0x1914154
+	public string GetRandName() { }
+
+	// RVA: 0x191435C Offset: 0x191035C VA: 0x191435C
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class NameENConfig : BaseConfig // TypeDefIndex: 435
+{
+	// Fields
+	public string firstName; // 0x18
+	public string lastName; // 0x20
+
+	// Methods
+
+	// RVA: 0x19143A4 Offset: 0x19103A4 VA: 0x19143A4
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class NameENConfigTable : IdentityConfigTable<NameENConfig> // TypeDefIndex: 436
+{
+	// Fields
+	private int _firstNameCount; // 0x20
+	private int _lastNameCount; // 0x24
+
+	// Methods
+
+	// RVA: 0x19143AC Offset: 0x19103AC VA: 0x19143AC
+	public string GetRandName() { }
+
+	// RVA: 0x1914510 Offset: 0x1910510 VA: 0x1914510
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class OptionsConfig : BaseConfig // TypeDefIndex: 437
+{
+	// Fields
+	[CompilerGenerated]
+	private int <Type>k__BackingField; // 0x14
+	private string _desc; // 0x18
+	[CompilerGenerated]
+	private string <Value>k__BackingField; // 0x20
+
+	// Properties
+	public int Type { get; set; }
+	public string Desc { get; set; }
+	public string Value { get; set; }
+
+	// Methods
+
+	[CompilerGenerated]
+	// RVA: 0x1914558 Offset: 0x1910558 VA: 0x1914558
+	public int get_Type() { }
+
+	[CompilerGenerated]
+	// RVA: 0x1914560 Offset: 0x1910560 VA: 0x1914560
+	public void set_Type(int value) { }
+
+	// RVA: 0x1914568 Offset: 0x1910568 VA: 0x1914568
+	public string get_Desc() { }
+
+	// RVA: 0x19145E8 Offset: 0x19105E8 VA: 0x19145E8
+	public void set_Desc(string value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x19145F0 Offset: 0x19105F0 VA: 0x19145F0
+	public string get_Value() { }
+
+	[CompilerGenerated]
+	// RVA: 0x19145F8 Offset: 0x19105F8 VA: 0x19145F8
+	public void set_Value(string value) { }
+
+	// RVA: 0x1914600 Offset: 0x1910600 VA: 0x1914600
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class OptionsConfigTable : IdentityConfigTable<OptionsConfig> // TypeDefIndex: 438
+{
+	// Methods
+
+	// RVA: 0x1914608 Offset: 0x1910608 VA: 0x1914608
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class PersonalTrainerConfig : BaseConfig // TypeDefIndex: 439
+{
+	// Fields
+	private string _name; // 0x18
+	public string icon; // 0x20
+	public string iconBack; // 0x28
+	private string _desc; // 0x30
+	public int type; // 0x38
+	public int ratio; // 0x3C
+	public int weekCost; // 0x40
+
+	// Properties
+	public string name { get; set; }
+	public string desc { get; set; }
+
+	// Methods
+
+	// RVA: 0x1914650 Offset: 0x1910650 VA: 0x1914650
+	public string get_name() { }
+
+	// RVA: 0x19146D0 Offset: 0x19106D0 VA: 0x19146D0
+	public void set_name(string value) { }
+
+	// RVA: 0x19146D8 Offset: 0x19106D8 VA: 0x19146D8
+	public string get_desc() { }
+
+	// RVA: 0x1914758 Offset: 0x1910758 VA: 0x1914758
+	public void set_desc(string value) { }
+
+	// RVA: 0x1914760 Offset: 0x1910760 VA: 0x1914760
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class PersonalTrainerConfigTable : IdentityConfigTable<PersonalTrainerConfig> // TypeDefIndex: 440
+{
+	// Methods
+
+	// RVA: 0x1914768 Offset: 0x1910768 VA: 0x1914768
+	public List<PersonalTrainerConfig> GetTrainerListByType(int pttype) { }
+
+	// RVA: 0x1914994 Offset: 0x1910994 VA: 0x1914994
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class PlayerConfig : MutipleTableConfig // TypeDefIndex: 441
+{
+	// Fields
+	public string name_cn; // 0x18
+	public string name_en; // 0x20
+	[CompilerGenerated]
+	private byte <Num>k__BackingField; // 0x28
+	public int club; // 0x2C
+	public byte position; // 0x30
+	[CompilerGenerated]
+	private int <Price>k__BackingField; // 0x34
+	[CompilerGenerated]
+	private byte <InitAge>k__BackingField; // 0x38
+	[CompilerGenerated]
+	private int <NormalValue>k__BackingField; // 0x3C
+	[CompilerGenerated]
+	private int <AuctionValue>k__BackingField; // 0x40
+	[CompilerGenerated]
+	private byte <GrowType>k__BackingField; // 0x44
+	private Dictionary<byte, byte> _allAbilitydic; // 0x48
+	private Dictionary<byte, byte> _abilityDic; // 0x50
+
+	// Properties
+	public string name { get; }
+	public byte Num { get; set; }
+	public int Price { get; set; }
+	public byte InitAge { get; set; }
+	public int NormalValue { get; set; }
+	public int AuctionValue { get; set; }
+	public byte GrowType { get; set; }
+
+	// Methods
+
+	// RVA: 0x19149DC Offset: 0x19109DC VA: 0x19149DC
+	public string get_name() { }
+
+	[CompilerGenerated]
+	// RVA: 0x1914A70 Offset: 0x1910A70 VA: 0x1914A70
+	public byte get_Num() { }
+
+	[CompilerGenerated]
+	// RVA: 0x1914A78 Offset: 0x1910A78 VA: 0x1914A78
+	public void set_Num(byte value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x1914A80 Offset: 0x1910A80 VA: 0x1914A80
+	public int get_Price() { }
+
+	[CompilerGenerated]
+	// RVA: 0x1914A88 Offset: 0x1910A88 VA: 0x1914A88
+	public void set_Price(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x1914A90 Offset: 0x1910A90 VA: 0x1914A90
+	public byte get_InitAge() { }
+
+	[CompilerGenerated]
+	// RVA: 0x1914A98 Offset: 0x1910A98 VA: 0x1914A98
+	public void set_InitAge(byte value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x1914AA0 Offset: 0x1910AA0 VA: 0x1914AA0
+	public int get_NormalValue() { }
+
+	[CompilerGenerated]
+	// RVA: 0x1914AA8 Offset: 0x1910AA8 VA: 0x1914AA8
+	public void set_NormalValue(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x1914AB0 Offset: 0x1910AB0 VA: 0x1914AB0
+	public int get_AuctionValue() { }
+
+	[CompilerGenerated]
+	// RVA: 0x1914AB8 Offset: 0x1910AB8 VA: 0x1914AB8
+	public void set_AuctionValue(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x1914AC0 Offset: 0x1910AC0 VA: 0x1914AC0
+	public byte get_GrowType() { }
+
+	[CompilerGenerated]
+	// RVA: 0x1914AC8 Offset: 0x1910AC8 VA: 0x1914AC8
+	public void set_GrowType(byte value) { }
+
+	// RVA: 0x1914AD0 Offset: 0x1910AD0 VA: 0x1914AD0 Slot: 4
+	public override void LoadFromBinary(BinaryReader binaryReader) { }
+
+	// RVA: 0x1914CC8 Offset: 0x1910CC8 VA: 0x1914CC8
+	public Dictionary<byte, byte> GetAbilitys() { }
+
+	// RVA: 0x1915084 Offset: 0x1911084 VA: 0x1915084
+	public Dictionary<byte, byte> GetAllAbilitys() { }
+
+	// RVA: 0x191508C Offset: 0x191108C VA: 0x191508C
+	public static int GetTotalAbilityScore(Dictionary<byte, byte> all) { }
+
+	// RVA: 0x191522C Offset: 0x191122C VA: 0x191522C
+	public static int GetAbilityScoreByPosition(int pos, Dictionary<byte, byte> all) { }
+
+	// RVA: 0x1915400 Offset: 0x1911400 VA: 0x1915400
+	private static Dictionary<int, AbilityMin> GetAbilitysByPosition(int pos, Dictionary<byte, byte> allAbilitys) { }
+
+	// RVA: 0x19156DC Offset: 0x19116DC VA: 0x19156DC
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class PlayerConfigTable : IdentityConfigTable<PlayerConfig> // TypeDefIndex: 442
+{
+	// Methods
+
+	// RVA: 0x1915788 Offset: 0x1911788 VA: 0x1915788
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class PlayerGrowConfig : BaseConfig // TypeDefIndex: 443
+{
+	// Fields
+	[CompilerGenerated]
+	private string <GrowPath>k__BackingField; // 0x18
+	private int[] _growPathList; // 0x20
+	private int _bestAge; // 0x28
+
+	// Properties
+	public string GrowPath { get; set; }
+
+	// Methods
+
+	[CompilerGenerated]
+	// RVA: 0x19157D0 Offset: 0x19117D0 VA: 0x19157D0
+	public string get_GrowPath() { }
+
+	[CompilerGenerated]
+	// RVA: 0x19157D8 Offset: 0x19117D8 VA: 0x19157D8
+	public void set_GrowPath(string value) { }
+
+	// RVA: 0x19157E0 Offset: 0x19117E0 VA: 0x19157E0
+	public float GetGrowRatio(int curAge, int initAge) { }
+
+	// RVA: 0x1915844 Offset: 0x1911844 VA: 0x1915844
+	public int GetRatioByAge(int curAge) { }
+
+	// RVA: 0x1915888 Offset: 0x1911888 VA: 0x1915888
+	public int GetBestAge() { }
+
+	// RVA: 0x1915894 Offset: 0x1911894 VA: 0x1915894
+	public void InitGrowTypePath() { }
+
+	// RVA: 0x19159BC Offset: 0x19119BC VA: 0x19159BC
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class PlayerGrowConfigTable : IdentityConfigTable<PlayerGrowConfig> // TypeDefIndex: 444
+{
+	// Methods
+
+	// RVA: 0x19159C4 Offset: 0x19119C4 VA: 0x19159C4
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class PositionConfig : BaseConfig // TypeDefIndex: 445
+{
+	// Fields
+	private string _name; // 0x18
+	public string abbreviation; // 0x20
+	public string des; // 0x28
+	public int type; // 0x30
+	public int hpConsume; // 0x34
+	public string initAbility; // 0x38
+	public string coachAbility; // 0x40
+	public string coachFormation; // 0x48
+	[CompilerGenerated]
+	private int <StealsStlsRatio>k__BackingField; // 0x50
+	[CompilerGenerated]
+	private int <HurtRatio>k__BackingField; // 0x54
+	[CompilerGenerated]
+	private int <YellowCardRatio>k__BackingField; // 0x58
+	[CompilerGenerated]
+	private int <GoalRatio>k__BackingField; // 0x5C
+	[CompilerGenerated]
+	private int <AssistsRatio>k__BackingField; // 0x60
+	[CompilerGenerated]
+	private int <UserGoalRatio>k__BackingField; // 0x64
+	[CompilerGenerated]
+	private int <UserAssistsRatio>k__BackingField; // 0x68
+	[CompilerGenerated]
+	private int <UserStealsStlsRatio>k__BackingField; // 0x6C
+	[CompilerGenerated]
+	private int <Num>k__BackingField; // 0x70
+	private List<int> list; // 0x78
+
+	// Properties
+	public string name { get; set; }
+	public int StealsStlsRatio { get; set; }
+	public int HurtRatio { get; set; }
+	public int YellowCardRatio { get; set; }
+	public int GoalRatio { get; set; }
+	public int AssistsRatio { get; set; }
+	public int UserGoalRatio { get; set; }
+	public int UserAssistsRatio { get; set; }
+	public int UserStealsStlsRatio { get; set; }
+	public int Num { get; set; }
+
+	// Methods
+
+	// RVA: 0x1915A0C Offset: 0x1911A0C VA: 0x1915A0C
+	public string get_name() { }
+
+	// RVA: 0x1915A8C Offset: 0x1911A8C VA: 0x1915A8C
+	public void set_name(string value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x1915A94 Offset: 0x1911A94 VA: 0x1915A94
+	public int get_StealsStlsRatio() { }
+
+	[CompilerGenerated]
+	// RVA: 0x1915A9C Offset: 0x1911A9C VA: 0x1915A9C
+	public void set_StealsStlsRatio(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x1915AA4 Offset: 0x1911AA4 VA: 0x1915AA4
+	public int get_HurtRatio() { }
+
+	[CompilerGenerated]
+	// RVA: 0x1915AAC Offset: 0x1911AAC VA: 0x1915AAC
+	public void set_HurtRatio(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x1915AB4 Offset: 0x1911AB4 VA: 0x1915AB4
+	public int get_YellowCardRatio() { }
+
+	[CompilerGenerated]
+	// RVA: 0x1915ABC Offset: 0x1911ABC VA: 0x1915ABC
+	public void set_YellowCardRatio(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x1915AC4 Offset: 0x1911AC4 VA: 0x1915AC4
+	public int get_GoalRatio() { }
+
+	[CompilerGenerated]
+	// RVA: 0x1915ACC Offset: 0x1911ACC VA: 0x1915ACC
+	public void set_GoalRatio(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x1915AD4 Offset: 0x1911AD4 VA: 0x1915AD4
+	public int get_AssistsRatio() { }
+
+	[CompilerGenerated]
+	// RVA: 0x1915ADC Offset: 0x1911ADC VA: 0x1915ADC
+	public void set_AssistsRatio(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x1915AE4 Offset: 0x1911AE4 VA: 0x1915AE4
+	public int get_UserGoalRatio() { }
+
+	[CompilerGenerated]
+	// RVA: 0x1915AEC Offset: 0x1911AEC VA: 0x1915AEC
+	public void set_UserGoalRatio(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x1915AF4 Offset: 0x1911AF4 VA: 0x1915AF4
+	public int get_UserAssistsRatio() { }
+
+	[CompilerGenerated]
+	// RVA: 0x1915AFC Offset: 0x1911AFC VA: 0x1915AFC
+	public void set_UserAssistsRatio(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x1915B04 Offset: 0x1911B04 VA: 0x1915B04
+	public int get_UserStealsStlsRatio() { }
+
+	[CompilerGenerated]
+	// RVA: 0x1915B0C Offset: 0x1911B0C VA: 0x1915B0C
+	public void set_UserStealsStlsRatio(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x1915B14 Offset: 0x1911B14 VA: 0x1915B14
+	public int get_Num() { }
+
+	[CompilerGenerated]
+	// RVA: 0x1915B1C Offset: 0x1911B1C VA: 0x1915B1C
+	public void set_Num(int value) { }
+
+	// RVA: 0x1914F28 Offset: 0x1910F28 VA: 0x1914F28
+	public List<int> GetInitAbilitys() { }
+
+	// RVA: 0x1915B24 Offset: 0x1911B24 VA: 0x1915B24
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class PositionConfigTable : IdentityConfigTable<PositionConfig> // TypeDefIndex: 446
+{
+	// Methods
+
+	// RVA: 0x1915BAC Offset: 0x1911BAC VA: 0x1915BAC
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class BattleStruct // TypeDefIndex: 447
+{
+	// Fields
+	public int battleID; // 0x10
+	public int home; // 0x14
+	public int away; // 0x18
+
+	// Methods
+
+	// RVA: 0x1915BF4 Offset: 0x1911BF4 VA: 0x1915BF4
+	public void .ctor(int prefix, int index, int home, int away) { }
+}
+
+// Namespace: FootballStar
+public class RoundBattleRuleConfig : BaseConfig // TypeDefIndex: 448
+{
+	// Fields
+	public int roundBattleRule; // 0x14
+	public int round; // 0x18
+	public string battles; // 0x20
+	public List<BattleStruct> battleList; // 0x28
+
+	// Methods
+
+	// RVA: 0x1915C3C Offset: 0x1911C3C VA: 0x1915C3C
+	public List<BattleStruct> GetBattles(int roundId) { }
+
+	// RVA: 0x1915E40 Offset: 0x1911E40 VA: 0x1915E40
+	public List<BattleStruct> GetCLGroupBattles(int seasonId, int groupId, int roundId) { }
+
+	// RVA: 0x191605C Offset: 0x191205C VA: 0x191605C
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class RoundBattleRuleConfigTable : IdentityConfigTable<RoundBattleRuleConfig> // TypeDefIndex: 449
+{
+	// Methods
+
+	// RVA: 0x19160E4 Offset: 0x19120E4 VA: 0x19160E4
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class RoundConfig : BaseConfig // TypeDefIndex: 450
+{
+	// Fields
+	public short league; // 0x14
+	public byte season; // 0x16
+	public byte round; // 0x17
+	public long time; // 0x18
+
+	// Methods
+
+	// RVA: 0x191612C Offset: 0x191212C VA: 0x191612C Slot: 4
+	public override void LoadFromBinary(BinaryReader binaryReader) { }
+
+	// RVA: 0x19161C4 Offset: 0x19121C4 VA: 0x19161C4
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class RoundConfigTable : IdentityConfigTable<RoundConfig> // TypeDefIndex: 451
+{
+	// Methods
+
+	// RVA: 0x19161CC Offset: 0x19121CC VA: 0x19161CC
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class RoutineTrainConfig : BaseConfig // TypeDefIndex: 452
+{
+	// Fields
+	private string _name; // 0x18
+	public string desc; // 0x20
+	public int expBase; // 0x28
+	public string abilitys; // 0x30
+	private List<int> list; // 0x38
+
+	// Properties
+	public string name { get; set; }
+
+	// Methods
+
+	// RVA: 0x1916214 Offset: 0x1912214 VA: 0x1916214
+	public string get_name() { }
+
+	// RVA: 0x1916294 Offset: 0x1912294 VA: 0x1916294
+	public void set_name(string value) { }
+
+	// RVA: 0x191629C Offset: 0x191229C VA: 0x191629C
+	public List<int> GetAbilitys() { }
+
+	// RVA: 0x19163D4 Offset: 0x19123D4 VA: 0x19163D4
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class RoutineTrainConfigTable : IdentityConfigTable<RoutineTrainConfig> // TypeDefIndex: 453
+{
+	// Methods
+
+	// RVA: 0x191645C Offset: 0x191245C VA: 0x191645C
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class SeasonCDConfig : BaseConfig // TypeDefIndex: 454
+{
+	// Fields
+	private string _seasonName; // 0x18
+	private string _cdName; // 0x20
+	[CompilerGenerated]
+	private int <CD>k__BackingField; // 0x28
+	[CompilerGenerated]
+	private byte <CanClear>k__BackingField; // 0x2C
+
+	// Properties
+	public string SeasonName { get; set; }
+	public string CDName { get; set; }
+	public int CD { get; set; }
+	public byte CanClear { get; set; }
+
+	// Methods
+
+	// RVA: 0x19164A4 Offset: 0x19124A4 VA: 0x19164A4
+	public string get_SeasonName() { }
+
+	// RVA: 0x1916524 Offset: 0x1912524 VA: 0x1916524
+	public void set_SeasonName(string value) { }
+
+	// RVA: 0x191652C Offset: 0x191252C VA: 0x191652C
+	public string get_CDName() { }
+
+	// RVA: 0x19165AC Offset: 0x19125AC VA: 0x19165AC
+	public void set_CDName(string value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x19165B4 Offset: 0x19125B4 VA: 0x19165B4
+	public int get_CD() { }
+
+	[CompilerGenerated]
+	// RVA: 0x19165BC Offset: 0x19125BC VA: 0x19165BC
+	public void set_CD(int value) { }
+
+	[CompilerGenerated]
+	// RVA: 0x19165C4 Offset: 0x19125C4 VA: 0x19165C4
+	public byte get_CanClear() { }
+
+	[CompilerGenerated]
+	// RVA: 0x19165CC Offset: 0x19125CC VA: 0x19165CC
+	public void set_CanClear(byte value) { }
+
+	// RVA: 0x19165D4 Offset: 0x19125D4 VA: 0x19165D4 Slot: 4
+	public override void LoadFromBinary(BinaryReader binaryReader) { }
+
+	// RVA: 0x1916684 Offset: 0x1912684 VA: 0x1916684
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class SeasonCDConfigTable : IdentityConfigTable<SeasonCDConfig> // TypeDefIndex: 455
+{
+	// Methods
+
+	// RVA: 0x191668C Offset: 0x191268C VA: 0x191668C
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class SkillTrainConfig : BaseConfig // TypeDefIndex: 456
+{
+	// Fields
+	private string _name; // 0x18
+	public string icon; // 0x20
+	private string _desc; // 0x28
+	public int expBase; // 0x30
+	public int abilitys; // 0x34
+	public int trainTime; // 0x38
+	public string requires; // 0x40
+	public int needAD; // 0x48
+	public string needDiamond; // 0x50
+	public int hpSpend; // 0x58
+	private Dictionary<int, int> dic; // 0x60
+
+	// Properties
+	public string name { get; set; }
+	public string desc { get; set; }
+
+	// Methods
+
+	// RVA: 0x19166D4 Offset: 0x19126D4 VA: 0x19166D4
+	public string get_name() { }
+
+	// RVA: 0x1916754 Offset: 0x1912754 VA: 0x1916754
+	public void set_name(string value) { }
+
+	// RVA: 0x191675C Offset: 0x191275C VA: 0x191675C
+	public string get_desc() { }
+
+	// RVA: 0x19167DC Offset: 0x19127DC VA: 0x19167DC
+	public void set_desc(string value) { }
+
+	// RVA: 0x19167E4 Offset: 0x19127E4 VA: 0x19167E4
+	public int GetTrainDays() { }
+
+	// RVA: 0x19167EC Offset: 0x19127EC VA: 0x19167EC
+	public Dictionary<int, int> GetRequires() { }
+
+	// RVA: 0x191692C Offset: 0x191292C VA: 0x191692C
+	public int GetDiamond() { }
+
+	// RVA: 0x1916984 Offset: 0x1912984 VA: 0x1916984
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class SkillTrainConfigTable : IdentityConfigTable<SkillTrainConfig> // TypeDefIndex: 457
+{
+	// Methods
+
+	// RVA: 0x1916A0C Offset: 0x1912A0C VA: 0x1916A0C
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class SupportLangConfig : BaseConfig // TypeDefIndex: 458
+{
+	// Fields
+	[CompilerGenerated]
+	private string <Suffix>k__BackingField; // 0x18
+	[CompilerGenerated]
+	private string <Ready>k__BackingField; // 0x20
+	[CompilerGenerated]
+	private string <Desc>k__BackingField; // 0x28
+	[CompilerGenerated]
+	private string <Default>k__BackingField; // 0x30
+
+	// Properties
+	public string Suffix { get; set; }
+	public string Ready { get; set; }
+	public string Desc { get; set; }
+	public string Default { get; set; }
+
+	// Methods
+
+	[CompilerGenerated]
+	// RVA: 0x1916A54 Offset: 0x1912A54 VA: 0x1916A54
+	public string get_Suffix() { }
+
+	[CompilerGenerated]
+	// RVA: 0x1916A5C Offset: 0x1912A5C VA: 0x1916A5C

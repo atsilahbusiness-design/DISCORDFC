@@ -5,6 +5,8 @@ import {
   type AbilityId,
   type AbilityState,
   type CareerStats,
+  type DetailedSkills,
+  type DetailedSkillId,
   type MatchOutcome,
   type MatchRecord,
   type MatchResult,
@@ -49,6 +51,17 @@ const DEFAULT_STATS: Record<Position, PlayerStats> = {
 };
 
 const ABILITIES: AbilityId[] = ['atk', 'def', 'speed', 'power', 'strength', 'technique'];
+
+function initialDetailedSkills(position: Position): DetailedSkills {
+  const presets: Record<Position, Record<DetailedSkillId, number>> = {
+    GK: { shots: 20, penalty: 25, header: 45, pass: 52, dribbling: 30, freeKick: 20, offBallRunning: 25, holdOffDefenders: 62, teamwork: 60, endurance: 58, speed: 35, willpower: 60 },
+    DF: { shots: 32, penalty: 25, header: 62, pass: 45, dribbling: 38, freeKick: 20, offBallRunning: 35, holdOffDefenders: 66, teamwork: 60, endurance: 60, speed: 48, willpower: 55 },
+    MF: { shots: 48, penalty: 35, header: 35, pass: 68, dribbling: 62, freeKick: 45, offBallRunning: 58, holdOffDefenders: 45, teamwork: 68, endurance: 52, speed: 57, willpower: 58 },
+    FW: { shots: 70, penalty: 55, header: 75, pass: 55, dribbling: 60, freeKick: 50, offBallRunning: 70, holdOffDefenders: 50, teamwork: 50, endurance: 45, speed: 55, willpower: 60 }
+  };
+  return Object.fromEntries(Object.entries(presets[position]).map(([skill, level]) => [skill, { level, exp: 0 }])) as DetailedSkills;
+}
+
 const TRAINING_COST = GAME_BALANCE.training.energyCost;
 const MATCH_ENERGY_COST = GAME_BALANCE.match.energyCost;
 const MATCH_HP_COST = GAME_BALANCE.match.hpCost;
@@ -145,7 +158,7 @@ export function createInitialProfile(userId: string, displayName: string, positi
     displayName,
     createdAt: timestamp,
     updatedAt: timestamp,
-    age: 18,
+    age: 15,
     position,
     club: RECOVERY_CLUBS.find((club) => club.league === 1011)?.nameEn ?? 'Rising City FC',
     money: 1_000,
@@ -180,7 +193,18 @@ export function createInitialProfile(userId: string, displayName: string, positi
       goalsFor: 0,
       goalsAgainst: 0
     },
-    lastActionAt: timestamp
+    lastActionAt: timestamp,
+    mode: 'PLAYER',
+    careerStatus: 'ACTIVE',
+    careerYear: 1,
+    careerWeek: 1,
+    seasonWeek: 1,
+    rebirthCount: 0,
+    detailedSkills: initialDetailedSkills(position),
+    unassignedMatchExp: 0,
+    charm: 0,
+    unlockedTricks: [],
+    honors: []
   };
 }
 
@@ -223,6 +247,8 @@ export function trainPlayer(profileInput: PlayerProfile, ability: AbilityId, now
 export function playMatch(profileInput: PlayerProfile, now = new Date(), rng: RandomSource = new MathRandomSource()): MatchResult {
   const profile = cloneProfile(profileInput);
   recover(profile, now);
+  if (profile.careerStatus === 'RETIRED') throw new Error('Karier ini sudah pensiun. Gunakan /rebirth untuk memulai karier baru.');
+  if ((profile.injury?.weeksRemaining ?? 0) > 0) throw new Error(`Pemain sedang cedera selama ${profile.injury!.weeksRemaining} minggu lagi.`);
   if (profile.energy < MATCH_ENERGY_COST) throw new Error('Energi tidak cukup untuk pertandingan.');
   if (profile.hp < MATCH_HP_COST) throw new Error('HP pemain terlalu rendah untuk pertandingan.');
 
@@ -245,13 +271,15 @@ export function playMatch(profileInput: PlayerProfile, now = new Date(), rng: Ra
     playerGoals,
     opponentGoals,
     playerScore: Number(playerScore.toFixed(2)),
-    rewards: { money, exp }
+    rewards: { money, exp },
+    week: profile.careerWeek ?? profile.league.matchday
   };
 
   profile.energy -= MATCH_ENERGY_COST;
   profile.hp = clamp(profile.hp - MATCH_HP_COST, 0, profile.maxHp);
   profile.money += money;
   profile.totalExp += exp;
+  profile.unassignedMatchExp = (profile.unassignedMatchExp ?? 0) + exp;
   profile.career.appearances += 1;
   profile.career.goals += playerGoals;
   profile.career.assists += playerGoals > 0 && rng.next() < 0.45 ? 1 : 0;

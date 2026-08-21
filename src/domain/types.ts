@@ -1,14 +1,25 @@
 export type Position = 'GK' | 'DF' | 'MF' | 'FW';
 export type AbilityId = 'atk' | 'def' | 'speed' | 'power' | 'strength' | 'technique';
+export type DetailedSkillId = 'shots' | 'penalty' | 'header' | 'pass' | 'dribbling' | 'freeKick' | 'offBallRunning' | 'holdOffDefenders' | 'teamwork' | 'endurance' | 'speed' | 'willpower';
 export type MatchOutcome = 'WIN' | 'DRAW' | 'LOSS';
 export type TacticId = 'balanced' | 'attacking' | 'defensive' | 'counter';
 export type FormationId = '4-4-2' | '4-3-3' | '3-5-2' | '5-3-2';
 export type ListingStatus = 'OPEN' | 'SOLD' | 'CANCELLED';
+export type CareerMode = 'PLAYER' | 'COACH';
+export type CareerStatus = 'ACTIVE' | 'RETIRED';
+export type InjurySeverity = 'MINOR' | 'MODERATE' | 'MAJOR';
+export type InjurySource = 'MATCH' | 'TRAINING' | 'EVENT';
+export type HonorCategory = 'PERSONAL' | 'TEAM' | 'NATIONAL';
+export type CultureSubject = 'science' | 'arts' | 'history';
+export type TrainerTier = 'JUNIOR' | 'SENIOR' | 'EXPERT';
 
 export interface AbilityState {
   level: number;
   exp: number;
 }
+
+export type DetailedSkillState = AbilityState;
+export type DetailedSkills = Record<DetailedSkillId, DetailedSkillState>;
 
 export interface PlayerStats {
   atk: number;
@@ -17,6 +28,78 @@ export interface PlayerStats {
   power: number;
   strength: number;
   technique: number;
+}
+
+export interface InjuryState {
+  severity: InjurySeverity;
+  weeksRemaining: number;
+  source: InjurySource;
+  treatmentUsed: boolean;
+  diagnosedAt: string;
+}
+
+export interface ActiveTraining {
+  skill: DetailedSkillId;
+  completeAtWeek: number;
+  expReward: number;
+  hpCost: number;
+}
+
+export interface TrainerState {
+  id: string;
+  tier: TrainerTier;
+  type: 'PHYSICAL' | 'TECHNICAL';
+  ratio: number;
+  weeklyCost: number;
+  hiredAtWeek: number;
+  active: boolean;
+}
+
+export interface CultureStudyState {
+  subject: CultureSubject;
+  completeAtWeek: number;
+  charmReward: number;
+  skillReward: DetailedSkillId;
+  skillExpReward: number;
+}
+
+export interface TrickDefinition {
+  id: string;
+  name: string;
+  description: string;
+  requires: Partial<Record<DetailedSkillId, number>>;
+  energyCost: number;
+  matchModifier: number;
+  source: 'WALKTHROUGH_OBSERVED' | 'RECOVERY_VERIFIED' | 'RECOVERY_INFERRED';
+}
+
+export interface HonorRecord {
+  id: string;
+  category: HonorCategory;
+  title: string;
+  season: number;
+  description: string;
+  source: 'RECOVERY_VERIFIED' | 'WALKTHROUGH_OBSERVED' | 'RECOVERY_INFERRED';
+  value: number;
+  awardedAt: string;
+}
+
+export interface WorldFootballerState {
+  season: number;
+  winner: string;
+  userScore: number;
+  userWon: boolean;
+  resolved: boolean;
+  candidates: Array<{ name: string; score: number }>;
+}
+
+export interface RetirementState {
+  retiredAt: string;
+  age: number;
+  finalSeason: number;
+  finalRating: number;
+  finalGoals: number;
+  finalHonors: number;
 }
 
 export interface CareerStats {
@@ -47,6 +130,8 @@ export interface MatchRecord {
     money: number;
     exp: number;
   };
+  week?: number;
+  injury?: InjuryState;
 }
 
 export interface LeagueState {
@@ -179,12 +264,24 @@ export interface DailyState {
   streak: number;
 }
 
+export interface EventChoice {
+  id: string;
+  label: string;
+  cost: number;
+  rewardMoney: number;
+  rewardExp: number;
+  moraleDelta: number;
+  skillEffects?: Partial<Record<DetailedSkillId, number>>;
+  energyDelta?: number;
+  charmDelta?: number;
+}
+
 export interface EventState {
   dayKey: string;
   eventId: string;
   title: string;
   description: string;
-  choices: Array<{ id: string; label: string; cost: number; rewardMoney: number; rewardExp: number; moraleDelta: number }>;
+  choices: EventChoice[];
   resolved: boolean;
 }
 
@@ -229,6 +326,23 @@ export interface PlayerProfile {
   market?: MarketListing[];
   marketUpdatedAt?: string;
   ledger?: EconomyLedgerEntry[];
+  mode?: CareerMode;
+  careerStatus?: CareerStatus;
+  careerYear?: number;
+  careerWeek?: number;
+  seasonWeek?: number;
+  rebirthCount?: number;
+  detailedSkills?: DetailedSkills;
+  unassignedMatchExp?: number;
+  injury?: InjuryState;
+  activeTraining?: ActiveTraining;
+  trainer?: TrainerState;
+  cultureStudy?: CultureStudyState;
+  charm?: number;
+  unlockedTricks?: string[];
+  honors?: HonorRecord[];
+  worldFootballer?: WorldFootballerState;
+  retirement?: RetirementState;
 }
 
 export interface MatchResult {
@@ -246,6 +360,47 @@ export interface TrainResult {
   statAfter: number;
 }
 
+export interface DetailedTrainResult {
+  profile: PlayerProfile;
+  skill: DetailedSkillId;
+  expGained: number;
+  levelUps: number;
+  levelBefore: number;
+  levelAfter: number;
+  energySpent: number;
+}
+
+export interface ExpAllocationResult {
+  profile: PlayerProfile;
+  allocated: number;
+  remaining: number;
+  levelsGained: number;
+}
+
+export interface TreatmentResult {
+  profile: PlayerProfile;
+  treatment: 'BASIC' | 'EXPERT';
+  weeksRemoved: number;
+  moneySpent: number;
+}
+
+export interface GameplayActionResult {
+  profile: PlayerProfile;
+  message: string;
+}
+
+export interface WeekResult {
+  profile: PlayerProfile;
+  week: number;
+  season: number;
+  narrative: string[];
+  match?: MatchRecord;
+  expAwaitingAssignment: number;
+  injury?: InjuryState;
+  award?: WorldFootballerState;
+  retired: boolean;
+}
+
 export interface ClubMatchResult {
   profile: PlayerProfile;
   fixture: ClubFixture;
@@ -256,6 +411,10 @@ export interface ClubMatchResult {
   commentary: string[];
 }
 
+export const ABILITIES: AbilityId[] = ['atk', 'def', 'speed', 'power', 'strength', 'technique'];
+
+export const DETAILED_SKILLS: DetailedSkillId[] = ['shots', 'penalty', 'header', 'pass', 'dribbling', 'freeKick', 'offBallRunning', 'holdOffDefenders', 'teamwork', 'endurance', 'speed', 'willpower'];
+
 export const ABILITY_LABELS: Record<AbilityId, string> = {
   atk: 'Attack',
   def: 'Defence',
@@ -263,6 +422,21 @@ export const ABILITY_LABELS: Record<AbilityId, string> = {
   power: 'Power',
   strength: 'Strength',
   technique: 'Technique'
+};
+
+export const DETAILED_SKILL_LABELS: Record<DetailedSkillId, string> = {
+  shots: 'Shots',
+  penalty: 'Penalty',
+  header: 'Header',
+  pass: 'Pass',
+  dribbling: 'Dribbling',
+  freeKick: 'Free Kick',
+  offBallRunning: 'Off-ball Running',
+  holdOffDefenders: 'Hold Off Defenders',
+  teamwork: 'Teamwork',
+  endurance: 'Endurance',
+  speed: 'Speed',
+  willpower: 'Willpower'
 };
 
 export const POSITION_LABELS: Record<Position, string> = {
@@ -285,3 +459,66 @@ export const TACTICS: Record<TacticId, { name: string; attackMultiplier: number;
   defensive: { name: 'Defensive', attackMultiplier: 0.9, defenceMultiplier: 1.1, controlMultiplier: 1.02, description: 'Mengurangi serangan dan memperkuat pertahanan.' },
   counter: { name: 'Counter Attack', attackMultiplier: 1.05, defenceMultiplier: 1.02, controlMultiplier: 0.95, description: 'Mengandalkan transisi cepat setelah bertahan.' }
 };
+
+export const TRAINER_CATALOG: Record<string, Omit<TrainerState, 'hiredAtWeek'>> = {
+  'junior-physical': { id: 'junior-physical', tier: 'JUNIOR', type: 'PHYSICAL', ratio: 0.04, weeklyCost: 90, active: true },
+  'senior-technical': { id: 'senior-technical', tier: 'SENIOR', type: 'TECHNICAL', ratio: 0.07, weeklyCost: 180, active: true },
+  'expert-complete': { id: 'expert-complete', tier: 'EXPERT', type: 'TECHNICAL', ratio: 0.11, weeklyCost: 320, active: true }
+};
+
+export const TRICK_CATALOG: Record<string, TrickDefinition> = {
+  'bicycle-kick': {
+    id: 'bicycle-kick',
+    name: 'Bicycle Kick',
+    description: 'Teknik akrobatik dengan bonus finishing situasional.',
+    requires: { shots: 8, header: 6, dribbling: 6 },
+    energyCost: 24,
+    matchModifier: 0.06,
+    source: 'WALKTHROUGH_OBSERVED'
+  },
+  'first-touch-turn': {
+    id: 'first-touch-turn',
+    name: 'First-touch Turn',
+    description: 'Kontrol sentuhan pertama untuk mempercepat progresi bola.',
+    requires: { dribbling: 7, pass: 6 },
+    energyCost: 20,
+    matchModifier: 0.04,
+    source: 'RECOVERY_INFERRED'
+  }
+};
+
+export const HONOR_CATEGORY_LABELS: Record<HonorCategory, string> = {
+  PERSONAL: 'Personal',
+  TEAM: 'Team',
+  NATIONAL: 'National'
+};
+
+export function clampStat(value: number): number {
+  return Math.min(99, Math.max(1, Math.round(value)));
+}
+
+export function createEmptyDetailedSkills(level = 1): DetailedSkills {
+  return Object.fromEntries(DETAILED_SKILLS.map((skill) => [skill, { level, exp: 0 }])) as DetailedSkills;
+}
+
+export function deriveMacroStats(detailed: DetailedSkills): PlayerStats {
+  const value = (skill: DetailedSkillId): number => detailed[skill]?.level ?? 1;
+  return {
+    atk: clampStat((value('shots') * 2 + value('dribbling') + value('offBallRunning')) / 4),
+    def: clampStat((value('holdOffDefenders') * 2 + value('teamwork') + value('endurance')) / 4),
+    speed: clampStat((value('speed') * 2 + value('offBallRunning') + value('dribbling')) / 4),
+    power: clampStat((value('header') + value('holdOffDefenders') + value('endurance') + value('shots')) / 4),
+    strength: clampStat((value('holdOffDefenders') * 2 + value('endurance') + value('willpower')) / 4),
+    technique: clampStat((value('pass') + value('dribbling') * 2 + value('freeKick')) / 4)
+  };
+}
+
+export function normalizeDetailedSkills(input: Partial<DetailedSkills> | undefined, fallbackLevel = 1): DetailedSkills {
+  const defaults = createEmptyDetailedSkills(fallbackLevel);
+  for (const skill of DETAILED_SKILLS) {
+    const state = input?.[skill];
+    if (!state) continue;
+    defaults[skill] = { level: Math.max(1, Math.floor(state.level || fallbackLevel)), exp: Math.max(0, Math.floor(state.exp || 0)) };
+  }
+  return defaults;
+}

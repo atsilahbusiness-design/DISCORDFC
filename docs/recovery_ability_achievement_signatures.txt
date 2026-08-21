@@ -1,0 +1,406 @@
+	public const AchievementConst.AchievementId LosAngeles4amTrain = 106002;
+	public const AchievementConst.AchievementId ChattingUpWithFemaleSinger = 106003;
+	public const AchievementConst.AchievementId ForgiveWhenConservativeTreatment = 106004;
+	public const AchievementConst.AchievementId InjuryInOneSeason = 106005;
+	public const AchievementConst.AchievementId ContinuousHealthSeasonCount = 106006;
+	public const AchievementConst.AchievementId SkillTrainCountInLife = 106007;
+	public const AchievementConst.AchievementId MVPWhenRedCard = 106008;
+	public const AchievementConst.AchievementId ContinuousCandidateOfWorldPlayer = 106009;
+	public const AchievementConst.AchievementId WorldPlayerBeforeAge = 106010;
+	public const AchievementConst.AchievementId CoachTurnTheTide = 201001;
+	public const AchievementConst.AchievementId CoachTactics = 201002;
+	public const AchievementConst.AchievementId CoachContinuousClubWin = 201003;
+	public const AchievementConst.AchievementId CoachBallControl = 201004;
+	public const AchievementConst.AchievementId CoachContinuousTacticsRestrict = 201005;
+	public const AchievementConst.AchievementId CoachContinuousGoal3 = 201006;
+	public const AchievementConst.AchievementId CoachContinuousZeroKeeper = 201007;
+	public const AchievementConst.AchievementId CoachWinWhenRedCard = 201008;
+	public const AchievementConst.AchievementId CoachScoreWithChampion = 201009;
+	public const AchievementConst.AchievementId CoachAllFormationInLife = 201010;
+	public const AchievementConst.AchievementId CoachContinuousChampionWithClub = 201011;
+	public const AchievementConst.AchievementId CoachClubNeverLoseInOneSeason = 201012;
+	public const AchievementConst.AchievementId CoachChampionInAllSLeague = 201013;
+	public const AchievementConst.AchievementId CoachContinuousCLChampionWithClub = 201014;
+	public const AchievementConst.AchievementId CoachPrestige = 202001;
+	public const AchievementConst.AchievementId CoachClubPlayerStatusMax = 202002;
+	public const AchievementConst.AchievementId CoachContinuousClubSeasonTargetComplete = 202003;
+	public const AchievementConst.AchievementId CoachClubBToS = 202004;
+	public const AchievementConst.AchievementId CoachClubChangeInSameLevel = 202005;
+	public const AchievementConst.AchievementId CoachSignPlayer = 202006;
+	public const AchievementConst.AchievementId CoachSignPlayerByScout = 202007;
+	public const AchievementConst.AchievementId CoachClubPlayersBeyond80 = 202008;
+	public const AchievementConst.AchievementId CoachClubPlayersBeyond90 = 202009;
+	public const AchievementConst.AchievementId CoachClubYear = 202010;
+	public const AchievementConst.AchievementId CoachPlayersSoldout = 202011;
+	public const AchievementConst.AchievementId CoachAbilityLevel = 203001;
+	public const AchievementConst.AchievementId CoachLoseJob = 203002;
+	public const AchievementConst.AchievementId CoachPerfectRetire = 203003;
+	public const AchievementConst.AchievementId CoachNeverLoseJobInLife = 203004;
+	public const AchievementConst.AchievementId CoachMonthMVPInOneYear = 203005;
+	public const AchievementConst.AchievementId CoachContinuousCandidateInWorldYearMVP = 203006;
+	public const AchievementConst.AchievementId CoachContinuousWorldYearMVP = 203007;
+	public const AchievementConst.AchievementId CoachWorldYearMVP = 203008;
+	public const AchievementConst.AchievementId OnAdReward10 = 301001;
+	public const AchievementConst.AchievementId OnAdReward200 = 301002;
+	public const AchievementConst.AchievementId CharWithDifferentNation = 301003;
+	public const AchievementConst.AchievementId Player3MVPPerPosition = 301004;
+	public const AchievementConst.AchievementId CoachReincarnation = 301005;
+	public const AchievementConst.AchievementId PlayerRetire = 301006;
+}
+
+// Namespace: FootballStar
+public class AchievementConst // TypeDefIndex: 332
+{
+	// Fields
+	public static Dictionary<int, LangID> AchievementTypeName; // 0x0
+
+	// Methods
+
+	// RVA: 0x190C4D4 Offset: 0x19084D4 VA: 0x190C4D4
+	public void .ctor() { }
+
+	// RVA: 0x190C4DC Offset: 0x19084DC VA: 0x190C4DC
+	private static void .cctor() { }
+}
+
+// Namespace: FootballStar
+public class CoachConst // TypeDefIndex: 333
+{
+	// Fields
+	public static readonly Dictionary<int, long> FIRST_DAY_TICK; // 0x0
+	public static readonly Dictionary<int, long> RETIRE_DAY_TICK; // 0x8
+	public const int USER_BEGIN_AGE = 36;
+	public const int NPC_FULL_HP = 200;
+	public const int COACH_ABILITY_MAX_LEVEL = 150;
+	public const int COACH_FORMATION_MAX_LEVEL = 30;
+	public const int BATTLE_COACH_HP_CONSUME = 15;
+	public const int BATTLE_PLAYER_HP_CONSUME = 10;
+	public const int BATTLE_GK_PLAYER_HP_CONSUME = 6;
+	public const int FORMATION_CHANCE = 3;
+	public const int FORMATION_DRAG_CHECK = 30;
+	public const int LOST_JOB_MAX = 12;
+	public const int MAX_SALARY = 200000000;
+
+	// Methods
+
+	// RVA: 0x190C650 Offset: 0x1908650 VA: 0x190C650
+	public void .ctor() { }
+
+	// RVA: 0x190C658 Offset: 0x1908658 VA: 0x190C658
+	private static void .cctor() { }
+}
+
+// Namespace: FootballStar
+public enum CoachBattleProperty // TypeDefIndex: 334
+{
+	// Fields
+	public int value__; // 0x0
+	public const CoachBattleProperty ATK = 0;
+	public const CoachBattleProperty DEF = 1;
+	public const CoachBattleProperty BALL_CONTROL = 2;
+}
+
+// Namespace: FootballStar
+public class PlayerStatus // TypeDefIndex: 335
+{
+	// Fields
+	public const int VERY_GOOD = 5;
+	public const int GOOD = 4;
+	public const int NORMAL = 3;
+	public const int DOWN = 2;
+	public const int VERY_DOWN = 1;
+
+	// Methods
+
+	// RVA: 0x190C8F8 Offset: 0x19088F8 VA: 0x190C8F8
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class PlayerHPStatus // TypeDefIndex: 336
+{
+	// Fields
+	public const int EXHAUSTED = 10;
+	public const int TIRED = 50;
+
+	// Methods
+
+	// RVA: 0x190C900 Offset: 0x1908900 VA: 0x190C900
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class CoachAbilityId // TypeDefIndex: 337
+{
+	// Fields
+	public const int FORMATION = 1;
+	public const int TACTICS = 2;
+	public const int STATUS_TRAIN = 3;
+	public const int TRAINING_LEVEL = 4;
+	public const int LOCKER_ROOM_PRESTIGE = 5;
+	public const int PERSONAL_CHARISMA = 6;
+
+	// Methods
+
+	// RVA: 0x190C908 Offset: 0x1908908 VA: 0x190C908
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class CollectiveTalkState // TypeDefIndex: 338
+{
+	// Fields
+	public const int INIT = 0;
+	public const int CREATE = 1;
+	public const int DONE = 2;
+	public const int NOT_CARE = 3;
+
+	// Methods
+
+	// RVA: 0x190C910 Offset: 0x1908910 VA: 0x190C910
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class LockerRoomRiotState // TypeDefIndex: 339
+{
+	// Fields
+	public const int INIT = 0;
+	public const int CREATE = 1;
+	public const int DONE = 2;
+	public const int NOT_CARE = 3;
+
+	// Methods
+
+	// RVA: 0x190C918 Offset: 0x1908918 VA: 0x190C918
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class PlayerDealState // TypeDefIndex: 340
+{
+	// Fields
+	public const int SHELVES = 1;
+	public const int IN_DEAL = 2;
+	public const int END = 4;
+
+	// Methods
+
+	// RVA: 0x190C920 Offset: 0x1908920 VA: 0x190C920
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class MarketShowType // TypeDefIndex: 341
+{
+	// Fields
+	public const int MARKET = 1;
+	public const int SCOUTS = 2;
+	public const int TRADING_CENTER = 3;
+
+	// Methods
+
+	// RVA: 0x190C928 Offset: 0x1908928 VA: 0x190C928
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class PlayerDealType // TypeDefIndex: 342
+{
+	// Fields
+	public const int Normal = 1;
+	public const int Scouts = 2;
+
+	// Methods
+
+	// RVA: 0x190C930 Offset: 0x1908930 VA: 0x190C930
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class MarketTalkSuccessProbabilityType // TypeDefIndex: 343
+{
+	// Fields
+	public const int NO_WAY = 0;
+	public const int ONE = 1;
+	public const int TWO = 2;
+	public const int THREE = 3;
+	public const int FOUR = 4;
+
+	// Methods
+
+	// RVA: 0x190C938 Offset: 0x1908938 VA: 0x190C938
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class SeasonAvgShowType // TypeDefIndex: 344
+{
+	// Fields
+	public const int Mediocre = 1;
+	public const int Good = 2;
+	public const int Excellent = 3;
+
+	// Methods
+
+	// RVA: 0x190C940 Offset: 0x1908940 VA: 0x190C940
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class PlayerDealConst // TypeDefIndex: 345
+{
+	// Fields
+	public const long MAX_PRICE = 10000000000;
+	public const int CLUB_PLAYER_MAX = 40;
+	public const int CLUB_PLAYER_MIN = 11;
+
+	// Methods
+
+	// RVA: 0x190C948 Offset: 0x1908948 VA: 0x190C948
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class AbilityConfig : BaseConfig // TypeDefIndex: 346
+{
+	// Fields
+	private string _name; // 0x18
+	public int atk; // 0x20
+	public int def; // 0x24
+	public int speed; // 0x28
+	public int power; // 0x2C
+	public int strength; // 0x30
+	public int technique; // 0x34
+	private string _kingName; // 0x38
+
+	// Properties
+	public string name { get; set; }
+	public string KingName { get; set; }
+
+	// Methods
+
+	// RVA: 0x190C950 Offset: 0x1908950 VA: 0x190C950
+	public string get_name() { }
+
+	// RVA: 0x190C9D0 Offset: 0x19089D0 VA: 0x190C9D0
+	public void set_name(string value) { }
+
+	// RVA: 0x190C9D8 Offset: 0x19089D8 VA: 0x190C9D8
+	public string get_KingName() { }
+
+	// RVA: 0x190CA58 Offset: 0x1908A58 VA: 0x190CA58
+	public void set_KingName(string value) { }
+
+	// RVA: 0x190CA60 Offset: 0x1908A60 VA: 0x190CA60
+	public float GetAttribute(int type, float level) { }
+
+	// RVA: 0x190CAD4 Offset: 0x1908AD4 VA: 0x190CAD4
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class AbilityConfigTable : IdentityConfigTable<AbilityConfig> // TypeDefIndex: 347
+{
+	// Methods
+
+	// RVA: 0x190CAE4 Offset: 0x1908AE4 VA: 0x190CAE4
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class AbilityLevelConfig : BaseConfig // TypeDefIndex: 348
+{
+	// Fields
+	public int level; // 0x14
+	public int totalExp; // 0x18
+	public int upExp; // 0x1C
+
+	// Methods
+
+	// RVA: 0x190CB2C Offset: 0x1908B2C VA: 0x190CB2C
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class AbilityLevelConfigTable : IdentityConfigTable<AbilityLevelConfig> // TypeDefIndex: 349
+{
+	// Methods
+
+	// RVA: 0x190CB34 Offset: 0x1908B34 VA: 0x190CB34
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class AchievementConfig : BaseConfig // TypeDefIndex: 350
+{
+	// Fields
+	public string name_cn; // 0x18
+	public string name_tc; // 0x20
+	public string name_en; // 0x28
+	public string name_id; // 0x30
+	public string name_kr; // 0x38
+	public string name_jp; // 0x40
+	public string icon; // 0x48
+	public string des_cn; // 0x50
+	public string des_tc; // 0x58
+	public string des_en; // 0x60
+	public string des_id; // 0x68
+	public string des_kr; // 0x70
+	public string des_jp; // 0x78
+	public int model; // 0x80
+	public int type; // 0x84
+	public string script; // 0x88
+	public int target; // 0x90
+	public int level; // 0x94
+	public int point; // 0x98
+	public string googleplay; // 0xA0
+	public string appstore; // 0xA8
+
+	// Properties
+	public string Name { get; }
+	public string Des { get; }
+
+	// Methods
+
+	// RVA: 0x190CB7C Offset: 0x1908B7C VA: 0x190CB7C
+	public string get_Name() { }
+
+	// RVA: 0x190CC50 Offset: 0x1908C50 VA: 0x190CC50
+	public string get_Des() { }
+
+	// RVA: 0x190CD58 Offset: 0x1908D58 VA: 0x190CD58
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class AchievementConfigTable : IdentityConfigTable<AchievementConfig> // TypeDefIndex: 351
+{
+	// Methods
+
+	// RVA: 0x190CD60 Offset: 0x1908D60 VA: 0x190CD60
+	public void .ctor() { }
+}
+
+// Namespace: FootballStar
+public class AgeConfig : BaseConfig // TypeDefIndex: 352
+{
+	// Fields
+	[CompilerGenerated]
+	private int <Level>k__BackingField; // 0x14
+	[CompilerGenerated]
+	private int <Discount>k__BackingField; // 0x18
+
+	// Properties
+	public int Level { get; set; }
+	public int Discount { get; set; }
+
+	// Methods
+
+	[CompilerGenerated]
+	// RVA: 0x190CDA8 Offset: 0x1908DA8 VA: 0x190CDA8
+	public int get_Level() { }
+
+	[CompilerGenerated]
+	// RVA: 0x190CDB0 Offset: 0x1908DB0 VA: 0x190CDB0
+	public void set_Level(int value) { }
