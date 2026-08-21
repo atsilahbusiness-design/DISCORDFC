@@ -1,4 +1,5 @@
 import { GAME_BALANCE } from '../config/game-balance.js';
+import { RECOVERY_CLUBS } from '../config/recovery-data.js';
 import {
   ABILITY_LABELS,
   type AbilityId,
@@ -145,7 +146,7 @@ export function createInitialProfile(userId: string, displayName: string, positi
     updatedAt: timestamp,
     age: 18,
     position,
-    club: 'Rising City FC',
+    club: RECOVERY_CLUBS.find((club) => club.league === 1011)?.nameEn ?? 'Rising City FC',
     money: 1_000,
     hp: 100,
     maxHp: 100,

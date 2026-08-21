@@ -1,8 +1,10 @@
 import { createInitialProfile, getRating, MathRandomSource, type RandomSource } from './engine.js';
 import { FORMATIONS, TACTICS, type ClubFixture, type ClubMatchResult, type ClubPlayer, type FormationId, type MatchOutcome, type PlayerProfile, type Position, type TacticId } from './types.js';
 import { SEED_CLUB_NAMES, SEED_PLAYER_NAMES, SEED_ROSTER_POSITIONS } from '../config/seed-data.js';
+import { RECOVERY_CLUBS, RECOVERY_PLAYERS_BY_CLUB, type RecoveryPlayerRecord } from '../config/recovery-data.js';
 
-const CLUB_NAMES = SEED_CLUB_NAMES;
+const RECOVERY_PRIMARY_CLUB_NAMES = RECOVERY_CLUBS.filter((club) => club.league === 1011).map((club) => club.nameEn);
+const CLUB_NAMES = RECOVERY_PRIMARY_CLUB_NAMES.length >= 10 ? RECOVERY_PRIMARY_CLUB_NAMES : SEED_CLUB_NAMES;
 const POSITIONS: Position[] = SEED_ROSTER_POSITIONS;
 const PLAYER_NAMES = SEED_PLAYER_NAMES;
 
@@ -31,6 +33,47 @@ function userAsClubPlayer(profile: PlayerProfile): ClubPlayer {
     goals: profile.career.goals,
     assists: profile.career.assists,
     appearances: profile.career.appearances
+  };
+}
+
+function recoveryPosition(code: number): Position {
+  if (code === 13) return 'GK';
+  if (code >= 10 && code <= 12) return 'DF';
+  if (code >= 5 && code <= 9) return 'MF';
+  return 'FW';
+}
+
+function recoveryOverall(record: RecoveryPlayerRecord): number {
+  return clamp(52 + Math.abs(record.normalValue % 38), 45, 92);
+}
+
+function recoveryClubPlayer(record: RecoveryPlayerRecord, level: number): ClubPlayer {
+  const overall = recoveryOverall(record);
+  const position = recoveryPosition(record.positionCode);
+  const stats = {
+    atk: clamp(overall + (position === 'FW' ? 8 : 0), 20, 99),
+    def: clamp(overall + (position === 'DF' || position === 'GK' ? 8 : 0), 20, 99),
+    speed: clamp(overall + (position === 'FW' || position === 'MF' ? 5 : 0), 20, 99),
+    power: clamp(overall + 1, 20, 99),
+    strength: clamp(overall + (position === 'DF' ? 5 : 0), 20, 99),
+    technique: clamp(overall + (position === 'MF' ? 7 : 0), 20, 99)
+  };
+  return {
+    id: `recovery-${record.clubId}-${record.num}-${record.nameEn.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+    name: record.nameEn,
+    position,
+    age: record.initAge,
+    overall,
+    stats,
+    morale: 75,
+    hp: 100,
+    maxHp: 100,
+    salary: Math.max(40, Math.round(record.price + level * 10)),
+    contractUntil: new Date(Date.now() + 180 * 86_400_000).toISOString(),
+    isUserPlayer: false,
+    goals: 0,
+    assists: 0,
+    appearances: 0
   };
 }
 
@@ -80,15 +123,22 @@ function buildFixtures(clubId: string, season: number, now: Date): ClubFixture[]
 export function ensureClubState(profileInput: PlayerProfile, now = new Date(), rng: RandomSource = new MathRandomSource()): PlayerProfile {
   const profile = structuredClone(profileInput);
   if (profile.clubState) return profile;
-  const roster = [userAsClubPlayer(profile), ...Array.from({ length: 15 }, (_, index) => npcPlayer(index, profile.level, rng))];
+  const officialClub = RECOVERY_CLUBS.find((club) => club.nameEn === profile.club) ?? RECOVERY_CLUBS.find((club) => club.league === 1011);
+  if (officialClub && profile.club === 'Rising City FC') profile.club = officialClub.nameEn;
+  const officialPlayers = officialClub ? (RECOVERY_PLAYERS_BY_CLUB.get(officialClub.id) ?? []).slice(0, 15).map((record) => recoveryClubPlayer(record, profile.level)) : [];
+  const fallbackPlayers = Array.from({ length: Math.max(0, 15 - officialPlayers.length) }, (_, index) => npcPlayer(index, profile.level, rng));
+  const roster = [userAsClubPlayer(profile), ...officialPlayers, ...fallbackPlayers];
   profile.clubState = {
     id: profile.club,
-    name: profile.club,
+    officialId: officialClub?.id,
+    name: officialClub?.nameEn ?? profile.club,
     level: 1,
     leagueTier: 1,
-    prestige: 100,
-    assets: 25_000,
-    salaryBudget: 5_000,
+    officialGrade: officialClub?.grade,
+    provenance: officialClub ? 'RECOVERY_VERIFIED' : 'SEED_FALLBACK',
+    prestige: officialClub ? Math.round(officialClub.prestige * 100) : 100,
+    assets: officialClub?.salaryBase ?? 25_000,
+    salaryBudget: officialClub?.coachSalaryBase ?? 5_000,
     formation: '4-4-2',
     tactic: 'balanced',
     roster,

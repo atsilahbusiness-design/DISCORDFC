@@ -145,9 +145,12 @@ export interface AchievementState {
 
 export interface ClubState {
   id: string;
+  officialId?: number;
   name: string;
   level: number;
   leagueTier?: number;
+  officialGrade?: number;
+  provenance?: 'SEED_FALLBACK' | 'RECOVERY_VERIFIED';
   prestige: number;
   assets: number;
   salaryBudget: number;

@@ -4,6 +4,13 @@ import { createInitialProfile, SeededRandom } from '../src/domain/engine.js';
 import { ensureClubState, getClubRating, playClubMatch, setClubFormation, setClubTactic } from '../src/domain/club-engine.js';
 import { buyMarketPlayer, claimDailyReward, generateDailyEvent, refreshMarket, resolveDailyEvent, sellClubPlayer } from '../src/domain/progression-engine.js';
 
+test('recovery data seeds an official club and roster names', () => {
+  const profile = ensureClubState(createInitialProfile('recovery-1', 'Recovery', 'FW'), new Date('2026-01-01T00:00:00.000Z'), new SeededRandom(5));
+  assert.equal(profile.club, 'Arsenal');
+  assert.equal(profile.clubState?.provenance, 'RECOVERY_VERIFIED');
+  assert.equal(profile.clubState?.roster.some((player) => player.name === 'David Raya'), true);
+});
+
 test('club state creates a roster and can change formation and tactic', () => {
   const profile = createInitialProfile('club-1', 'Club Owner', 'MF');
   let enriched = ensureClubState(profile, new Date('2026-01-01T00:00:00.000Z'), new SeededRandom(5));
