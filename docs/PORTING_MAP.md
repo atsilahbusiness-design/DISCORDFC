@@ -27,3 +27,21 @@ Nilai tersebut **bukan klaim bahwa formula identik dengan game asli**. Nilai sen
 ## Batasan recovery
 
 Arsip tidak memuat source C# identik, scene/prefab Unity, konfigurasi import/editor, secret backend, atau data server. Reverse engineering body method dari `libil2cpp.so` dapat memberikan informasi tambahan, tetapi tetap perlu validasi hukum, otorisasi internal, dan pengujian kompatibilitas. Bot ini menggunakan nama domain dan struktur gameplay sebagai referensi internal, bukan menyalin binary game.
+
+## Status expanded implementation
+
+Sejak MVP, domain bot telah diperluas menjadi dua loop: career player dan club management. Roster, formation, tactics, assets, prestige, fixture, standings, league tier, promosi/degradasi, season reset, market, contract, daily reward, event choice, Champions League knockout, achievement, maintenance scheduler, structured logging, rate limiting, dan admin operations kini tersedia pada codebase.
+
+| Area recovery | Status bot | Catatan parity |
+| --- | --- | --- |
+| `CoachLeagueManager` dan `CoachSeason` | Implemented rebuild | Fixture, standings, season, tier, promotion, Champions League state; jadwal dan ranking dibuat modular |
+| `CoachClub` | Implemented rebuild | Roster, formation, tactic, assets, prestige, buy/sell player |
+| `Contract` | Implemented rebuild | Salary, begin/end time, active/expired, renewal |
+| `GameEventUserChooseConfig` | Implemented rebuild | Daily choice event dengan cost/reward/morale contract |
+| `CoachChampionsLeague` | Implemented rebuild | Qualification gate, round, opponent, aggregate, eliminated/champion |
+| `Achievement/Honor` | Partial implemented | Achievement progress dan claim; honor reward layer masih dapat diperdalam |
+| `GameData` battle statistics | Partial implemented | Core appearances/wins/draws/losses/goals; assists/cards/steals/clean sheets masih perlu golden data |
+| Formula `GoalHelp` dan tactics | Modular inferred | Balance dipusatkan pada `src/config/game-balance.ts`; source saat ini `RECOVERY_INFERRED` |
+| Official player/club/config data | Seed data only | Ganti `src/config/seed-data.ts` dengan data internal resmi yang berwenang |
+
+Parity 1:1 belum dapat dipastikan karena dump recovery tidak memberikan source C# dan backend live. Setiap angka yang inferred harus dikalibrasi dengan data resmi sebelum public launch.

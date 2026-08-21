@@ -1,45 +1,52 @@
-# Laporan Implementasi Final
+# Laporan Implementasi Expanded
 
-## Hasil
+## Ringkasan
 
-Repository `DISCORDFC` kini berisi fondasi **Football Rising Star Discord Bot MVP**. Implementasi dibuat dari repository kosong dan dipush ke branch `main`.
+Repository `DISCORDFC` telah dikembangkan dari bot MVP menjadi rebuild Football Rising Star berbasis Discord yang memiliki career loop, club loop, kompetisi, ekonomi, progression, persistence production, maintenance scheduler, admin tools, dan deployment assets.
 
-| Area | Status |
+Paket recovery yang tersedia adalah Unity IL2CPP recovery. Karena source C# dan backend internal tidak tersedia, hasil ini adalah implementasi ulang berbasis kontrak domain dan struktur field/method yang terlihat, bukan binary port atau klaim kesamaan formula numerik 1:1.
+
+## Fitur yang selesai
+
+| Domain | Implementasi |
 | --- | --- |
-| Profil pemain GK/DF/MF/FW | Selesai |
-| Ability, level, EXP, training | Selesai |
-| HP dan energi berbasis waktu | Selesai |
-| Simulasi pertandingan dan reward | Selesai |
-| Statistik karier dan progres season | Selesai |
-| Slash command Discord | Selesai |
-| Persistence JSON atomik | Selesai untuk MVP |
-| Dockerfile dan Compose | Disediakan |
-| Live Discord guild test | Belum, memerlukan token dan guild ID pengguna |
-| Formula identik dengan game asal | Belum dapat diklaim dari IL2CPP dump |
-| Database production | Belum, JSON perlu diganti PostgreSQL/MySQL |
+| Career player | GK/DF/MF/FW, ability, level, EXP, training, HP/energy recovery, player match, reward, career stats |
+| Club management | Roster 16 pemain, club rating, formation 4-4-2/4-3-3/3-5-2/5-3-2, four tactics, assets, prestige |
+| League | Fixtures, matchday, standings, points, season reset, league tier, promotion/degradation |
+| Competition | Champions League qualification, round, aggregate, eliminated/champion state |
+| Economy | Money, atomic ledger, salary, contract, expiry, renewal, transfer market, buy/sell |
+| Progression | Daily reward streak, daily event choices, achievements and claimable rewards |
+| Operations | PostgreSQL store, SQL schema, migration, JSON import, scheduled maintenance, structured logs, rate limiter, admin stats/market refresh |
+| Delivery | Dockerfile, Compose PostgreSQL stack, GitHub Actions CI, README, operations runbook, porting map, Trae A.I. handoff |
 
-## Verifikasi teknis
+## Commands Discord
 
-`pnpm build` berhasil tanpa error. `pnpm test` berhasil dengan **5 test lulus dan 0 gagal**. Tidak ada token Discord atau state pemain yang dimasukkan ke commit.
+`/start`, `/profile`, `/train`, `/match`, `/league`, `/club`, `/squad`, `/formation`, `/tactic`, `/club-match`, `/standings`, `/season-end`, `/contract`, `/daily`, `/event`, `/market`, `/buy-player`, `/sell-player`, `/champions`, `/achievements`, `/claim-achievement`, `/admin`, dan `/help` telah disediakan pada command registration.
 
-Commit implementasi utama adalah `79e7f4f` dan commit dokumentasi handoff adalah `250fb79`. Branch lokal telah diverifikasi sinkron dengan `origin/main`.
+## QA
 
-## Cara menjalankan
+Perintah `pnpm build` berhasil. Perintah `pnpm test` berhasil dengan **16 test lulus dan 0 gagal**. Suite mencakup engine balance, contract, Champions League, achievements, rate limiter, club state, fixture, standings, daily streak, event, market, transfer, career MVP, JSON persistence, dan maintenance scheduler.
 
-```bash
-pnpm install
-cp .env.example .env
-# isi DISCORD_TOKEN, DISCORD_CLIENT_ID, dan opsional DISCORD_GUILD_ID
-pnpm commands:register
-pnpm dev
-```
+Build output telah diperbaiki agar entry point production benar berada pada `dist/index.js`. Docker image juga membawa `dist/storage/schema.sql` untuk migration runtime.
 
-Untuk production, jalankan `pnpm build && pnpm start`, atau gunakan `docker compose up -d --build` setelah `.env` diisi. Bot harus berjalan pada proses yang selalu aktif; komputer kantor/server yang sudah tersedia adalah jalur pengujian yang paling ringan, sedangkan hosting Node.js managed/VPS lebih sesuai untuk operasional tanpa bergantung pada komputer kantor.
+## Persistence dan deployment
 
-## Batasan penting
+Tanpa `DATABASE_URL`, bot memakai JSON fallback untuk development. Dengan `DATABASE_URL`, bot memakai PostgreSQL dan menyimpan profile serta economy ledger secara transaksional. Jalankan `pnpm db:migrate` sebelum bot, kemudian gunakan `pnpm db:import-json` bila perlu memindahkan state JSON lama.
 
-Paket recovery hanya berisi build IL2CPP, metadata, struktur tipe, aset, dan binary; body method source C# serta backend internal tidak tersedia. Formula simulator dalam MVP adalah implementasi sementara yang mengikuti kontrak field dan method yang terlihat, bukan reproduksi numerik yang telah diverifikasi. Untuk porting 1:1, perusahaan perlu memberikan source/config/backend yang berwenang atau hasil validasi internal terhadap formula.
+Compose menjalankan PostgreSQL dan bot secara persisten. GitHub Actions menjalankan install lockfile, build, dan test pada push/pull request ke `main`. Structured log mencatat startup, shutdown, maintenance, dan command error tanpa token.
 
-## Langkah berikutnya
+## Commit utama
 
-Setelah live test pertama, prioritas sebaiknya adalah mengganti JSON dengan database production, menambahkan migration dan backup, lalu memasukkan data konfigurasi resmi untuk roster, formation, tactics, market/contract, event, Champions League, achievement, dan formula pertandingan. Golden tests perlu dibuat dari hasil yang disetujui product/engineering agar setiap perubahan formula dapat divalidasi.
+| Commit | Isi |
+| --- | --- |
+| `79e7f4f` | MVP career/player bot |
+| `5108de3` | Club, competition, economy, PostgreSQL persistence |
+| `3b5a3b2` | Champions, contract, achievement, balance config |
+| `b8551b3` | Maintenance scheduler dan structured logger |
+| `4044316` | Seed data, CI, operations runbook |
+
+## Batasan yang masih tersisa
+
+Bot belum diuji pada guild Discord live karena token, application ID, guild ID, dan admin user ID belum diberikan dalam environment. Roster resmi, club IDs, event payload, contract rules, market backend, exact goal formula, detailed battle statistics, honor/reincarnation, dan backend synchronization masih perlu source/config/data perusahaan yang berwenang.
+
+Untuk mencapai parity 1:1, langkah engineering berikutnya adalah memasukkan source atau configuration resmi, membuat golden test dari output game asli, dan mengganti semua balance `RECOVERY_INFERRED` dengan calibration version yang disetujui product/engineering.
