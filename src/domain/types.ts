@@ -147,6 +147,7 @@ export interface ClubState {
   id: string;
   name: string;
   level: number;
+  leagueTier?: number;
   prestige: number;
   assets: number;
   salaryBudget: number;

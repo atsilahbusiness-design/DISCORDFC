@@ -84,6 +84,7 @@ export function ensureClubState(profileInput: PlayerProfile, now = new Date(), r
     id: profile.club,
     name: profile.club,
     level: 1,
+    leagueTier: 1,
     prestige: 100,
     assets: 25_000,
     salaryBudget: 5_000,
@@ -251,10 +252,15 @@ export function finishSeason(profileInput: PlayerProfile, now = new Date()): Pla
   profile.league.goalsAgainst = 0;
   club.fixtures = buildFixtures(club.id, profile.league.season, now);
   club.standings = CLUB_NAMES.map((clubName) => ({ clubId: clubName, clubName, played: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, points: 0 }));
+  const currentTier = club.leagueTier ?? 1;
+  const promoted = standing.points >= 18;
+  const relegated = standing.points <= 4 && currentTier > 1;
+  club.leagueTier = clamp(currentTier + (promoted ? 1 : relegated ? -1 : 0), 1, 5);
+  club.level = clamp(club.level + (promoted ? 1 : 0), 1, 10);
   club.championsLeagueQualified = standing.points >= 15;
   club.championsLeagueRound = club.championsLeagueQualified ? 1 : 0;
   club.nextFixtureAt = club.fixtures[0].playedAt!;
-  club.prestige = clamp(club.prestige + (standing.points >= 15 ? 10 : 2), 0, 1_000);
+  club.prestige = clamp(club.prestige + (promoted ? 10 : relegated ? -6 : 2), 0, 1_000);
   profile.updatedAt = now.toISOString();
   return profile;
 }
