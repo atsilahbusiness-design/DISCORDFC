@@ -14,6 +14,7 @@ interface StoreFile {
 
 export class JsonPlayerStore implements PlayerStore {
   private cache?: StoreFile;
+  private writeTail: Promise<void> = Promise.resolve();
 
   constructor(private readonly path: string) {}
 
@@ -34,20 +35,27 @@ export class JsonPlayerStore implements PlayerStore {
   async get(userId: string): Promise<PlayerProfile | undefined> {
     const store = await this.load();
     const profile = store.players[userId];
-    return profile ? structuredClone(profile) : undefined;
+    if (!profile) return undefined;
+    profile.version ??= 0;
+    return structuredClone(profile);
   }
 
   async save(profile: PlayerProfile): Promise<void> {
-    const store = await this.load();
-    store.players[profile.userId] = structuredClone(profile);
-    await mkdir(dirname(this.path), { recursive: true });
-    const tempPath = `${this.path}.tmp`;
-    await writeFile(tempPath, `${JSON.stringify(store, null, 2)}\n`, 'utf8');
-    await rename(tempPath, this.path);
+    const next = this.writeTail.catch(() => undefined).then(async () => {
+      const store = await this.load();
+      profile.version = (profile.version ?? 0) + 1;
+      store.players[profile.userId] = structuredClone(profile);
+      await mkdir(dirname(this.path), { recursive: true });
+      const tempPath = `${this.path}.tmp`;
+      await writeFile(tempPath, `${JSON.stringify(store, null, 2)}\n`, 'utf8');
+      await rename(tempPath, this.path);
+    });
+    this.writeTail = next;
+    await next;
   }
 
   async all(): Promise<PlayerProfile[]> {
     const store = await this.load();
-    return Object.values(store.players).map((profile) => structuredClone(profile));
+    return Object.values(store.players).map((profile) => { profile.version ??= 0; return structuredClone(profile); });
   }
 }

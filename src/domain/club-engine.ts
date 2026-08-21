@@ -187,12 +187,12 @@ function selectPlayingSquad(roster: ClubPlayer[], formationId: FormationId): Clu
   return selected;
 }
 
-function getAttackDefence(squad: ClubPlayer[], clubId: string, formationId: FormationId, tacticId: TacticId): { attack: number; defence: number } {
+function getAttackDefence(squad: ClubPlayer[], clubId: string, formationId: FormationId, tacticId: TacticId, isHome: boolean): { attack: number; defence: number } {
   const averageAttack = squad.reduce((sum, player) => sum + player.stats.atk * 0.45 + player.stats.speed * 0.15 + player.stats.power * 0.2 + player.stats.technique * 0.2, 0) / Math.max(1, squad.length);
   const averageDefence = squad.reduce((sum, player) => sum + player.stats.def * 0.5 + player.stats.strength * 0.2 + player.stats.speed * 0.1 + player.stats.technique * 0.2, 0) / Math.max(1, squad.length);
   const formation = FORMATIONS[formationId];
   const tactic = TACTICS[tacticId];
-  const homeAdvantage = clubId === squad.find((player) => player.isUserPlayer)?.id ? 1 : 1;
+  const homeAdvantage = isHome ? 1.04 : 1;
   return { attack: averageAttack * formation.attackMultiplier * tactic.attackMultiplier * homeAdvantage, defence: averageDefence * formation.defenceMultiplier * tactic.defenceMultiplier };
 }
 
@@ -226,7 +226,7 @@ export function playClubMatch(profileInput: PlayerProfile, now = new Date(), rng
   if (!fixture) throw new Error('Musim klub telah selesai. Gunakan `/season-end` untuk memulai musim baru.');
   const squad = selectPlayingSquad(club.roster, club.formation);
   const userClubIsHome = fixture.homeClub === club.id;
-  const userTeam = getAttackDefence(squad, club.id, club.formation, club.tactic);
+  const userTeam = getAttackDefence(squad, club.id, club.formation, club.tactic, userClubIsHome);
   const opponentRating = 52 + fixture.matchday * 2 + Math.floor(rng.next() * 24);
   const opponentAttack = opponentRating * (0.8 + rng.next() * 0.25);
   const opponentDefence = opponentRating * (0.8 + rng.next() * 0.25);

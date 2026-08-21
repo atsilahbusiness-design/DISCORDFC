@@ -1,4 +1,4 @@
-import { ChatInputCommandInteraction, EmbedBuilder, type ColorResolvable } from 'discord.js';
+import { ButtonInteraction, ChatInputCommandInteraction, EmbedBuilder, StringSelectMenuInteraction, type ColorResolvable } from 'discord.js';
 import { createInitialProfile, formatAbility, getRating, playMatch, recoverPlayer, trainPlayer } from '../domain/engine.js';
 import { ensureClubState, finishSeason, formatClubStanding, getClubRating, getNextClubFixture, playClubMatch, setClubFormation, setClubTactic } from '../domain/club-engine.js';
 import { buyMarketPlayer, claimDailyReward, formatMoney, generateDailyEvent, refreshMarket, resolveDailyEvent, sellClubPlayer } from '../domain/progression-engine.js';
@@ -7,6 +7,7 @@ import { formatContract, getContractStatus, renewContract, signContract } from '
 import { joinOfficialClub, listOfficialClubs } from '../domain/official-club-engine.js';
 import { ABILITY_LABELS, FORMATIONS, POSITION_LABELS, TACTICS, type AbilityId, type PlayerProfile, type Position } from '../domain/types.js';
 import type { PlayerStore } from '../storage/json-store.js';
+import { careerControls, trainingControls } from './components.js';
 import { log } from '../observability/logger.js';
 
 const BRAND_COLOR: ColorResolvable = '#1f8b4c';
@@ -34,7 +35,7 @@ function profileEmbed(profile: PlayerProfile): EmbedBuilder {
 async function requireProfile(interaction: ChatInputCommandInteraction, store: PlayerStore): Promise<PlayerProfile | undefined> {
   const profile = await store.get(interaction.user.id);
   if (!profile) {
-    await interaction.reply({ content: 'Profil belum dibuat. Jalankan `/start position:<GK|DF|MF|FW>` terlebih dahulu.', ephemeral: true });
+    await interaction.editReply({ content: 'Profil belum dibuat. Jalankan `/start position:<GK|DF|MF|FW>` terlebih dahulu.' });
     return undefined;
   }
   return profile;
@@ -43,10 +44,11 @@ async function requireProfile(interaction: ChatInputCommandInteraction, store: P
 export async function handleCommand(interaction: ChatInputCommandInteraction, store: PlayerStore): Promise<void> {
   const command = interaction.commandName;
   try {
+    if (!interaction.replied && !interaction.deferred) await interaction.deferReply();
     if (command === 'start') {
       const existing = await store.get(interaction.user.id);
       if (existing) {
-        await interaction.reply({ content: 'Profil Anda sudah ada. Gunakan `/profile` untuk melihatnya.', ephemeral: true });
+        await interaction.editReply({ content: 'Profil Anda sudah ada. Gunakan `/profile` untuk melihatnya.' });
         return;
       }
       const position = interaction.options.getString('position', true) as Position;
@@ -55,7 +57,7 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
       profile = refreshMarket(profile);
       profile = generateDailyEvent(profile);
       await store.save(profile);
-      await interaction.reply({ embeds: [profileEmbed(profile)] });
+      await interaction.editReply({ embeds: [profileEmbed(profile)], components: careerControls(interaction.user.id) });
       return;
     }
 
@@ -64,7 +66,7 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
       if (profile) {
         const enriched = ensureClubState(recoverPlayer(profile));
         await store.save(enriched);
-        await interaction.reply({ embeds: [profileEmbed(enriched)] });
+        await interaction.editReply({ embeds: [profileEmbed(enriched)] });
       }
       return;
     }
@@ -76,7 +78,7 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
       const result = trainPlayer(profile, ability);
       await store.save(result.profile);
       const levelText = result.levelUp ? '\n**Level ability naik.**' : '';
-      await interaction.reply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle('Training selesai').setDescription(`**${formatAbility(result.ability)}** bertambah dari **${result.statBefore}** menjadi **${result.statAfter}**. EXP diperoleh: **${result.expGained}**.${levelText}`).addFields({ name: 'Sisa energi', value: `${result.profile.energy}/${result.profile.maxEnergy}`, inline: true }, { name: 'Player rating', value: `${getRating(result.profile)}`, inline: true })] });
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle('Training selesai').setDescription(`**${formatAbility(result.ability)}** bertambah dari **${result.statBefore}** menjadi **${result.statAfter}**. EXP diperoleh: **${result.expGained}**.${levelText}`).addFields({ name: 'Sisa energi', value: `${result.profile.energy}/${result.profile.maxEnergy}`, inline: true }, { name: 'Player rating', value: `${getRating(result.profile)}`, inline: true })] });
       return;
     }
 
@@ -86,7 +88,7 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
       const result = playMatch(profile);
       await store.save(result.profile);
       const outcomeLabel = result.record.outcome === 'WIN' ? 'VICTORY' : result.record.outcome === 'DRAW' ? 'DRAW' : 'DEFEAT';
-      await interaction.reply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`${outcomeLabel} · ${result.profile.club} ${result.record.playerGoals}–${result.record.opponentGoals} ${result.record.opponent}`).setDescription(result.narrative.join('\n')).addFields({ name: 'Player score', value: `${result.record.playerScore}`, inline: true }, { name: 'Rewards', value: `${formatMoney(result.record.rewards.money)} money\n${result.record.rewards.exp} EXP`, inline: true }, { name: 'Condition', value: `HP ${result.profile.hp}/${result.profile.maxHp}\nEnergy ${result.profile.energy}/${result.profile.maxEnergy}`, inline: true }).setFooter({ text: `Season ${result.profile.league.season} · Matchday ${result.profile.league.matchday}` })] });
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`${outcomeLabel} · ${result.profile.club} ${result.record.playerGoals}–${result.record.opponentGoals} ${result.record.opponent}`).setDescription(result.narrative.join('\n')).addFields({ name: 'Player score', value: `${result.record.playerScore}`, inline: true }, { name: 'Rewards', value: `${formatMoney(result.record.rewards.money)} money\n${result.record.rewards.exp} EXP`, inline: true }, { name: 'Condition', value: `HP ${result.profile.hp}/${result.profile.maxHp}\nEnergy ${result.profile.energy}/${result.profile.maxEnergy}`, inline: true }).setFooter({ text: `Season ${result.profile.league.season} · Matchday ${result.profile.league.matchday}` })] });
       return;
     }
 
@@ -95,7 +97,7 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
       if (!profile) return;
       const enriched = ensureClubState(recoverPlayer(profile));
       await store.save(enriched);
-      await interaction.reply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`${enriched.club} · Season ${enriched.league.season}`).setDescription(formatClubStanding(enriched)).addFields({ name: 'Progress', value: `Matchday **${enriched.league.matchday}**\nPoints **${enriched.league.points}**\nRecord **${enriched.league.wins}-${enriched.league.draws}-${enriched.league.losses}**\nGoals **${enriched.league.goalsFor}–${enriched.league.goalsAgainst}**` })] });
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`${enriched.club} · Season ${enriched.league.season}`).setDescription(formatClubStanding(enriched)).addFields({ name: 'Progress', value: `Matchday **${enriched.league.matchday}**\nPoints **${enriched.league.points}**\nRecord **${enriched.league.wins}-${enriched.league.draws}-${enriched.league.losses}**\nGoals **${enriched.league.goalsFor}–${enriched.league.goalsAgainst}**` })] });
       return;
     }
 
@@ -106,7 +108,7 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
       await store.save(enriched);
       const club = enriched.clubState!;
       const fixture = getNextClubFixture(enriched);
-      await interaction.reply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`${club.name} · Club Office`).setDescription(`Club rating **${getClubRating(enriched)}** · Level **${club.level}**`).addFields({ name: 'Resources', value: `Prestige **${club.prestige}**\nAssets **${formatMoney(club.assets)}**\nSalary budget **${formatMoney(club.salaryBudget)}**`, inline: true }, { name: 'Strategy', value: `Formation **${club.formation}**\nTactic **${TACTICS[club.tactic].name}**\n${TACTICS[club.tactic].description}`, inline: true }, { name: 'Next fixture', value: fixture ? `Matchday ${fixture.matchday}: ${fixture.homeClub} vs ${fixture.awayClub}\n${fixture.playedAt}` : 'Tidak ada fixture tersisa.' })] });
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`${club.name} · Club Office`).setDescription(`Club rating **${getClubRating(enriched)}** · Level **${club.level}**`).addFields({ name: 'Resources', value: `Prestige **${club.prestige}**\nAssets **${formatMoney(club.assets)}**\nSalary budget **${formatMoney(club.salaryBudget)}**`, inline: true }, { name: 'Strategy', value: `Formation **${club.formation}**\nTactic **${TACTICS[club.tactic].name}**\n${TACTICS[club.tactic].description}`, inline: true }, { name: 'Next fixture', value: fixture ? `Matchday ${fixture.matchday}: ${fixture.homeClub} vs ${fixture.awayClub}\n${fixture.playedAt}` : 'Tidak ada fixture tersisa.' })] });
       return;
     }
 
@@ -114,7 +116,7 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
       const league = interaction.options.getInteger('league') ?? undefined;
       const clubs = listOfficialClubs(league).slice(0, 40);
       const description = clubs.map((club) => `**${club.id}** · ${club.nameEn} · league ${club.league} · grade ${club.grade} · prestige ${club.prestige.toFixed(2)}`).join('\n');
-      await interaction.reply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`Official Clubs${league ? ` · League ${league}` : ''}`).setDescription(description || 'Tidak ada club untuk filter ini.').setFooter({ text: 'Gunakan /join-club club_id:<id> untuk pindah klub.' })] });
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`Official Clubs${league ? ` · League ${league}` : ''}`).setDescription(description || 'Tidak ada club untuk filter ini.').setFooter({ text: 'Gunakan /join-club club_id:<id> untuk pindah klub.' })] });
       return;
     }
 
@@ -124,7 +126,7 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
       const clubId = interaction.options.getInteger('club_id', true);
       const updated = joinOfficialClub(profile, clubId);
       await store.save(updated);
-      await interaction.reply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`Transfer · ${updated.club}`).setDescription(`Anda bergabung dengan **${updated.club}**.\nOfficial club ID: **${updated.clubState?.officialId}**\nProvenance: **${updated.clubState?.provenance}**\nSaldo: **${formatMoney(updated.money)}**`)] });
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`Transfer · ${updated.club}`).setDescription(`Anda bergabung dengan **${updated.club}**.\nOfficial club ID: **${updated.clubState?.officialId}**\nProvenance: **${updated.clubState?.provenance}**\nSaldo: **${formatMoney(updated.money)}**`)] });
       return;
     }
 
@@ -134,7 +136,7 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
       const enriched = ensureClubState(profile);
       await store.save(enriched);
       const roster = enriched.clubState!.roster.map((player) => `${player.id} · ${player.name} · ${player.position} · OVR ${player.overall} · HP ${player.hp}/${player.maxHp}${player.isUserPlayer ? ' · **YOU**' : ''}`).join('\n');
-      await interaction.reply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`${enriched.club} · Squad`).setDescription(roster.slice(0, 3900)).addFields({ name: 'Tip', value: 'Gunakan ID pemain pada `/sell-player` untuk melepas pemain non-user.' })] });
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`${enriched.club} · Squad`).setDescription(roster.slice(0, 3900)).addFields({ name: 'Tip', value: 'Gunakan ID pemain pada `/sell-player` untuk melepas pemain non-user.' })] });
       return;
     }
 
@@ -144,7 +146,7 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
       const formation = interaction.options.getString('id', true) as keyof typeof FORMATIONS;
       const updated = setClubFormation(profile, formation);
       await store.save(updated);
-      await interaction.reply(`Formasi klub diubah menjadi **${FORMATIONS[formation].name}**.`);
+      await interaction.editReply(`Formasi klub diubah menjadi **${FORMATIONS[formation].name}**.`);
       return;
     }
 
@@ -154,7 +156,7 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
       const tactic = interaction.options.getString('id', true) as keyof typeof TACTICS;
       const updated = setClubTactic(profile, tactic);
       await store.save(updated);
-      await interaction.reply(`Taktik klub diubah menjadi **${TACTICS[tactic].name}** — ${TACTICS[tactic].description}`);
+      await interaction.editReply(`Taktik klub diubah menjadi **${TACTICS[tactic].name}** — ${TACTICS[tactic].description}`);
       return;
     }
 
@@ -164,7 +166,7 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
       const result = playClubMatch(profile);
       await store.save(result.profile);
       const label = result.outcome === 'WIN' ? 'VICTORY' : result.outcome === 'DRAW' ? 'DRAW' : 'DEFEAT';
-      await interaction.reply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`${label} · ${result.homeGoals}–${result.awayGoals}`).setDescription(result.commentary.join('\n')).addFields({ name: 'Fixture', value: `${result.fixture.homeClub} vs ${result.fixture.awayClub}`, inline: true }, { name: 'MVP', value: `${result.mvp.name} · OVR ${result.mvp.overall}`, inline: true }, { name: 'Club resources', value: `${formatMoney(result.profile.clubState!.assets)} assets\n${result.profile.clubState!.prestige} prestige`, inline: true })] });
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`${label} · ${result.homeGoals}–${result.awayGoals}`).setDescription(result.commentary.join('\n')).addFields({ name: 'Fixture', value: `${result.fixture.homeClub} vs ${result.fixture.awayClub}`, inline: true }, { name: 'MVP', value: `${result.mvp.name} · OVR ${result.mvp.overall}`, inline: true }, { name: 'Club resources', value: `${formatMoney(result.profile.clubState!.assets)} assets\n${result.profile.clubState!.prestige} prestige`, inline: true })] });
       return;
     }
 
@@ -175,7 +177,7 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
       if (enriched.clubState!.fixtures.some((fixture) => !fixture.played)) throw new Error('Belum semua fixture selesai. Selesaikan seluruh pertandingan sebelum menutup musim.');
       const updated = finishSeason(enriched);
       await store.save(updated);
-      await interaction.reply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`Season ${updated.league.season - 1} selesai`).setDescription(`Season baru **${updated.league.season}** dimulai. Champions League: **${updated.clubState!.championsLeagueQualified ? 'qualified' : 'not qualified'}**.`)] });
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`Season ${updated.league.season - 1} selesai`).setDescription(`Season baru **${updated.league.season}** dimulai. Champions League: **${updated.clubState!.championsLeagueQualified ? 'qualified' : 'not qualified'}**.`)] });
       return;
     }
 
@@ -184,7 +186,7 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
       if (!profile) return;
       const result = claimDailyReward(profile);
       await store.save(result.profile);
-      await interaction.reply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle('Daily reward claimed').setDescription(`Anda menerima **${formatMoney(result.amount)} money** dan **${result.exp} EXP**.`).addFields({ name: 'Streak', value: `${result.streak} hari`, inline: true }, { name: 'Balance', value: formatMoney(result.profile.money), inline: true })] });
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle('Daily reward claimed').setDescription(`Anda menerima **${formatMoney(result.amount)} money** dan **${result.exp} EXP**.`).addFields({ name: 'Streak', value: `${result.streak} hari`, inline: true }, { name: 'Balance', value: formatMoney(result.profile.money), inline: true })] });
       return;
     }
 
@@ -196,11 +198,11 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
       if (choiceId) {
         const result = resolveDailyEvent(enriched, choiceId);
         await store.save(result.profile);
-        await interaction.reply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`${result.profile.event!.title} · Resolved`).setDescription(`Pilihan: **${result.choice.label}**\nReward: **${result.choice.rewardMoney} money** dan **${result.choice.rewardExp} EXP**.`)] });
+        await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`${result.profile.event!.title} · Resolved`).setDescription(`Pilihan: **${result.choice.label}**\nReward: **${result.choice.rewardMoney} money** dan **${result.choice.rewardExp} EXP**.`)] });
       } else {
         await store.save(enriched);
         const event = enriched.event!;
-        await interaction.reply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(event.title).setDescription(`${event.description}\n\n${event.choices.map((choice) => `**${choice.id}** — ${choice.label} (cost ${choice.cost}, reward ${choice.rewardMoney} money / ${choice.rewardExp} EXP)`).join('\n')}`).setFooter({ text: 'Pilih dengan /event choice:<id>' })] });
+        await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(event.title).setDescription(`${event.description}\n\n${event.choices.map((choice) => `**${choice.id}** — ${choice.label} (cost ${choice.cost}, reward ${choice.rewardMoney} money / ${choice.rewardExp} EXP)`).join('\n')}`).setFooter({ text: 'Pilih dengan /event choice:<id>' })] });
       }
       return;
     }
@@ -212,7 +214,7 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
       const enriched = action === 'refresh' || !profile.market?.length ? refreshMarket(profile) : profile;
       await store.save(enriched);
       const listings = enriched.market!.filter((item) => item.status === 'OPEN').map((item) => `**${item.id}** · ${item.player.name} · ${item.player.position} · OVR ${item.player.overall} · **${formatMoney(item.price)}**`).join('\n');
-      await interaction.reply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle('Transfer Market').setDescription(listings || 'Market kosong. Gunakan action refresh.') .setFooter({ text: 'Gunakan /buy-player listing:<id> untuk membeli.' })] });
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle('Transfer Market').setDescription(listings || 'Market kosong. Gunakan action refresh.') .setFooter({ text: 'Gunakan /buy-player listing:<id> untuk membeli.' })] });
       return;
     }
 
@@ -222,7 +224,7 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
       const listingId = interaction.options.getString('listing', true);
       const result = buyMarketPlayer(profile, listingId);
       await store.save(result.profile);
-      await interaction.reply(`Transfer berhasil: **${result.listing.player.name}** bergabung dengan klub untuk **${formatMoney(result.listing.price)}**.`);
+      await interaction.editReply(`Transfer berhasil: **${result.listing.player.name}** bergabung dengan klub untuk **${formatMoney(result.listing.price)}**.`);
       return;
     }
 
@@ -232,7 +234,7 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
       const playerId = interaction.options.getString('player', true);
       const result = sellClubPlayer(profile, playerId);
       await store.save(result.profile);
-      await interaction.reply(`**${result.player.name}** dijual dengan harga **${formatMoney(result.price)}**.`);
+      await interaction.editReply(`**${result.player.name}** dijual dengan harga **${formatMoney(result.price)}**.`);
       return;
     }
 
@@ -245,9 +247,9 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
         if (current?.state === 'ACTIVE') throw new Error('Kontrak masih aktif.');
         const updated = current?.state === 'EXPIRED' ? renewContract(profile) : signContract(profile);
         await store.save(updated);
-        await interaction.reply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle('Contract updated').setDescription(formatContract(updated.contract))] });
+        await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle('Contract updated').setDescription(formatContract(updated.contract))] });
       } else {
-        await interaction.reply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle('Player contract').setDescription(formatContract(current))] });
+        await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle('Player contract').setDescription(formatContract(current))] });
       }
       return;
     }
@@ -259,12 +261,12 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
       if (action === 'play') {
         const result = playChampionsLeague(profile);
         await store.save(result.profile);
-        await interaction.reply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`Champions League · ${result.status}`).setDescription(result.commentary.join('\\n')).addFields({ name: 'Reward state', value: result.status === 'CHAMPION' ? 'Club assets and prestige increased.' : 'Continue the competition from the next round.', inline: true })] });
+        await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`Champions League · ${result.status}`).setDescription(result.commentary.join('\\n')).addFields({ name: 'Reward state', value: result.status === 'CHAMPION' ? 'Club assets and prestige increased.' : 'Continue the competition from the next round.', inline: true })] });
       } else {
         const enriched = startChampionsLeague(profile);
         await store.save(enriched);
         const state = enriched.championsLeague!;
-        await interaction.reply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle('Champions League · Status').setDescription(`Status **${state.status}**\nRound **${state.round}**\nOpponent **${state.opponent}**\nAggregate **${state.aggregate}**`).setFooter({ text: 'Gunakan /champions action:play untuk memainkan ronde.' })] });
+        await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle('Champions League · Status').setDescription(`Status **${state.status}**\nRound **${state.round}**\nOpponent **${state.opponent}**\nAggregate **${state.aggregate}**`).setFooter({ text: 'Gunakan /champions action:play untuk memainkan ronde.' })] });
       }
       return;
     }
@@ -274,7 +276,7 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
       if (!profile) return;
       const enriched = syncAchievements(profile);
       await store.save(enriched);
-      await interaction.reply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle('Achievements').setDescription(formatAchievements(enriched))] });
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle('Achievements').setDescription(formatAchievements(enriched))] });
       return;
     }
 
@@ -284,7 +286,7 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
       const achievementId = interaction.options.getString('achievement', true);
       const result = claimAchievement(profile, achievementId);
       await store.save(result.profile);
-      await interaction.reply(`Achievement **${result.achievement.title}** diklaim: **${formatMoney(result.achievement.rewardMoney)} money** dan **${result.achievement.rewardExp} EXP**.`);
+      await interaction.editReply(`Achievement **${result.achievement.title}** diklaim: **${formatMoney(result.achievement.rewardMoney)} money** dan **${result.achievement.rewardExp} EXP**.`);
       return;
     }
 
@@ -294,22 +296,81 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
       const profiles = await store.all();
       if (action === 'stats') {
         const averageLevel = profiles.length ? profiles.reduce((sum, profile) => sum + profile.level, 0) / profiles.length : 0;
-        await interaction.reply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle('Bot Operations').setDescription(`Profiles **${profiles.length}**\nAverage player level **${averageLevel.toFixed(2)}**\nPersistence **${process.env.DATABASE_URL ? 'PostgreSQL' : 'JSON'}**\nNode environment **${process.env.NODE_ENV ?? 'development'}**`)] });
+        await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle('Bot Operations').setDescription(`Profiles **${profiles.length}**\nAverage player level **${averageLevel.toFixed(2)}**\nPersistence **${process.env.DATABASE_URL ? 'PostgreSQL' : 'JSON'}**\nNode environment **${process.env.NODE_ENV ?? 'development'}**`)] });
       } else if (action === 'refresh-markets') {
-        for (const profile of profiles) await store.save(refreshMarket(profile));
-        await interaction.reply(`Market refreshed untuk **${profiles.length}** profile(s).`);
+        for (const profile of profiles) await store.save(refreshMarket(profile, new Date(), true));
+        await interaction.editReply(`Market refreshed untuk **${profiles.length}** profile(s).`);
       }
       return;
     }
 
     if (command === 'help') {
-      await interaction.reply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle('Football Rising Star — Panduan').setDescription('Bangun karier pemain dan kelola klub melalui dua loop gameplay.').addFields({ name: 'Career', value: '`/start`, `/profile`, `/train`, `/match`, `/league`' }, { name: 'Club', value: '`/club`, `/squad`, `/formation`, `/tactic`, `/club-match`, `/standings`, `/season-end`' }, { name: 'Economy & events', value: '`/daily`, `/event`, `/market`, `/buy-player`, `/sell-player`' }, { name: 'Production roadmap', value: 'Tinggal menambahkan database production, admin seed, Champions League detail, achievements, contracts, dan kalibrasi formula resmi.' })] });
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle('Football Rising Star — Panduan').setDescription('Bangun karier pemain dan kelola klub melalui dua loop gameplay.').addFields({ name: 'Career', value: '`/start`, `/profile`, `/train`, `/match`, `/league`' }, { name: 'Club', value: '`/club`, `/squad`, `/formation`, `/tactic`, `/club-match`, `/standings`, `/season-end`' }, { name: 'Economy & events', value: '`/daily`, `/event`, `/market`, `/buy-player`, `/sell-player`' }, { name: 'Production roadmap', value: 'Tinggal menambahkan database production, admin seed, Champions League detail, achievements, contracts, dan kalibrasi formula resmi.' })] });
       return;
     }
 
-    await interaction.reply({ content: 'Command belum dikenali.', ephemeral: true });
+    await interaction.editReply({ content: 'Command belum dikenali.' });
   } catch (error) {
     log('error', 'command_failed', { command, userId: interaction.user.id, error });
+    const message = error instanceof Error ? error.message : 'Terjadi kesalahan internal.';
+    if (interaction.replied || interaction.deferred) await interaction.followUp({ content: message, ephemeral: true });
+    else await interaction.editReply({ content: message });
+  }
+}
+
+
+function componentOwner(customId: string, userId: string): string {
+  const [namespace, ownerId, action] = customId.split(':');
+  if (namespace !== 'frs' || ownerId !== userId || !action) throw new Error('Komponen ini bukan milik profile Anda. Jalankan command dari profile Anda sendiri.');
+  return action;
+}
+
+export async function handleComponent(interaction: ButtonInteraction | StringSelectMenuInteraction, store: PlayerStore): Promise<void> {
+  try {
+    const action = componentOwner(interaction.customId, interaction.user.id);
+    await interaction.deferReply({ ephemeral: true });
+    const profile = await store.get(interaction.user.id);
+    if (!profile) throw new Error('Profil belum dibuat. Jalankan `/start position:<GK|DF|MF|FW>` terlebih dahulu.');
+
+    if (action === 'profile') {
+      const enriched = ensureClubState(recoverPlayer(profile));
+      await store.save(enriched);
+      await interaction.editReply({ embeds: [profileEmbed(enriched)], components: careerControls(interaction.user.id) });
+      return;
+    }
+
+    if (action === 'train') {
+      await interaction.editReply({ content: 'Pilih ability yang ingin dilatih.', components: trainingControls(interaction.user.id) });
+      return;
+    }
+
+    if (action === 'train-select' && interaction.isStringSelectMenu()) {
+      const ability = interaction.values[0] as AbilityId;
+      const result = trainPlayer(profile, ability);
+      await store.save(result.profile);
+      await interaction.editReply({ content: `**${formatAbility(result.ability)}** naik dari **${result.statBefore}** menjadi **${result.statAfter}**. EXP: **${result.expGained}**.`, components: careerControls(interaction.user.id) });
+      return;
+    }
+
+    if (action === 'match') {
+      const result = playMatch(profile);
+      await store.save(result.profile);
+      const outcomeLabel = result.record.outcome === 'WIN' ? 'VICTORY' : result.record.outcome === 'DRAW' ? 'DRAW' : 'DEFEAT';
+      await interaction.editReply({ content: `**${outcomeLabel}** · ${result.profile.club} ${result.record.playerGoals}–${result.record.opponentGoals} ${result.record.opponent}\n${result.narrative.join('\n')}\nReward: ${formatMoney(result.record.rewards.money)} money / ${result.record.rewards.exp} EXP.`, components: careerControls(interaction.user.id) });
+      return;
+    }
+
+    if (action === 'club') {
+      const enriched = ensureClubState(profile);
+      await store.save(enriched);
+      const club = enriched.clubState!;
+      await interaction.editReply({ content: `**${club.name} · Club Office**\nRating ${getClubRating(enriched)} · Level ${club.level}\nFormation ${club.formation} · Tactic ${TACTICS[club.tactic].name}\nPrestige ${club.prestige} · Assets ${formatMoney(club.assets)}`, components: careerControls(interaction.user.id) });
+      return;
+    }
+
+    throw new Error('Aksi komponen tidak dikenali.');
+  } catch (error) {
+    log('error', 'component_failed', { component: interaction.customId, userId: interaction.user.id, error });
     const message = error instanceof Error ? error.message : 'Terjadi kesalahan internal.';
     if (interaction.replied || interaction.deferred) await interaction.followUp({ content: message, ephemeral: true });
     else await interaction.reply({ content: message, ephemeral: true });

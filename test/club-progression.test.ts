@@ -14,6 +14,8 @@ test('official club data exposes league 1011 and supports club transfer', () => 
   profile = joinOfficialClub(profile, target.id, new Date('2026-01-01T00:00:00.000Z'));
   assert.equal(profile.clubState?.officialId, target.id);
   assert.equal(profile.clubState?.provenance, 'RECOVERY_VERIFIED');
+  assert.equal(profile.ledger?.[0]?.type, 'TRANSFER_FEE');
+  assert.equal(profile.ledger?.[0]?.amount, -Math.max(250, Math.round(target.salaryBase / 100)));
 });
 
 test('recovery data seeds an official club and roster names', () => {
@@ -53,17 +55,21 @@ test('daily reward enforces one claim per day and streaks on consecutive days', 
 });
 
 test('daily event can be resolved and writes a reward', () => {
-  const profile = generateDailyEvent(createInitialProfile('event-1', 'Event', 'DF'), new Date('2026-01-01T00:00:00.000Z'), new SeededRandom(2));
+  const profile = ensureClubState(generateDailyEvent(createInitialProfile('event-1', 'Event', 'DF'), new Date('2026-01-01T00:00:00.000Z'), new SeededRandom(2)), new Date('2026-01-01T00:00:00.000Z'), new SeededRandom(3));
   const choice = profile.event!.choices[0];
+  const moraleBefore = profile.clubState!.roster.find((player) => player.isUserPlayer)!.morale;
   const result = resolveDailyEvent(profile, choice.id, new Date('2026-01-01T01:00:00.000Z'));
+  const moraleAfter = result.profile.clubState!.roster.find((player) => player.isUserPlayer)!.morale;
   assert.equal(result.profile.event?.resolved, true);
   assert.equal(result.profile.totalExp >= choice.rewardExp, true);
+  assert.equal(moraleAfter, Math.min(100, moraleBefore + choice.moraleDelta));
 });
 
 test('market refresh supports buying and selling non-user players', () => {
   let profile = ensureClubState(createInitialProfile('market-1', 'Market', 'DF'), new Date('2026-01-01T00:00:00.000Z'), new SeededRandom(4));
   profile.money = 5_000;
   profile = refreshMarket(profile, new Date('2026-01-01T00:00:00.000Z'));
+  assert.throws(() => refreshMarket(profile, new Date('2026-01-01T01:00:00.000Z')), /refresh lagi/);
   const listing = profile.market![0];
   const bought = buyMarketPlayer(profile, listing.id, new Date('2026-01-01T01:00:00.000Z'));
   assert.equal(bought.profile.clubState?.roster.some((player) => player.id === listing.player.id), true);

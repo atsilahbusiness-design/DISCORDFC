@@ -1,4 +1,4 @@
-import { SlashCommandBuilder } from 'discord.js';
+import { PermissionFlagsBits, SlashCommandBuilder } from 'discord.js';
 
 export const commandDefinitions = [
   new SlashCommandBuilder()
@@ -70,6 +70,6 @@ export const commandDefinitions = [
   new SlashCommandBuilder().setName('champions').setDescription('Lihat atau mainkan Champions League').addStringOption((option) => option.setName('action').setDescription('Aksi').setRequired(false).addChoices({ name: 'Status', value: 'status' }, { name: 'Play', value: 'play' })),
   new SlashCommandBuilder().setName('achievements').setDescription('Lihat achievement dan progress'),
   new SlashCommandBuilder().setName('claim-achievement').setDescription('Klaim achievement yang sudah selesai').addStringOption((option) => option.setName('achievement').setDescription('ID achievement').setRequired(true)),
-  new SlashCommandBuilder().setName('admin').setDescription('Admin maintenance command').addStringOption((option) => option.setName('action').setDescription('Aksi admin').setRequired(true).addChoices({ name: 'Stats', value: 'stats' }, { name: 'Refresh all markets', value: 'refresh-markets' })),
+  new SlashCommandBuilder().setName('admin').setDescription('Admin maintenance command').setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild.toString()).addStringOption((option) => option.setName('action').setDescription('Aksi admin').setRequired(true).addChoices({ name: 'Stats', value: 'stats' }, { name: 'Refresh all markets', value: 'refresh-markets' })),
   new SlashCommandBuilder().setName('help').setDescription('Lihat panduan command bot')
 ].map((command) => command.toJSON());

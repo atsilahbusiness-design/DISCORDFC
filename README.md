@@ -13,14 +13,14 @@ Proyek ini mengembangkan Football Rising Star menjadi pengalaman game berbasis D
 | Competition | Fixture, matchday, standings, promotion-ready season loop, Champions League knockout state |
 | Economy | Money, atomic economy ledger, salary, contract, market listing, buy/sell player |
 | Progression | Daily reward streak, daily event choices, achievements, MVP, season scoring |
-| Production | PostgreSQL store, schema migration, JSON-to-PostgreSQL import, Docker image, Compose stack, rate limiter, admin stats |
+| Production | PostgreSQL store dengan optimistic concurrency, schema migration, JSON-to-PostgreSQL import, Docker image, Compose stack, rate limiter, per-user command queue, structured logging, admin stats |
 
 ## Slash commands
 
 | Command | Fungsi |
 | --- | --- |
 | `/start position:FW` | Membuat profil pemain dan klub awal |
-| `/profile` | Melihat atribut, kondisi, contract, club rating, dan career stats |
+| `/profile` | Melihat atribut, kondisi, contract, club rating, career stats, dan dashboard tombol interaktif |
 | `/train ability:technique` | Melatih ability dan mengonsumsi energy |
 | `/match` | Memainkan pertandingan karier pemain |
 | `/club` | Melihat club office, resources, strategy, dan next fixture |
@@ -46,6 +46,8 @@ Proyek ini mengembangkan Football Rising Star menjadi pengalaman game berbasis D
 | `/admin action:stats` | Statistik operasi, hanya untuk `ADMIN_USER_IDS` |
 | `/admin action:refresh-markets` | Refresh market semua profil, hanya admin |
 | `/help` | Melihat bantuan command |
+
+Setelah `/start` atau `/profile`, dashboard menyediakan tombol **Profile**, **Train**, **Play match**, dan **Club office**. Tombol serta training select terikat pada Discord user pemilik profile sehingga tidak dapat dipakai user lain.
 
 ## Data client 2.8.0
 
@@ -87,13 +89,10 @@ pnpm start
 
 ## Menjalankan dengan PostgreSQL dan Docker
 
-Compose menyediakan service PostgreSQL lokal dan bot. Ubah password contoh pada `compose.yaml` sebelum dipakai di lingkungan bersama. Setelah `.env` berisi token Discord:
+Compose menyediakan service PostgreSQL lokal dan bot. Isi `POSTGRES_PASSWORD` yang kuat di `.env`; bot akan menjalankan migration schema secara otomatis sebelum gateway Discord dinyalakan. Setelah `.env` berisi token Discord:
 
 ```bash
-docker compose up -d db
-docker compose build bot
-docker compose run --rm bot node dist/storage/migrate.js
-docker compose up -d bot
+docker compose up -d --build
 ```
 
 Untuk database managed, gunakan `DATABASE_URL` provider tersebut dan jalankan migration dari environment yang dapat mengakses database. Import data JSON lama dapat dilakukan dengan `pnpm db:import-json` setelah `DATABASE_URL` dan `DATA_FILE` diatur.
@@ -107,7 +106,7 @@ pnpm build
 pnpm test
 ```
 
-Test suite saat ini berisi **15 test lulus dan 0 gagal**, mencakup career, club, fixture, standings, daily streak, event, market, transfer, contract, Champions League, achievements, rate limiter, persistence JSON, dan konfigurasi balance.
+Test suite saat ini berisi **22 test lulus dan 0 gagal**, mencakup career, club, fixture, standings, daily streak, event morale, market cooldown/transfer guard, contract, Champions League, achievements, rate limiter, command queue, interactive components, persistence JSON, dan konfigurasi balance.
 
 Nilai gameplay yang masih bersifat sementara berada pada `src/config/game-balance.ts`. Config menyimpan biaya training/match, recovery, reward, peluang gol, versi balance, dan provenance. Saat formula internal sudah tervalidasi, ubah `source` menjadi `OFFICIAL_CALIBRATED`, tambahkan golden tests, dan catat sumber kalibrasi di `docs/PORTING_MAP.md`.
 
@@ -115,7 +114,7 @@ Nilai gameplay yang masih bersifat sementara berada pada `src/config/game-balanc
 
 Bot Discord membutuhkan proses yang berjalan terus-menerus. Komputer kantor/server yang sudah tersedia cocok untuk internal testing. Hosting Node.js managed atau VPS lebih cocok untuk operasi publik karena dapat menjalankan restart policy, database terpisah, monitoring, backup, dan secret management. Minimal production hardening yang masih direkomendasikan adalah backup PostgreSQL, TLS pada database managed, structured logging, error alerting, command audit log, dan pemisahan admin user ID dari source code.
 
-Command `/admin` dibatasi oleh `ADMIN_USER_IDS`. Rate limiter default membatasi satu user sampai 12 command per 60 detik pada satu proses. Untuk deployment multi-instance, rate limiter perlu dipindahkan ke Redis atau database agar konsisten antar-instance.
+Command `/admin` dibatasi oleh native Discord `Manage Guild` permission dan `ADMIN_USER_IDS`. Rate limiter default membatasi satu user sampai 12 interaction per 60 detik pada satu proses. Command mutation user yang sama diserialisasi oleh per-user queue dan PostgreSQL menggunakan optimistic concurrency. Untuk deployment multi-instance, rate limiter dan queue perlu dipindahkan ke Redis atau database agar konsisten antar-instance.
 
 ## Batasan parity dengan game asli
 
@@ -127,3 +126,5 @@ Fase kalibrasi berikutnya sebaiknya memakai source/config/backend internal yang 
 
 [1]: https://github.com/atsilahbusiness-design/DISCORDFC "Repository DISCORDFC"
 [2]: https://docs.discord.com/developers/topics/oauth2 "Discord Developer Documentation — OAuth2"
+
+Riset dan roadmap internal: `docs/RESEARCH_NOTES.md`, `docs/PROFESSIONAL_ROADMAP.md`, dan `docs/BALANCE_SNAPSHOT.md`.

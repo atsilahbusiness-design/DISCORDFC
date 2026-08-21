@@ -140,6 +140,7 @@ export function createInitialProfile(userId: string, displayName: string, positi
   const timestamp = isoNow(now);
   const stats = structuredClone(DEFAULT_STATS[position]);
   return {
+    version: 0,
     userId,
     displayName,
     createdAt: timestamp,

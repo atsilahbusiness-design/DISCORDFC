@@ -198,6 +198,7 @@ export interface EconomyLedgerEntry {
 }
 
 export interface PlayerProfile {
+  version?: number;
   userId: string;
   displayName: string;
   createdAt: string;
@@ -226,6 +227,7 @@ export interface PlayerProfile {
   contract?: ContractState;
   achievements?: AchievementState[];
   market?: MarketListing[];
+  marketUpdatedAt?: string;
   ledger?: EconomyLedgerEntry[];
 }
 

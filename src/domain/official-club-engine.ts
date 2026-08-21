@@ -14,6 +14,9 @@ export function joinOfficialClub(profileInput: PlayerProfile, officialClubId: nu
   if (profile.clubState && profile.clubState.officialId === club.id) throw new Error('Pemain sudah berada di klub tersebut.');
   if (profile.money < transferFee) throw new Error(`Money tidak cukup. Biaya perpindahan: ${transferFee}.`);
   profile.money -= transferFee;
+  profile.ledger ??= [];
+  profile.ledger.unshift({ id: `${profile.userId}-TRANSFER_FEE-${now.getTime()}-${profile.ledger.length}`, createdAt: now.toISOString(), type: 'TRANSFER_FEE', amount: -transferFee, balanceAfter: profile.money, note: `Pindah ke ${club.nameEn}` });
+  profile.ledger = profile.ledger.slice(0, 100);
   profile.club = club.nameEn;
   profile.contract = undefined;
   profile.clubState = undefined;

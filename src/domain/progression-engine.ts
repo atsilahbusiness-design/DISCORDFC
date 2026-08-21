@@ -7,6 +7,10 @@ function clone<T>(value: T): T {
   return structuredClone(value);
 }
 
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
 function dayKey(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
@@ -91,6 +95,8 @@ export function resolveDailyEvent(profileInput: PlayerProfile, choiceId: string,
   if (choice.cost > 0) ledger(profile, 'EVENT_COST', -choice.cost, `Cost event ${profile.event.eventId}`, now);
   if (choice.rewardMoney > 0) ledger(profile, 'EVENT_REWARD', choice.rewardMoney, `Reward event ${profile.event.eventId}`, now);
   profile.totalExp += choice.rewardExp;
+  const userPlayer = profile.clubState?.roster.find((player) => player.isUserPlayer);
+  if (userPlayer) userPlayer.morale = clamp(userPlayer.morale + choice.moraleDelta, 0, 100);
   profile.event.resolved = true;
   profile.updatedAt = now.toISOString();
   profile.lastActionAt = now.toISOString();
@@ -119,9 +125,15 @@ function marketPlayer(id: string, name: string, position: ClubPlayer['position']
   return { id: `listing-${id}`, sellerUserId: 'system-market', player, price, status: 'OPEN', createdAt: now.toISOString() };
 }
 
-export function refreshMarket(profileInput: PlayerProfile, now = new Date()): PlayerProfile {
+export function refreshMarket(profileInput: PlayerProfile, now = new Date(), force = false): PlayerProfile {
   const profile = clone(profileInput);
+  const cooldownMs = 6 * 60 * 60 * 1_000;
+  if (!force && profile.market?.length && profile.marketUpdatedAt) {
+    const elapsed = now.getTime() - new Date(profile.marketUpdatedAt).getTime();
+    if (elapsed < cooldownMs) throw new Error(`Market baru dapat di-refresh lagi dalam ${Math.ceil((cooldownMs - elapsed) / 3_600_000)} jam.`);
+  }
   profile.market = SEED_MARKET_PLAYERS.map((player) => marketPlayer(player.id, player.name, player.position, player.overall, player.price, now));
+  profile.marketUpdatedAt = now.toISOString();
   profile.updatedAt = now.toISOString();
   return profile;
 }
@@ -132,6 +144,8 @@ export function buyMarketPlayer(profileInput: PlayerProfile, listingId: string, 
   const listing = profile.market.find((item) => item.id === listingId && item.status === 'OPEN');
   if (!listing) throw new Error('Listing tidak ditemukan atau sudah tidak tersedia.');
   if (profile.money < listing.price) throw new Error('Money tidak cukup untuk membeli pemain ini.');
+  if (profile.clubState!.roster.some((player) => player.id === listing.player.id)) throw new Error('Pemain tersebut sudah berada di roster Anda.');
+  if (profile.clubState!.roster.length >= 32) throw new Error('Roster sudah penuh. Jual pemain non-user sebelum membeli pemain baru.');
   ledger(profile, 'TRANSFER_BUY', -listing.price, `Membeli ${listing.player.name}`, now);
   listing.status = 'SOLD';
   listing.buyerUserId = profile.userId;
