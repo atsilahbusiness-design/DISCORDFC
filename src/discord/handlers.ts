@@ -6,6 +6,7 @@ import { claimAchievement, formatAchievements, playChampionsLeague, startChampio
 import { formatContract, getContractStatus, renewContract, signContract } from '../domain/contract-engine.js';
 import { ABILITY_LABELS, FORMATIONS, POSITION_LABELS, TACTICS, type AbilityId, type PlayerProfile, type Position } from '../domain/types.js';
 import type { PlayerStore } from '../storage/json-store.js';
+import { log } from '../observability/logger.js';
 
 const BRAND_COLOR: ColorResolvable = '#1f8b4c';
 const ADMIN_USER_IDS = new Set((process.env.ADMIN_USER_IDS ?? '').split(',').map((value) => value.trim()).filter(Boolean));
@@ -289,6 +290,7 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
 
     await interaction.reply({ content: 'Command belum dikenali.', ephemeral: true });
   } catch (error) {
+    log('error', 'command_failed', { command, userId: interaction.user.id, error });
     const message = error instanceof Error ? error.message : 'Terjadi kesalahan internal.';
     if (interaction.replied || interaction.deferred) await interaction.followUp({ content: message, ephemeral: true });
     else await interaction.reply({ content: message, ephemeral: true });
