@@ -112,6 +112,16 @@ export interface CompetitionStanding {
   points: number;
 }
 
+export interface ContractState {
+  id: string;
+  clubId: string;
+  salary: number;
+  beginTime: string;
+  endTime: string;
+  state: 'ACTIVE' | 'EXPIRED' | 'REJECTED';
+  type: 'INITIAL' | 'RENEWAL' | 'TRANSFER';
+}
+
 export interface ChampionsLeagueState {
   season: number;
   round: number;
@@ -209,6 +219,7 @@ export interface PlayerProfile {
   daily?: DailyState;
   event?: EventState;
   championsLeague?: ChampionsLeagueState;
+  contract?: ContractState;
   achievements?: AchievementState[];
   market?: MarketListing[];
   ledger?: EconomyLedgerEntry[];

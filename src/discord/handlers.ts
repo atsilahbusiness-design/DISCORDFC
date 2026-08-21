@@ -3,6 +3,7 @@ import { createInitialProfile, formatAbility, getRating, playMatch, recoverPlaye
 import { ensureClubState, finishSeason, formatClubStanding, getClubRating, getNextClubFixture, playClubMatch, setClubFormation, setClubTactic } from '../domain/club-engine.js';
 import { buyMarketPlayer, claimDailyReward, formatMoney, generateDailyEvent, refreshMarket, resolveDailyEvent, sellClubPlayer } from '../domain/progression-engine.js';
 import { claimAchievement, formatAchievements, playChampionsLeague, startChampionsLeague, syncAchievements } from '../domain/competition-engine.js';
+import { formatContract, getContractStatus, renewContract, signContract } from '../domain/contract-engine.js';
 import { ABILITY_LABELS, FORMATIONS, POSITION_LABELS, TACTICS, type AbilityId, type PlayerProfile, type Position } from '../domain/types.js';
 import type { PlayerStore } from '../storage/json-store.js';
 
@@ -212,6 +213,22 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
       const result = sellClubPlayer(profile, playerId);
       await store.save(result.profile);
       await interaction.reply(`**${result.player.name}** dijual dengan harga **${formatMoney(result.price)}**.`);
+      return;
+    }
+
+    if (command === 'contract') {
+      const profile = await requireProfile(interaction, store);
+      if (!profile) return;
+      const action = interaction.options.getString('action') ?? 'view';
+      const current = getContractStatus(profile);
+      if (action === 'sign') {
+        if (current?.state === 'ACTIVE') throw new Error('Kontrak masih aktif.');
+        const updated = current?.state === 'EXPIRED' ? renewContract(profile) : signContract(profile);
+        await store.save(updated);
+        await interaction.reply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle('Contract updated').setDescription(formatContract(updated.contract))] });
+      } else {
+        await interaction.reply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle('Player contract').setDescription(formatContract(current))] });
+      }
       return;
     }
 

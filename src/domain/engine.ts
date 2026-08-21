@@ -1,3 +1,4 @@
+import { GAME_BALANCE } from '../config/game-balance.js';
 import {
   ABILITY_LABELS,
   type AbilityId,
@@ -47,10 +48,10 @@ const DEFAULT_STATS: Record<Position, PlayerStats> = {
 };
 
 const ABILITIES: AbilityId[] = ['atk', 'def', 'speed', 'power', 'strength', 'technique'];
-const TRAINING_COST = 15;
-const MATCH_ENERGY_COST = 20;
-const MATCH_HP_COST = 8;
-const MAX_MATCH_GOALS = 5;
+const TRAINING_COST = GAME_BALANCE.training.energyCost;
+const MATCH_ENERGY_COST = GAME_BALANCE.match.energyCost;
+const MATCH_HP_COST = GAME_BALANCE.match.hpCost;
+const MAX_MATCH_GOALS = GAME_BALANCE.match.maxGoals;
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
@@ -76,8 +77,8 @@ function recover(profile: PlayerProfile, now: Date): void {
   const elapsedMs = Math.max(0, now.getTime() - new Date(profile.lastActionAt).getTime());
   const elapsedHours = Math.floor(elapsedMs / 3_600_000);
   if (elapsedHours <= 0) return;
-  profile.hp = clamp(profile.hp + elapsedHours * 2, 0, profile.maxHp);
-  profile.energy = clamp(profile.energy + elapsedHours * 10, 0, profile.maxEnergy);
+  profile.hp = clamp(profile.hp + elapsedHours * GAME_BALANCE.recovery.hpPerHour, 0, profile.maxHp);
+  profile.energy = clamp(profile.energy + elapsedHours * GAME_BALANCE.recovery.energyPerHour, 0, profile.maxEnergy);
 }
 
 function calculateRating(profile: PlayerProfile): number {
@@ -96,8 +97,8 @@ function calculateRating(profile: PlayerProfile): number {
 function simulateGoals(attack: number, defence: number, rng: RandomSource): number {
   const pressure = clamp(0.65 + (attack - defence) / 90, 0.2, 1.5);
   let goals = 0;
-  for (let attempt = 0; attempt < 5; attempt += 1) {
-    const chance = clamp(0.13 * pressure + attempt * 0.015, 0.04, 0.32);
+  for (let attempt = 0; attempt < GAME_BALANCE.competition.attemptsPerTeam; attempt += 1) {
+    const chance = clamp(GAME_BALANCE.competition.baseGoalChance * pressure + attempt * 0.015, 0.04, GAME_BALANCE.competition.maxGoalChance);
     if (rng.next() < chance) goals += 1;
   }
   return Math.min(MAX_MATCH_GOALS, goals);
@@ -193,7 +194,7 @@ export function trainPlayer(profileInput: PlayerProfile, ability: AbilityId, now
 
   const state = profile.abilities[ability];
   const statBefore = profile.stats[ability];
-  const expGained = 18 + Math.floor(rng.next() * 13);
+  const expGained = GAME_BALANCE.training.expMin + Math.floor(rng.next() * (GAME_BALANCE.training.expMaxExclusive - GAME_BALANCE.training.expMin));
   profile.energy -= TRAINING_COST;
   state.exp += expGained;
   profile.totalExp += expGained;
@@ -229,8 +230,8 @@ export function playMatch(profileInput: PlayerProfile, now = new Date(), rng: Ra
   const opponentGoals = simulateGoals(opponentRating, playerRating + 2, rng);
   const outcome = outcomeFromScore(playerGoals, opponentGoals);
   const playerScore = clamp(5.5 + (playerGoals - opponentGoals) * 0.45 + rng.next() * 1.1, 4, 9.8);
-  const exp = outcome === 'WIN' ? 42 : outcome === 'DRAW' ? 30 : 22;
-  const money = outcome === 'WIN' ? 220 : outcome === 'DRAW' ? 140 : 90;
+  const exp = outcome === 'WIN' ? GAME_BALANCE.match.rewardExp.win : outcome === 'DRAW' ? GAME_BALANCE.match.rewardExp.draw : GAME_BALANCE.match.rewardExp.loss;
+  const money = outcome === 'WIN' ? GAME_BALANCE.match.rewardMoney.win : outcome === 'DRAW' ? GAME_BALANCE.match.rewardMoney.draw : GAME_BALANCE.match.rewardMoney.loss;
   const opponent = `Club ${String.fromCharCode(65 + ((profile.league.matchday - 1) % 26))}`;
   const record: MatchRecord = {
     id: `${profile.userId}-${now.getTime()}`,

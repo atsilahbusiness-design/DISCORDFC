@@ -1,100 +1,121 @@
 # Football Rising Star Discord Bot
 
-Bot Discord ini adalah **MVP porting fungsional** dari konsep Football Rising Star ke interaksi berbasis slash command. Repository target sebelumnya kosong, sehingga fondasi proyek dibuat dari awal dengan pemisahan antara engine game, penyimpanan state, dan adapter Discord.
+Proyek ini mengembangkan Football Rising Star menjadi pengalaman game berbasis Discord. Versi sekarang sudah melampaui MVP awal: pemain dapat membangun karier, berlatih, memainkan pertandingan, mengelola klub, mengubah formasi dan taktik, mengikuti musim, menjalankan transfer market, mengambil daily reward, menyelesaikan event, menandatangani kontrak, mengejar achievement, dan mengikuti jalur Champions League.
 
-> Arsip game yang tersedia merupakan build Unity IL2CPP hasil recovery, bukan source C# asli. Karena itu, implementasi ini meniru struktur domain dan alur gameplay yang terlihat dari `dump.cs`, bukan menyalin binary atau mengklaim kesamaan formula numerik 1:1.
+> Paket recovery yang tersedia adalah build Unity IL2CPP, bukan source C# dan backend asli. Karena itu, proyek ini membangun ulang loop game dan kontrak domain yang terlihat dari recovery. Formula yang belum dapat dibaca atau divalidasi dari binary diberi konfigurasi terpusat dan ditandai sebagai `RECOVERY_INFERRED`, bukan diklaim identik 1:1.
 
-## Fitur MVP
+## Fitur yang tersedia
 
-MVP saat ini menyediakan onboarding profil pemain dengan posisi GK/DF/MF/FW, atribut dasar yang berbeda berdasarkan posisi, ability dan level, training yang mengonsumsi energi, pemulihan HP/energi berbasis waktu, simulasi pertandingan deterministik-seeded, hadiah money/EXP, statistik karier, dan progres musim pribadi. State profil disimpan secara atomik dalam `data/players.json` agar tetap tersedia setelah restart bot.
+| Area | Fitur |
+| --- | --- |
+| Career | Profil GK/DF/MF/FW, ability, level, EXP, training, HP, energy, player match, reward, career stats |
+| Club | Roster, squad rating, formation 4-4-2/4-3-3/3-5-2/5-3-2, tactics balanced/attacking/defensive/counter, assets, prestige |
+| Competition | Fixture, matchday, standings, promotion-ready season loop, Champions League knockout state |
+| Economy | Money, atomic economy ledger, salary, contract, market listing, buy/sell player |
+| Progression | Daily reward streak, daily event choices, achievements, MVP, season scoring |
+| Production | PostgreSQL store, schema migration, JSON-to-PostgreSQL import, Docker image, Compose stack, rate limiter, admin stats |
+
+## Slash commands
 
 | Command | Fungsi |
 | --- | --- |
-| `/start position:FW` | Membuat profil pemain baru |
-| `/profile` | Melihat rating, kondisi, ability, dan statistik karier |
-| `/train ability:technique` | Melatih satu ability dan memperoleh EXP |
-| `/match` | Memainkan pertandingan berikutnya dan memperoleh reward |
-| `/league` | Melihat season, matchday, poin, rekor, dan gol |
-| `/help` | Melihat panduan singkat |
+| `/start position:FW` | Membuat profil pemain dan klub awal |
+| `/profile` | Melihat atribut, kondisi, contract, club rating, dan career stats |
+| `/train ability:technique` | Melatih ability dan mengonsumsi energy |
+| `/match` | Memainkan pertandingan karier pemain |
+| `/club` | Melihat club office, resources, strategy, dan next fixture |
+| `/squad` | Melihat roster dan ID pemain |
+| `/formation id:4-3-3` | Mengubah formasi klub |
+| `/tactic id:attacking` | Mengubah taktik klub |
+| `/club-match` | Memainkan fixture klub dan memperbarui standings |
+| `/league` atau `/standings` | Melihat klasemen dan progres season |
+| `/season-end` | Memulai season berikutnya setelah seluruh fixture selesai |
+| `/contract action:sign` | Menandatangani atau memperpanjang kontrak |
+| `/daily` | Mengambil daily reward dan menaikkan streak |
+| `/event` | Melihat event harian |
+| `/event choice:accept` | Menyelesaikan pilihan event |
+| `/market action:refresh` | Membuat daftar pemain market |
+| `/buy-player listing:listing-market-1` | Membeli pemain dari market |
+| `/sell-player player:npc-1` | Menjual pemain non-user dari roster |
+| `/champions action:status` | Melihat status Champions League |
+| `/champions action:play` | Memainkan ronde Champions League |
+| `/achievements` | Melihat progress achievement |
+| `/claim-achievement achievement:appearances-10` | Mengklaim achievement yang siap |
+| `/admin action:stats` | Statistik operasi, hanya untuk `ADMIN_USER_IDS` |
+| `/admin action:refresh-markets` | Refresh market semua profil, hanya admin |
+| `/help` | Melihat bantuan command |
 
 ## Arsitektur
 
-Engine pada `src/domain/engine.ts` tidak bergantung pada Discord sehingga dapat diuji dan dikalibrasi secara mandiri. `src/storage/json-store.ts` bertanggung jawab atas persistence MVP. `src/discord/handlers.ts` menerjemahkan slash command menjadi operasi domain dan embed Discord. `src/discord/register-commands.ts` mendaftarkan command ke guild tertentu ketika `DISCORD_GUILD_ID` tersedia, atau secara global jika tidak tersedia.
+Engine domain berada di `src/domain/` dan tidak bergantung pada Discord. `engine.ts` menangani career player, training, recovery, dan player match. `club-engine.ts` menangani roster, formation, tactics, fixtures, standings, dan club match. `competition-engine.ts` menangani Champions League dan achievements. `progression-engine.ts` menangani daily reward, event, market, transfer, dan economy ledger. `contract-engine.ts` menangani kontrak. `src/discord/handlers.ts` menjadi adapter interaction Discord.
 
-Struktur proyek utama adalah sebagai berikut:
-
-```text
-src/
-  domain/
-    engine.ts             # Profile, training, recovery, match, league
-    types.ts              # Kontrak data domain
-  discord/
-    commands.ts           # Slash command definitions
-    handlers.ts           # Discord interaction adapter
-    register-commands.ts  # Command registration
-  storage/
-    json-store.ts         # Atomic JSON persistence
-  index.ts                # Bot entry point
-test/
-  engine.test.ts          # 5 automated tests
-data/
-  .gitkeep                # Runtime state is intentionally ignored
-```
+Persistence memiliki dua mode. Tanpa `DATABASE_URL`, bot memakai `JsonPlayerStore` untuk development lokal. Dengan `DATABASE_URL`, bot memakai `PostgresPlayerStore`. Schema disediakan pada `src/storage/schema.sql`; script migration dan import JSON berada pada `src/storage/migrate.ts` dan `src/storage/import-json.ts`.
 
 ## Menjalankan secara lokal
 
-Pastikan Node.js 22 atau versi yang lebih baru tersedia. Kemudian instal dependensi dan salin environment template:
+Pastikan Node.js 22 atau versi yang lebih baru tersedia. Instal dependency dan buat environment file:
 
 ```bash
 pnpm install
 cp .env.example .env
 ```
 
-Isi `DISCORD_TOKEN` dengan token bot dan `DISCORD_CLIENT_ID` dengan application ID. Untuk pengujian cepat pada satu server, isi `DISCORD_GUILD_ID`; command guild akan diperbarui lebih cepat daripada command global. Jalankan registrasi command dan bot:
+Isi sekurang-kurangnya `DISCORD_TOKEN` dan `DISCORD_CLIENT_ID`. Untuk pengujian cepat pada satu server, isi `DISCORD_GUILD_ID`. Isi `ADMIN_USER_IDS` dengan Discord user ID admin yang dipisahkan koma apabila command admin akan digunakan.
+
+Mode JSON development:
 
 ```bash
+# kosongkan DATABASE_URL pada .env
 pnpm commands:register
 pnpm dev
 ```
 
-Untuk build production:
+Build production:
 
 ```bash
 pnpm build
 pnpm start
 ```
 
-Aplikasi Discord dibuat melalui Developer Portal Discord. Pada saat mengundang bot ke server, gunakan scope `bot` dan `applications.commands`; dokumentasi OAuth2 Discord menjelaskan bahwa `applications.commands` memungkinkan aplikasi menambahkan command ke guild dan tercakup secara default dalam scope bot [1].
+## Menjalankan dengan PostgreSQL dan Docker
 
-## Pengujian
-
-Test engine dapat dijalankan tanpa token Discord:
+Compose menyediakan service PostgreSQL lokal dan bot. Ubah password contoh pada `compose.yaml` sebelum dipakai di lingkungan bersama. Setelah `.env` berisi token Discord:
 
 ```bash
+docker compose up -d db
+docker compose build bot
+docker compose run --rm bot node dist/storage/migrate.js
+docker compose up -d bot
+```
+
+Untuk database managed, gunakan `DATABASE_URL` provider tersebut dan jalankan migration dari environment yang dapat mengakses database. Import data JSON lama dapat dilakukan dengan `pnpm db:import-json` setelah `DATABASE_URL` dan `DATA_FILE` diatur.
+
+## Testing dan balance
+
+Perintah berikut menjalankan build dan test:
+
+```bash
+pnpm build
 pnpm test
 ```
 
-Test mencakup pembuatan profil berbasis posisi, konsumsi energi dan EXP saat training, pemulihan berbasis timestamp, hasil pertandingan beserta reward dan klasemen, serta persistence atomik. Hasil terakhir yang diverifikasi: **5 test lulus, 0 gagal**.
+Test suite saat ini berisi **15 test lulus dan 0 gagal**, mencakup career, club, fixture, standings, daily streak, event, market, transfer, contract, Champions League, achievements, rate limiter, persistence JSON, dan konfigurasi balance.
 
-## Pilihan menjalankan bot online
+Nilai gameplay yang masih bersifat sementara berada pada `src/config/game-balance.ts`. Config menyimpan biaya training/match, recovery, reward, peluang gol, versi balance, dan provenance. Saat formula internal sudah tervalidasi, ubah `source` menjadi `OFFICIAL_CALIBRATED`, tambahkan golden tests, dan catat sumber kalibrasi di `docs/PORTING_MAP.md`.
 
-Bot Discord harus dijalankan pada proses yang selalu aktif agar dapat menerima event dari Discord. Dua jalur yang layak adalah sebagai berikut.
+## Deployment dan operasi
 
-| Pilihan | Trade-off | Biaya/setup |
-| --- | --- | --- |
-| Menjalankan pada komputer kantor atau server yang sudah dimiliki | Setup paling ringan dan kontrol penuh, tetapi mesin dan koneksi internet harus selalu aktif; perlu process manager seperti systemd atau Docker Compose | Biaya infrastruktur yang sudah ada; setup rendah sampai menengah |
-| Men-deploy ke hosting Node.js/VPS managed | Lebih stabil dan independen dari komputer kantor, mudah ditambah database produksi, tetapi memerlukan konfigurasi secret, logging, restart policy, dan biaya hosting | Biaya mengikuti provider; setup menengah |
+Bot Discord membutuhkan proses yang berjalan terus-menerus. Komputer kantor/server yang sudah tersedia cocok untuk internal testing. Hosting Node.js managed atau VPS lebih cocok untuk operasi publik karena dapat menjalankan restart policy, database terpisah, monitoring, backup, dan secret management. Minimal production hardening yang masih direkomendasikan adalah backup PostgreSQL, TLS pada database managed, structured logging, error alerting, command audit log, dan pemisahan admin user ID dari source code.
 
-Untuk MVP, komputer kantor/server yang sudah tersedia cukup untuk pengujian tertutup. Untuk produksi multi-server atau jumlah pemain besar, ganti JSON store dengan PostgreSQL atau MySQL, tambahkan migration, rate limiting, audit log, dan job worker yang menangani pemulihan/event secara konsisten.
+Command `/admin` dibatasi oleh `ADMIN_USER_IDS`. Rate limiter default membatasi satu user sampai 12 command per 60 detik pada satu proses. Untuk deployment multi-instance, rate limiter perlu dipindahkan ke Redis atau database agar konsisten antar-instance.
 
-## Roadmap porting
+## Batasan parity dengan game asli
 
-Fase berikutnya sebaiknya memprioritaskan data konfigurasi asli dan formula resmi yang belum dapat dipastikan dari `dump.cs`: roster klub, formation dan tactics, contract/market, event pilihan, Champions League, transfer, achievement/honor, serta integrasi backend. Formula pertandingan saat ini sengaja dipisahkan agar tim dapat mengganti implementasi simulator tanpa mengubah command Discord ketika formula internal sudah tersedia.
+Recovery memperlihatkan nama type, field, signature method, RVA, asset, dan binary. Recovery tidak menyediakan source C# identik, body method yang mudah dibaca, server data, secret backend, atau seluruh konfigurasi live. Oleh sebab itu, fitur yang sudah dibuat adalah rebuild fungsional yang mendekati loop game, sedangkan kesamaan formula, nilai balance, roster resmi, nama klub resmi, dan sinkronisasi backend memerlukan data perusahaan yang berwenang.
 
-## Keamanan
-
-Jangan menulis token Discord, kredensial database, atau secret backend ke repository. File `.env` dan `data/*.json` telah di-ignore. Bila token pernah terpublikasi, revoke token tersebut di Developer Portal Discord sebelum bot dijalankan kembali.
+Fase kalibrasi berikutnya sebaiknya memakai source/config/backend internal yang disetujui untuk mengganti balance inferred, memasukkan roster/club data resmi, memvalidasi standings dan reward, serta menambahkan golden tests dari output game asli.
 
 ## Referensi
 
-[1]: https://docs.discord.com/developers/topics/oauth2 "Discord Developer Documentation — OAuth2"
+[1]: https://github.com/atsilahbusiness-design/DISCORDFC "Repository DISCORDFC"
+[2]: https://docs.discord.com/developers/topics/oauth2 "Discord Developer Documentation — OAuth2"
