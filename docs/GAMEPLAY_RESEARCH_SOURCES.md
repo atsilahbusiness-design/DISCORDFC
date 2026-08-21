@@ -46,3 +46,19 @@ The client audit contains both directly structured payloads (for example `cfg_se
 ## Gameplay gap identified
 
 Bot saat ini masih terlalu ringkas pada skill model: enam ability (`atk`, `def`, `speed`, `power`, `strength`, `technique`) belum mencerminkan detailed skill allocation dan training point loop yang terlihat di walkthrough. Bot juga belum memiliki explicit `Next Week` time progression, injury duration/treatment, trick training unlocks, personal trainers, culture study/charm, manual post-match EXP assignment, Hall of Honor trophy categories, contract squad rank, annual World Footballer award, atau full Coach mode. Ini menjadi prioritas gameplay expansion.
+
+
+## Mode count verification — 2026-08-22
+
+Official Google Play and Apple App Store descriptions state that Football Rising Star has **two unique gameplay modes: Coach mode and Player mode**. The official descriptions characterize Player mode as a 15-year-old player's 20-year career and Coach mode as a retired star's coaching career. [Official Google Play](https://play.google.com/store/apps/details?id=com.babuyo.footy.tc.android&hl=en_US) [Official Apple App Store](https://apps.apple.com/us/app/football-rising-star/id1585604439)
+
+The community NamuWiki page adds an important distinction: it describes Player mode, Director/Manager mode, and a **match mode that opens after completing a season in manager mode**. Its table of contents separately lists Player mode and Director mode, while the recovery dump shows distinct `Versus*` and `CoachBattle*` subsystems. Therefore, the defensible classification is **2 official top-level modes**, with manager/Coach competitions containing a match/versus sub-system rather than a third official top-level mode. [NamuWiki](https://en.namu.wiki/w/%EC%B6%95%EA%B5%AC:%20%EB%9D%BC%EC%9D%B4%EC%A7%95%EC%8A%A4%ED%83%80)
+
+The official store pages do not describe Coach mode as multiplayer. The recovery dump demonstrates network-aware synchronization and versus/season data structures, but it does not expose the original server protocol or prove that every Coach opponent is a live human. Any claim that Coach mode is inherently multiplayer must therefore be labeled `RECOVERY_INFERRED` unless supported by additional official documentation or controlled network evidence.
+
+
+## Versus Mode public evidence — 2026-08-22
+
+A Korean App Store listing for Football Rising Star contains release-note text indexed in public search results stating that **Versus Mode added a group-code function**, **advanced scouting**, and **player condition improvement**. This is stronger public evidence that Versus is a distinct mode with group-based online participation, separate from the two store-marketed Player/Coach career modes. The App Store page itself is [Football Rising Star Korean listing](https://apps.apple.com/us/app/%EC%B6%95%EA%B5%AC-%EB%9D%BC%EC%9D%B4%EC%A징스타/id1585604439?l=ko), and the indexed release-note wording must still be treated as store metadata rather than proof of the complete server protocol.
+
+NamuWiki's current page states that a **match/battle mode opens after completing one season in Director/Coach mode**. A third-party game listing claims players fight others online in a free-for-all/semi-battle-royale style, but this source is not official and is not sufficient to establish exact rules. The recovery dump provides stronger implementation evidence: `VersusUser` lifecycle, `VersusUserSave`, `VersusSeasonConfig` with group IDs, `VersusBattleMiniData` with home/away IDs, scheduled time, goals and side rewards, and `VersusBattle`/`VersusBattleClub` with two-half simulation, tactical/formation effects, player lists, cards, shots, corners, MVP, and result settlement. These findings support a distinct online, group-based, time-driven Versus Mode; real-time simultaneous control remains unverified.
