@@ -164,6 +164,8 @@ export interface CoachCareerState {
   event?: CoachEvent;
   staff?: TrainerState;
   honors: HonorRecord[];
+  /** Coach-only competition state; intentionally separate from PlayerProfile.championsLeague. */
+  championsLeague?: ChampionsLeagueState;
   retiredAt?: string;
 }
 
@@ -499,6 +501,19 @@ export interface VersusSeasonReward {
   relegated: boolean;
 }
 
+export type VersusCurrency = 'MONEY' | 'COIN';
+
+export interface VersusLedgerEntry {
+  id: string;
+  createdAt: string;
+  seasonId: string;
+  battleId?: string;
+  currency: VersusCurrency;
+  amount: number;
+  balanceAfter: number;
+  note: string;
+}
+
 export interface VersusSeason {
   id: string;
   groupCode: string;
@@ -529,6 +544,7 @@ export interface VersusUserSave {
   club: VersusClub;
   season?: VersusSeason;
   history: Array<{ seasonId: string; rank: number; points: number; rewards: VersusSeasonReward }>;
+  ledger?: VersusLedgerEntry[];
 }
 
 export interface EconomyLedgerEntry {

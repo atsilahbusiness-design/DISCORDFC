@@ -8,13 +8,22 @@ export interface PlayerStore {
   all(): Promise<PlayerProfile[]>;
 }
 
+export interface BatchPlayerStore extends PlayerStore {
+  saveBatch(profiles: PlayerProfile[]): Promise<void>;
+}
+
+export interface VersusGroupLockStore extends PlayerStore {
+  withVersusGroupLock<T>(groupCode: string, operation: () => Promise<T>): Promise<T>;
+}
+
 interface StoreFile {
   players: Record<string, PlayerProfile>;
 }
 
-export class JsonPlayerStore implements PlayerStore {
+export class JsonPlayerStore implements BatchPlayerStore, VersusGroupLockStore {
   private cache?: StoreFile;
   private writeTail: Promise<void> = Promise.resolve();
+  private readonly groupQueues = new Map<string, Promise<void>>();
 
   constructor(private readonly path: string) {}
 
@@ -41,10 +50,20 @@ export class JsonPlayerStore implements PlayerStore {
   }
 
   async save(profile: PlayerProfile): Promise<void> {
+    await this.saveBatch([profile]);
+  }
+
+  async saveBatch(profiles: PlayerProfile[]): Promise<void> {
+    if (profiles.length === 0) return;
     const next = this.writeTail.catch(() => undefined).then(async () => {
       const store = await this.load();
-      profile.version = (profile.version ?? 0) + 1;
-      store.players[profile.userId] = structuredClone(profile);
+      const seen = new Set<string>();
+      for (const profile of profiles) {
+        if (seen.has(profile.userId)) throw new Error(`Duplicate profile in batch: ${profile.userId}`);
+        seen.add(profile.userId);
+        profile.version = (profile.version ?? 0) + 1;
+        store.players[profile.userId] = structuredClone(profile);
+      }
       await mkdir(dirname(this.path), { recursive: true });
       const tempPath = `${this.path}.tmp`;
       await writeFile(tempPath, `${JSON.stringify(store, null, 2)}\n`, 'utf8');
@@ -52,6 +71,21 @@ export class JsonPlayerStore implements PlayerStore {
     });
     this.writeTail = next;
     await next;
+  }
+
+  async withVersusGroupLock<T>(groupCode: string, operation: () => Promise<T>): Promise<T> {
+    const previous = this.groupQueues.get(groupCode) ?? Promise.resolve();
+    let release!: () => void;
+    const current = new Promise<void>((resolve) => { release = resolve; });
+    const queued = previous.then(() => current);
+    this.groupQueues.set(groupCode, queued);
+    await previous;
+    try {
+      return await operation();
+    } finally {
+      release();
+      if (this.groupQueues.get(groupCode) === queued) this.groupQueues.delete(groupCode);
+    }
   }
 
   async all(): Promise<PlayerProfile[]> {

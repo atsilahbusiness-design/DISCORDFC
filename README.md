@@ -1,6 +1,6 @@
 # Football Rising Star Discord Bot
 
-Proyek ini mengembangkan Football Rising Star menjadi pengalaman game berbasis Discord. Versi sekarang sudah melampaui MVP awal: pemain dapat membangun karier, berlatih, memainkan pertandingan, mengelola klub, mengubah formasi dan taktik, mengikuti musim, menjalankan transfer market, mengambil daily reward, menyelesaikan event, menandatangani kontrak, mengejar achievement, dan mengikuti jalur Champions League.
+Proyek ini mengembangkan Football Rising Star menjadi pengalaman game berbasis Discord dengan tiga mode terpisah: Player Mode, Coach Mode, dan Versus Mode. Player membangun karier solo; Coach mengelola club melalui season home-away; Versus menjalankan liga multi-club asynchronous dengan group, battle, standings, dan rewards.
 
 > Paket recovery yang tersedia adalah build Unity IL2CPP, bukan source C# dan backend asli. Karena itu, proyek ini membangun ulang loop game dan kontrak domain yang terlihat dari recovery. Formula yang belum dapat dibaca atau divalidasi dari binary diberi konfigurasi terpusat dan ditandai sebagai `RECOVERY_INFERRED`, bukan diklaim identik 1:1.
 
@@ -8,12 +8,14 @@ Proyek ini mengembangkan Football Rising Star menjadi pengalaman game berbasis D
 
 | Area | Fitur |
 | --- | --- |
-| Career | Profil GK/DF/MF/FW, ability, level, EXP, training, HP, energy, player match, reward, career stats |
-| Club | Roster, squad rating, formation 4-4-2/4-3-3/3-5-2/5-3-2, tactics balanced/attacking/defensive/counter, assets, prestige |
-| Competition | Fixture, matchday, standings, promotion-ready season loop, Champions League knockout state |
+| Player Mode | Profil GK/DF/MF/FW, six macro abilities, twelve detailed skills, weekly progression, training orders, HP/energy, match, manual EXP, injury, trainers, culture, tricks, events, awards, retirement/rebirth |
+| Coach Mode | Enam Coach abilities, roster, seven formations, ten tactics, two-half match, halftime context, 38-round home-away season, full projected league standings, board targets, approval, events, job offers, isolated Champions League aggregate, retirement/rebirth |
+| Versus Mode | Club/roster/wallet terpisah, club dashboard, group-code registration, competition sign-up state, pre-match setup interaktif, legal XI/substitute/captain/formation/tactic submission, roster-version/deadline checks, locked snapshots, fast two-half seeded settlement, result/history, standings, Market Deal/Scout surfaces, Sponsor tiers, Rewards, Schedule, Rankings, Global Ranking, lifecycle state, reward ledger |
+| Club | Roster, squad rating, dynamic recovered-league fixtures, formation, tactics, assets, prestige |
+| Competition | Fixture, matchday, standings, promotion/relegation thresholds, Player Champions League, dan Coach Champions League yang state/season/reward-nya terisolasi |
 | Economy | Money, atomic economy ledger, salary, contract, market listing, buy/sell player |
 | Progression | Daily reward streak, daily event choices, achievements, MVP, season scoring |
-| Production | PostgreSQL store dengan optimistic concurrency, schema migration, JSON-to-PostgreSQL import, Docker image, Compose stack, rate limiter, per-user command queue, structured logging, admin stats |
+| Production | PostgreSQL store dengan optimistic concurrency, atomic multi-profile batch save, advisory group lock untuk Versus, schema migration, JSON-to-PostgreSQL import, Docker image, Compose stack, rate limiter, per-user command queue, structured logging, admin stats |
 
 ## Slash commands
 
@@ -29,8 +31,20 @@ Proyek ini mengembangkan Football Rising Star menjadi pengalaman game berbasis D
 | `/squad` | Melihat roster dan ID pemain |
 | `/formation id:4-3-3` | Mengubah formasi klub |
 | `/tactic id:attacking` | Mengubah taktik klub |
-| `/club-match` | Memainkan fixture klub dan memperbarui standings |
-| `/league` atau `/standings` | Melihat klasemen dan progres season |
+| `/club-match` | Memainkan fixture Player Club dan memperbarui standings |
+| `/coach-career`, `/coach-profile` | Memulai atau melihat karier Coach |
+| `/coach-round`, `/coach-exp`, `/coach-event` | Memainkan round Coach, alokasikan EXP, dan selesaikan event |
+| `/coach-job`, `/coach-retire`, `/coach-rebirth` | Mengelola job offer, retirement, dan rebirth Coach |
+| `/league` atau `/standings` | Melihat klasemen dan progres Player Club season |
+| `/versus-join group_code:CODE` | Membuat atau bergabung dengan Versus group |
+| `/versus-profile`, `/versus-standings` | Membuka Versus Home atau klasemen dengan navigation controls interaktif |
+| Versus Home → `Registration` | Melihat status registrasi, group code, competition, capacity, dan season state |
+| Versus Home → `Market` / `Deal` / `Scout` | Membuka market roster dan tab Deal/Scout; belum menjalankan transaksi atau advanced-scout effect yang belum terverifikasi |
+| Versus Home → `Sponsor` / `Rewards` | Menampilkan sponsor tiers, balance, reward state, dan ledger hasil season; sponsor claim tetap preview-only |
+| Versus Home → `Schedule` / `Rankings` / `Global Ranking` | Membuka jadwal fixture, kategori ranking, dan season-wide ranking |
+| Versus Home → `Lineup` / `Next Battle` | Membuka pre-match setup: pilih formation, tactic, XI per posisi, captain, substitutes, review, lalu confirm submission |
+| `/versus-lineup battle_id:<id> lineup:<ids> captain:<id> formation:4-4-2 tactic:balanced roster_version:<n>` | Fallback command untuk mengunci submission XI, substitutes opsional, captain, formation, tactic, dan roster version sebelum deadline |
+| `/versus-round`, `/versus-season` | Memproses round atau melihat/menutup season Versus |
 | `/season-end` | Memulai season berikutnya setelah seluruh fixture selesai |
 | `/contract action:sign` | Menandatangani atau memperpanjang kontrak |
 | `/daily` | Mengambil daily reward dan menaikkan streak |
@@ -39,15 +53,15 @@ Proyek ini mengembangkan Football Rising Star menjadi pengalaman game berbasis D
 | `/market action:refresh` | Membuat daftar pemain market |
 | `/buy-player listing:listing-market-1` | Membeli pemain dari market |
 | `/sell-player player:npc-1` | Menjual pemain non-user dari roster |
-| `/champions action:status` | Melihat status Champions League |
-| `/champions action:play` | Memainkan ronde Champions League |
+| `/champions action:status mode:PLAYER|COACH` | Melihat status Champions League pada aggregate Player atau Coach |
+| `/champions action:play mode:PLAYER|COACH` | Memainkan ronde Champions League pada mode yang dipilih |
 | `/achievements` | Melihat progress achievement |
 | `/claim-achievement achievement:appearances-10` | Mengklaim achievement yang siap |
 | `/admin action:stats` | Statistik operasi, hanya untuk `ADMIN_USER_IDS` |
 | `/admin action:refresh-markets` | Refresh market semua profil, hanya admin |
 | `/help` | Melihat bantuan command |
 
-Setelah `/start` atau `/profile`, dashboard menyediakan tombol **Profile**, **Train**, **Play match**, dan **Club office**. Tombol serta training select terikat pada Discord user pemilik profile sehingga tidak dapat dipakai user lain.
+Setelah `/start` atau `/profile`, dashboard menyediakan tombol **Profile**, **Train**, **Play match**, **Club office**, **Coach Mode**, dan **Versus Mode**. Tombol serta training select terikat pada Discord user pemilik profile sehingga tidak dapat dipakai user lain. Coach Club dan Versus Club tetap terpisah dari Player Club.
 
 ## Data client 2.8.0
 
@@ -57,9 +71,9 @@ Field ability dictionary variable-length belum dipaksakan menjadi overall resmi.
 
 ## Arsitektur
 
-Engine domain berada di `src/domain/` dan tidak bergantung pada Discord. `engine.ts` menangani career player, training, recovery, dan player match. `club-engine.ts` menangani roster, formation, tactics, fixtures, standings, dan club match. `competition-engine.ts` menangani Champions League dan achievements. `progression-engine.ts` menangani daily reward, event, market, transfer, dan economy ledger. `contract-engine.ts` menangani kontrak. `src/discord/handlers.ts` menjadi adapter interaction Discord.
+Engine domain berada di `src/domain/` dan tidak bergantung pada Discord. `engine.ts` menangani Player career dan match; `gameplay-engine.ts` menangani detailed progression; `club-engine.ts` menangani Club state dan club match; `coach-career-engine.ts` menangani Coach career/board/job/event; `versus-engine.ts` menangani Versus aggregates, schedule, settlement, standings, dan rewards; subsistem lain menangani competition, progression, contract, dan official transfer. `src/discord/components.ts` menyediakan Versus Home dan pre-match builder; `src/discord/handlers.ts` menjadi adapter interaction Discord.
 
-Persistence memiliki dua mode. Tanpa `DATABASE_URL`, bot memakai `JsonPlayerStore` untuk development lokal. Dengan `DATABASE_URL`, bot memakai `PostgresPlayerStore`. Schema disediakan pada `src/storage/schema.sql`; script migration dan import JSON berada pada `src/storage/migrate.ts` dan `src/storage/import-json.ts`.
+Persistence memiliki dua mode. Tanpa `DATABASE_URL`, bot memakai `JsonPlayerStore` untuk development lokal. Dengan `DATABASE_URL`, bot memakai `PostgresPlayerStore`. Keduanya kini memiliki kontrak `saveBatch` untuk menyimpan seluruh projection profile Versus secara atomic dalam satu operasi backend. PostgreSQL juga menyediakan advisory lock per group code; JSON fallback memakai serialized group queue dalam satu process. Schema disediakan pada `src/storage/schema.sql`; script migration dan import JSON berada pada `src/storage/migrate.ts` dan `src/storage/import-json.ts`. Versus tetap disimpan sebagai projection pada profile JSONB; dedicated canonical Versus tables masih merupakan roadmap untuk skala multi-replica yang lebih besar.
 
 ## Menjalankan secara lokal
 
@@ -106,9 +120,11 @@ pnpm build
 pnpm test
 ```
 
-Test suite saat ini berisi **22 test lulus dan 0 gagal**, mencakup career, club, fixture, standings, daily streak, event morale, market cooldown/transfer guard, contract, Champions League, achievements, rate limiter, command queue, interactive components, persistence JSON, dan konfigurasi balance.
+Test suite saat ini berisi **43 test lulus dan 0 gagal**, mencakup Player/Coach/Versus career, Coach full-league projection, mode isolation, Player/Coach Champions isolation, multi-club fixture, Versus Home/custom-ID ownership, legal Versus lineup submission, two-half settlement, standings, reward ledger idempotency, daily streak, event morale, market cooldown/transfer guard, contract, achievements, rate limiter, command/group queue, interactive components, atomic JSON batch persistence, dan konfigurasi balance.
 
-Nilai gameplay yang masih bersifat sementara berada pada `src/config/game-balance.ts`. Config menyimpan biaya training/match, recovery, reward, peluang gol, versi balance, dan provenance. Saat formula internal sudah tervalidasi, ubah `source` menjadi `OFFICIAL_CALIBRATED`, tambahkan golden tests, dan catat sumber kalibrasi di `docs/PORTING_MAP.md`.
+Advanced scout dan player-status improvement disebut oleh changelog publik battle mode, tetapi belum diaktifkan sebagai mechanic baru karena harga, offer generation, persistence, dan effect formula tidak tersedia dari bukti publik. Menampilkan UI palsu untuk dua mechanic tersebut akan lebih berisiko daripada menunggu ruleset yang dapat diaudit.
+
+Nilai gameplay yang masih bersifat sementara berada di `src/config/game-balance.ts`. Config menyimpan biaya training/match, recovery, reward, peluang gol, versi balance, dan provenance. Saat formula internal sudah tervalidasi, ubah `source` menjadi `OFFICIAL_CALIBRATED`, tambahkan golden tests, dan catat sumber kalibrasi di `docs/PORTING_MAP.md`.
 
 ## Deployment dan operasi
 

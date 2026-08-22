@@ -42,6 +42,7 @@ export function claimDailyReward(profileInput: PlayerProfile, now = new Date()):
   const exp = 20 + profile.daily.streak * 5;
   ledger(profile, 'DAILY_REWARD', amount, `Daily reward streak ${profile.daily.streak}`, now);
   profile.totalExp += exp;
+  profile.level = Math.max(profile.level, Math.floor(profile.totalExp / 100) + 1);
   profile.updatedAt = now.toISOString();
   profile.lastActionAt = now.toISOString();
   return { profile, amount, exp, streak: profile.daily.streak };
@@ -130,6 +131,7 @@ export function resolveDailyEvent(profileInput: PlayerProfile, choiceId: string,
   if (choice.rewardMoney > 0) ledger(profile, 'EVENT_REWARD', choice.rewardMoney, `Reward event ${profile.event.eventId}`, now);
   profile.totalExp += choice.rewardExp;
   applyEventSkillEffects(profile, choice.skillEffects);
+  profile.level = Math.max(profile.level, Math.floor(profile.totalExp / 100) + 1);
   profile.stats = deriveMacroStats(profile.detailedSkills!);
   profile.energy = clamp(profile.energy + (choice.energyDelta ?? 0), 0, profile.maxEnergy);
   profile.charm = Math.max(0, (profile.charm ?? 0) + (choice.charmDelta ?? 0));

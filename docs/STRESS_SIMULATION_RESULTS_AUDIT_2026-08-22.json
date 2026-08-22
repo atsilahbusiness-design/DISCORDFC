@@ -1,0 +1,90 @@
+{
+  "generatedAt": "2026-08-22T07:07:47.415Z",
+  "config": {
+    "trials": 300,
+    "playerWeeks": 60,
+    "coachSeasons": 2,
+    "versusCapacity": 8
+  },
+  "modes": [
+    {
+      "mode": "PLAYER",
+      "trials": 300,
+      "successfulTrials": 300,
+      "failedTrials": 0,
+      "actions": 54637,
+      "invariantChecks": 18300,
+      "invariantFailures": 0,
+      "errors": {},
+      "metrics": {
+        "wins": 0,
+        "draws": 0,
+        "losses": 0,
+        "matches": 17358,
+        "injuries": 1373,
+        "awards": 1800,
+        "trainingOrders": 16706,
+        "cultureStudies": 1200,
+        "weeks": 18000,
+        "win": 5793,
+        "loss": 4567,
+        "draw": 6998
+      },
+      "sampleFailures": [],
+      "determinismChecks": 25,
+      "determinismFailures": 0
+    },
+    {
+      "mode": "COACH",
+      "trials": 300,
+      "successfulTrials": 300,
+      "failedTrials": 0,
+      "actions": 52733,
+      "invariantChecks": 23400,
+      "invariantFailures": 0,
+      "errors": {},
+      "metrics": {
+        "seasons": 600,
+        "rounds": 22800,
+        "wins": 0,
+        "draws": 0,
+        "losses": 0,
+        "events": 13066,
+        "offers": 0,
+        "boardSuccesses": 600,
+        "boardFailures": 0,
+        "halftimeChecks": 22800,
+        "win": 5585,
+        "loss": 10154,
+        "draw": 7061
+      },
+      "sampleFailures": [],
+      "determinismChecks": 25,
+      "determinismFailures": 0
+    },
+    {
+      "mode": "VERSUS",
+      "trials": 300,
+      "successfulTrials": 300,
+      "failedTrials": 0,
+      "actions": 7200,
+      "invariantChecks": 8400,
+      "invariantFailures": 0,
+      "errors": {},
+      "metrics": {
+        "rounds": 4200,
+        "battles": 16800,
+        "publishedBattles": 16800,
+        "halftimeChecks": 16800,
+        "standingsChecks": 4200,
+        "rewards": 2400
+      },
+      "sampleFailures": [],
+      "determinismChecks": 25,
+      "determinismFailures": 0
+    }
+  ],
+  "totalActions": 114570,
+  "totalInvariantFailures": 0,
+  "status": "PASS"
+}

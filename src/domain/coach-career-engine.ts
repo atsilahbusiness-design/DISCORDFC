@@ -1,6 +1,6 @@
 import { RECOVERY_CLUBS } from '../config/recovery-data.js';
 import { GAME_BALANCE } from '../config/game-balance.js';
-import { ensureClubState, finishSeason, playClubMatch } from './club-engine.js';
+import { ensureClubState, finishSeason, playClubMatch, projectCoachLeagueStandings } from './club-engine.js';
 import { MathRandomSource, type RandomSource } from './engine.js';
 import {
   COACH_ABILITIES,
@@ -159,7 +159,7 @@ function makeCoachEvent(profile: PlayerProfile, rng: RandomSource, now: Date): C
   const templateId = ids[Math.floor(rng.next() * ids.length)];
   const template = eventTemplate(templateId);
   return {
-    id: `coach-event-${profile.league.season}-${profile.league.matchday}-${templateId}`,
+    id: `coach-event-${profile.coach?.season ?? 1}-${profile.coachClubState?.fixtures.filter((fixture) => fixture.played).length ?? 0}-${templateId}`,
     templateId,
     title: template.title,
     description: template.description,
@@ -187,7 +187,7 @@ export function createCoachCareer(profileInput: PlayerProfile, coachName = profi
     season: 1,
     boardTarget: targetFor(profile, 1),
     jobOffers: [],
-    honors: clone(profile.honors ?? [])
+    honors: []
   };
   profile.coach = coach;
   profile.updatedAt = now.toISOString();
@@ -229,14 +229,15 @@ export function advanceCoachRound(profileInput: PlayerProfile, now = new Date(),
 export function assignCoachExp(profileInput: PlayerProfile, allocations: Partial<Record<CoachAbilityId, number>>): CoachExpAllocationResult {
   const profile = clone(profileInput);
   const coach = coachOrThrow(profile);
+  if (coach.status === 'RETIRED') throw new Error('Coach yang sudah pensiun tidak dapat menerima EXP. Gunakan `/coach-rebirth`.');
   const total = Object.values(allocations).reduce((sum, value) => sum + (value ?? 0), 0);
-  if (total <= 0) throw new Error('Alokasi EXP Coach harus lebih besar dari 0.');
+  if (!Number.isInteger(total) || total <= 0) throw new Error('Alokasi EXP Coach harus bilangan bulat lebih besar dari 0.');
   if (total > coach.unassignedExp) throw new Error(`EXP Coach tidak cukup. Tersedia ${coach.unassignedExp}.`);
   let levelsGained = 0;
   for (const [id, amount] of Object.entries(allocations) as Array<[CoachAbilityId, number | undefined]>) {
     if (amount === undefined || amount === 0) continue;
     if (!COACH_ABILITIES.includes(id)) throw new Error(`Coach ability tidak dikenal: ${id}.`);
-    if (amount < 0) throw new Error('Alokasi EXP tidak boleh negatif.');
+    if (!Number.isInteger(amount) || amount < 0) throw new Error('Alokasi EXP tidak boleh pecahan atau negatif.');
     const state = coach.abilities[id];
     state.exp += amount;
     while (state.exp >= nextAbilityExp(state.level)) {
@@ -256,7 +257,10 @@ export function generateJobOffer(profileInput: PlayerProfile, rng: RandomSource 
   const coach = coachOrThrow(profile);
   if (coach.status === 'RETIRED') throw new Error('Coach yang sudah pensiun tidak dapat mencari job baru.');
   const current = currentClubRecord(profile);
-  const candidates = RECOVERY_CLUBS.filter((club) => club.league === 1011 && club.nameEn !== current?.nameEn)
+  const currentLeague = current?.league ?? 1011;
+  const sameLeague = RECOVERY_CLUBS.filter((club) => club.league === currentLeague && club.nameEn !== current?.nameEn)
+    .filter((club) => !coach.jobOffers.some((offer) => offer.status === 'OPEN' && offer.clubId === String(club.id)));
+  const candidates = sameLeague.length > 0 ? sameLeague : RECOVERY_CLUBS.filter((club) => club.league === 1011 && club.nameEn !== current?.nameEn)
     .filter((club) => !coach.jobOffers.some((offer) => offer.status === 'OPEN' && offer.clubId === String(club.id)));
   if (candidates.length === 0) throw new Error('Belum ada club lain yang membuka lowongan.');
   const club = candidates[Math.floor(rng.next() * candidates.length)];
@@ -289,6 +293,7 @@ export function declineJobOffer(profileInput: PlayerProfile, offerId: string): P
 export function acceptJobOffer(profileInput: PlayerProfile, offerId: string, now = new Date()): PlayerProfile {
   const profile = clone(profileInput);
   const coach = coachOrThrow(profile);
+  if (coach.status === 'RETIRED') throw new Error('Coach yang sudah pensiun tidak dapat menerima job offer. Gunakan `/coach-rebirth`.');
   const offer = coach.jobOffers.find((item) => item.id === offerId && item.status === 'OPEN');
   if (!offer) throw new Error('Job offer tidak ditemukan atau sudah ditutup.');
   offer.status = 'ACCEPTED';
@@ -312,6 +317,7 @@ export function acceptJobOffer(profileInput: PlayerProfile, offerId: string, now
 export function resolveCoachEvent(profileInput: PlayerProfile, choiceId: string, now = new Date()): PlayerProfile {
   const profile = clone(profileInput);
   const coach = coachOrThrow(profile);
+  if (coach.status !== 'EMPLOYED') throw new Error('Coach tidak sedang employed sehingga event tidak dapat diselesaikan.');
   const event = coach.event;
   if (!event || event.resolved) throw new Error('Tidak ada Coach event yang menunggu keputusan.');
   const choice = event.choices.find((item) => item.id === choiceId);
@@ -321,7 +327,13 @@ export function resolveCoachEvent(profileInput: PlayerProfile, choiceId: string,
   coach.totalExp += choice.expDelta;
   coach.unassignedExp += choice.expDelta;
   if (choice.ability) {
-    coach.abilities[choice.ability].exp += Math.max(0, Math.floor(choice.expDelta / 2));
+    const state = coach.abilities[choice.ability];
+    state.exp += Math.max(0, Math.floor(choice.expDelta / 2));
+    while (state.exp >= nextAbilityExp(state.level)) {
+      state.exp -= nextAbilityExp(state.level);
+      state.level += 1;
+    }
+    coach.level = Math.max(coach.level, ...COACH_ABILITIES.map((id) => coach.abilities[id].level));
   }
   event.resolved = true;
   profile.updatedAt = now.toISOString();
@@ -333,6 +345,7 @@ export function settleCoachSeason(profileInput: PlayerProfile, now = new Date())
   const coach = coachOrThrow(snapshot);
   if (coach.status !== 'EMPLOYED') throw new Error('Coach tidak sedang employed sehingga season tidak dapat diselesaikan.');
   if (snapshot.coachClubState?.fixtures.some((fixture) => !fixture.played)) throw new Error('Belum semua fixture Coach selesai.');
+  if (snapshot.coachClubState) projectCoachLeagueStandings(snapshot.coachClubState);
   const rank = currentRank(snapshot);
   const target = clone(coach.boardTarget);
   target.progressRank = rank;
@@ -352,7 +365,6 @@ export function settleCoachSeason(profileInput: PlayerProfile, now = new Date())
       awardedAt: now.toISOString()
     };
     coach.honors = [...coach.honors, honor];
-    snapshot.honors = [...(snapshot.honors ?? []), honor];
   }
   const playerLeague = clone(snapshot.league);
   const coachSeasonInput = { ...snapshot, league: { ...snapshot.league, season: coach.season } };
@@ -364,6 +376,7 @@ export function settleCoachSeason(profileInput: PlayerProfile, now = new Date())
   nextCoach.season = coach.season + 1;
   nextCoach.status = nextCoach.approval < 20 ? 'UNEMPLOYED' : 'EMPLOYED';
   nextCoach.boardTarget = targetFor(updated, nextCoach.season);
+  nextCoach.championsLeague = undefined;
   nextCoach.event = undefined;
   updated.updatedAt = now.toISOString();
   return updated;
@@ -384,7 +397,6 @@ export function retireCoach(profileInput: PlayerProfile, now = new Date()): Play
     awardedAt: now.toISOString()
   };
   coach.honors = [...coach.honors, honor];
-  profile.honors = [...(profile.honors ?? []), honor];
   coach.status = 'RETIRED';
   coach.retiredAt = now.toISOString();
   profile.updatedAt = now.toISOString();

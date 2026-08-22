@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createInitialProfile, SeededRandom } from '../src/domain/engine.js';
-import { createVersusSeason, enrollVersus, getVersusStandings, processVersusRound, settleVersusSeason, syncVersusProfileWithSeason } from '../src/domain/versus-engine.js';
+import { createVersusSeason, enrollVersus, getVersusStandings, processVersusRound, settleVersusSeason, submitVersusLineup, syncVersusProfileWithSeason } from '../src/domain/versus-engine.js';
 import type { PlayerProfile } from '../src/domain/types.js';
 
 function makeMembers(): PlayerProfile[] {
@@ -36,6 +36,27 @@ test('Versus round settles all scheduled battles with two-half stats and standin
   assert.throws(() => processVersusRound(next, 1, new Date('2026-01-02T00:00:00.000Z'), new SeededRandom(17)), /Round Versus berikutnya adalah 2/);
 });
 
+test('Versus submission locks a legal owner lineup and rejects stale/deadline writes', () => {
+  const [first, second] = makeMembers();
+  const start = new Date('2026-01-01T00:00:00.000Z');
+  const season = createVersusSeason('GROUP-42', [first, second], start, 4);
+  const club = season.clubs.find((item) => item.ownerId === first.userId)!;
+  const battle = season.battles.find((item) => item.roundId === 1 && (item.homeClubId === club.id || item.awayClubId === club.id))!;
+  const lineup = ['p1', 'p2', 'p3', 'p4', 'p5', 'p7', 'p8', 'p9', 'p10', 'p14', 'p15'].map((id) => `${club.id}:${id}`);
+  const submitted = submitVersusLineup(season, battle.id, first.userId, lineup, [`${club.id}:p6`], lineup[0], '4-4-2', 'tiki-taka', club.rosterVersion, new Date('2026-01-01T12:00:00.000Z'));
+  const submittedBattle = submitted.battles.find((item) => item.id === battle.id)!;
+  const stored = submittedBattle.homeClubId === club.id ? submittedBattle.homeSubmission : submittedBattle.awaySubmission;
+  assert.equal(stored?.ownerId, first.userId);
+  assert.equal(stored?.lineup.length, 11);
+  assert.equal(stored?.substitutes.length, 1);
+  assert.equal(stored?.formation, '4-4-2');
+  assert.equal(stored?.tactic, 'tiki-taka');
+  assert.equal(season.battles.find((item) => item.id === battle.id)?.homeSubmission, undefined);
+  assert.throws(() => submitVersusLineup(season, battle.id, second.userId, lineup, [], lineup[0], '4-4-2', 'balanced', club.rosterVersion, new Date('2026-01-01T12:00:00.000Z')), /bukan pemilik/);
+  assert.throws(() => submitVersusLineup(season, battle.id, first.userId, lineup, [], lineup[0], '4-4-2', 'balanced', club.rosterVersion + 1, new Date('2026-01-01T12:00:00.000Z')), /roster berubah/);
+  assert.throws(() => submitVersusLineup(season, battle.id, first.userId, lineup, [], lineup[0], '4-4-2', 'balanced', club.rosterVersion, new Date('2026-01-02T00:00:00.000Z')), /melewati deadline/);
+});
+
 test('Versus season rewards are isolated and sync is idempotent', () => {
   let members = makeMembers();
   let season = createVersusSeason('GROUP-42', members, new Date('2026-01-01T00:00:00.000Z'), 4);
@@ -53,5 +74,8 @@ test('Versus season rewards are isolated and sync is idempotent', () => {
     assert.equal(again.versus!.history.length, 1);
     assert.equal(again.versus!.versusMoney, moneyAfterFirstSync);
     assert.equal(again.money, member.money);
+    assert.ok(member.versus!.ledger && member.versus!.ledger.length >= totalRounds * 2 + 2);
+    assert.equal(new Set(member.versus!.ledger!.map((entry) => entry.id)).size, member.versus!.ledger!.length);
+    assert.equal(again.versus!.ledger!.length, member.versus!.ledger!.length);
   }
 });

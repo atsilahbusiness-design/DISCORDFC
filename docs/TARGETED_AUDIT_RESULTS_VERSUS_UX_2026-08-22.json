@@ -1,0 +1,59 @@
+{
+  "status": "PASS",
+  "findings": [
+    {
+      "id": "PLAYER-EXP-LEVEL-SYNC",
+      "severity": "MEDIUM",
+      "status": "PASS",
+      "details": "daily reward totalExp=154, level=2"
+    },
+    {
+      "id": "PLAYER-EVENT-EXP-LEVEL-SYNC",
+      "severity": "MEDIUM",
+      "status": "PASS",
+      "details": "event totalExp=176, level=2"
+    },
+    {
+      "id": "COACH-HONOR-CROSS-MODE",
+      "severity": "MEDIUM",
+      "status": "PASS",
+      "details": "Coach honors remain separate from Player profile.honors"
+    },
+    {
+      "id": "COACH-DECIMAL-EXP",
+      "severity": "MEDIUM",
+      "status": "PASS",
+      "details": "fractional Coach EXP is rejected"
+    },
+    {
+      "id": "COACH-RETIRED-EVENT-MUTATION",
+      "severity": "MEDIUM",
+      "status": "PASS",
+      "details": "retired Coach cannot resolve a pending event"
+    },
+    {
+      "id": "COACH-FULL-STANDINGS-PROJECTION",
+      "severity": "HIGH",
+      "status": "PASS",
+      "details": "projected 20 Coach standings rows to 38 matches"
+    },
+    {
+      "id": "COACH-CHAMPIONS-ISOLATION",
+      "severity": "HIGH",
+      "status": "PASS",
+      "details": "Player season 1 and Coach season 1 remain separate"
+    },
+    {
+      "id": "VERSUS-SYNC-REWARD-IMMUTABILITY",
+      "severity": "HIGH",
+      "status": "PASS",
+      "details": "fresh-season sync preserved reward wallet=6400, ledger entries=14, and input immutability"
+    },
+    {
+      "id": "CLUB-NON1011-LEAGUE",
+      "severity": "MEDIUM",
+      "status": "PASS",
+      "details": "league 20 clubs, fixtures=38"
+    }
+  ]
+}

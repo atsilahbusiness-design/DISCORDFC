@@ -86,7 +86,8 @@ function ensureVersusClub(profile: PlayerProfile, now: Date): VersusClub {
   const existing = profile.versus?.club;
   if (existing) return clone(existing);
   const id = `vclub:${profile.userId}`;
-  const base = clamp(48 + profile.level * 3 + profile.stats.technique / 10, 45, 78);
+  // Versus is a separate aggregate; its initial roster must not inherit Player progression.
+  const base = 52;
   return {
     id,
     ownerId: profile.userId,
@@ -259,8 +260,14 @@ function initialSeason(groupCode: string, profiles: PlayerProfile[], now: Date, 
 
 export function createVersusSeason(groupCode: string, profiles: PlayerProfile[], now = new Date(), capacity = DEFAULT_GROUP_CAPACITY): VersusSeason {
   const normalized = profiles.filter((profile, index, list) => list.findIndex((item) => item.userId === profile.userId) === index);
+  const code = groupCode.trim().toUpperCase();
+  if (!/^[A-Z0-9-]{4,24}$/.test(code)) throw new Error('Group code Versus tidak valid.');
   if (normalized.length === 0) throw new Error('Versus season membutuhkan minimal satu user.');
-  return initialSeason(groupCode.trim().toUpperCase(), normalized, now, Math.max(GAME_BALANCE.versus.minimumLeagueClubs, capacity));
+  if (normalized.some((profile) => profile.versus?.groupCode !== code)) throw new Error('Semua profile season harus sudah terdaftar pada group Versus yang sama.');
+  const seasonCapacity = Math.max(GAME_BALANCE.versus.minimumLeagueClubs, Math.floor(capacity));
+  if (!Number.isFinite(seasonCapacity) || seasonCapacity < normalized.length) throw new Error('Jumlah anggota melebihi capacity season Versus.');
+  if (seasonCapacity % 2 !== 0) throw new Error('Capacity season Versus harus genap agar setiap round memiliki pasangan home-away lengkap.');
+  return initialSeason(code, normalized, now, seasonCapacity);
 }
 
 function clubById(season: VersusSeason, id: string): VersusClub {
@@ -269,9 +276,23 @@ function clubById(season: VersusSeason, id: string): VersusClub {
   return club;
 }
 
+function recoverVersusRoster(roster: VersusPlayer[], now: Date): void {
+  // Condition/card/injury recovery cadence is RECOVERY_INFERRED for this Discord adaptation.
+  for (const player of roster) {
+    player.hp = clamp(player.hp + GAME_BALANCE.versus.lineupHpCost, 0, player.maxHp);
+    if (player.redCardBan > 0) player.redCardBan -= 1;
+    if (player.status === 'INJURED' && player.injuryEndsAt && new Date(player.injuryEndsAt).getTime() <= now.getTime()) {
+      player.status = 'AVAILABLE';
+      player.injuryType = undefined;
+      player.injuryEndsAt = undefined;
+    }
+    if (player.status === 'SUSPENDED' && player.redCardBan === 0) player.status = 'AVAILABLE';
+  }
+}
+
 function canPlay(player: VersusPlayer, now: Date): boolean {
   if (player.hp <= 0 || player.status === 'SUSPENDED' || player.redCardBan > 0) return false;
-  if (player.status === 'INJURED' && player.injuryEndsAt && new Date(player.injuryEndsAt).getTime() > now.getTime()) return false;
+  if (player.status === 'INJURED') return Boolean(player.injuryEndsAt) && new Date(player.injuryEndsAt!).getTime() <= now.getTime();
   return true;
 }
 
@@ -326,9 +347,10 @@ function snapshotSubmission(submission: VersusSubmission, club: VersusClub, now:
 }
 
 function validateSubmission(submission: VersusSubmission, club: VersusClub, battleId: string, now: Date): void {
+  if (!FORMATIONS[submission.formation] || !TACTICS[submission.tactic]) throw new Error('Formation atau tactic Versus tidak dikenal.');
   if (submission.battleId !== battleId || submission.clubId !== club.id) throw new Error('Submission Versus tidak cocok dengan battle.');
   if (submission.rosterVersion !== club.rosterVersion) throw new Error('Versus roster berubah setelah submission; submit ulang lineup.');
-  if (submission.lineup.length !== 11 || new Set([...submission.lineup, ...submission.substitutes]).size !== submission.lineup.length + submission.substitutes.length) throw new Error('Lineup/substitute Versus tidak valid atau berisi pemain duplikat.');
+  if (submission.lineup.length !== 11 || submission.substitutes.length > 5 || new Set([...submission.lineup, ...submission.substitutes]).size !== submission.lineup.length + submission.substitutes.length) throw new Error('Lineup/substitute Versus tidak valid atau berisi pemain duplikat.');
   if (!submission.lineup.includes(submission.captainId)) throw new Error('Captain harus berada di starting XI.');
   const slots = FORMATION_SLOTS[submission.formation];
   const counts = { GK: 0, DF: 0, MF: 0, FW: 0 };
@@ -465,13 +487,47 @@ function simulateBattle(battle: VersusBattle, home: VersusClub, away: VersusClub
   };
 }
 
+export function submitVersusLineup(seasonInput: VersusSeason, battleId: string, ownerId: string, lineup: string[], substitutes: string[], captainId: string, formation: FormationId, tactic: TacticId, rosterVersion: number, now = new Date()): VersusSeason {
+  const season = clone(seasonInput);
+  if (season.state !== 'ACTIVE') throw new Error('Versus season tidak aktif.');
+  const battle = season.battles.find((item) => item.id === battleId);
+  if (!battle) throw new Error('Battle Versus tidak ditemukan pada season ini.');
+  if (battle.roundId !== season.currentRound) throw new Error(`Battle Versus berada pada round ${season.currentRound}, bukan round aktif.`);
+  if (battle.state !== 'OPEN') throw new Error('Battle Versus sudah dikunci atau diselesaikan.');
+  const deadline = new Date(season.roundDeadline).getTime();
+  if (!Number.isFinite(deadline) || now.getTime() >= deadline) throw new Error(`Submission Versus sudah melewati deadline: ${season.roundDeadline}.`);
+  const home = clubById(season, battle.homeClubId);
+  const away = clubById(season, battle.awayClubId);
+  const club = home.ownerId === ownerId ? home : away.ownerId === ownerId ? away : undefined;
+  if (!club || club.isNpc) throw new Error('User bukan pemilik club pada battle Versus tersebut.');
+  const submission: VersusSubmission = {
+    battleId,
+    clubId: club.id,
+    ownerId,
+    lineup: lineup.map((id) => id.trim()).filter(Boolean),
+    substitutes: substitutes.map((id) => id.trim()).filter(Boolean),
+    captainId: captainId.trim(),
+    formation,
+    tactic,
+    rosterVersion,
+    submittedAt: now.toISOString()
+  };
+  validateSubmission(submission, club, battleId, now);
+  if (battle.homeClubId === club.id) battle.homeSubmission = submission;
+  else battle.awaySubmission = submission;
+  return season;
+}
+
 export function processVersusRound(seasonInput: VersusSeason, roundId = seasonInput.currentRound, now = new Date(), rng: RandomSource = new MathRandomSource()): VersusSeason {
   const season = clone(seasonInput);
   if (season.state !== 'ACTIVE') throw new Error('Versus season tidak aktif.');
   if (roundId !== season.currentRound) throw new Error(`Round Versus berikutnya adalah ${season.currentRound}.`);
+  const deadline = new Date(season.roundDeadline).getTime();
+  if (!Number.isFinite(deadline) || now.getTime() < deadline) throw new Error(`Round Versus belum mencapai deadline: ${season.roundDeadline}.`);
   const battles = season.battles.filter((battle) => battle.roundId === roundId);
   if (battles.length === 0) throw new Error('Tidak ada battle pada round Versus tersebut.');
   if (battles.some((battle) => battle.state === 'SETTLED' || battle.state === 'PUBLISHED')) throw new Error('Round Versus sudah diselesaikan; duplicate settlement ditolak.');
+  for (const club of season.clubs) recoverVersusRoster(club.roster, now);
   const updatedBattles: VersusBattle[] = [];
   for (const battle of battles) {
     const home = clubById(season, battle.homeClubId);
@@ -496,6 +552,7 @@ export function getVersusStandings(seasonInput: VersusSeason): VersusStanding[] 
 
 export function settleVersusSeason(seasonInput: VersusSeason, now = new Date()): VersusSeason {
   const season = clone(seasonInput);
+  if (season.state === 'FINISHED') return season;
   const totalRounds = Math.max(1, 2 * (season.clubs.length - 1));
   if (season.battles.some((battle) => battle.roundId <= totalRounds && battle.state !== 'PUBLISHED' && battle.state !== 'SETTLED')) throw new Error('Versus season belum selesai. Proses semua round terlebih dahulu.');
   season.standings = standingsFor(season);
@@ -515,16 +572,53 @@ export function settleVersusSeason(seasonInput: VersusSeason, now = new Date()):
 export function syncVersusProfileWithSeason(profileInput: PlayerProfile, season: VersusSeason, now = new Date()): PlayerProfile {
   const profile = clone(profileInput);
   if (!profile.versus || profile.versus.groupCode !== season.groupCode) throw new Error('Profile tidak terdaftar pada Versus group season ini.');
-  const club = season.clubs.find((item) => item.id === profile.versus!.clubId);
-  if (!club) throw new Error('Versus club user tidak ada pada season.');
+  const sourceClub = season.clubs.find((item) => item.id === profile.versus!.clubId);
+  if (!sourceClub) throw new Error('Versus club user tidak ada pada season.');
+  const club = clone(sourceClub);
   const reward = season.state === 'FINISHED' ? season.rewards.find((item) => item.clubId === club.id) : undefined;
-  const alreadyRewarded = reward ? profile.versus.history.some((item) => item.seasonId === season.id) : true;
-  if (reward && !alreadyRewarded) {
+  const historyEntry = reward ? profile.versus.history.find((item) => item.seasonId === season.id) : undefined;
+  const appliedSeasonReward = reward ? historyEntry?.rewards ?? reward : undefined;
+
+  if (reward && !historyEntry) {
     club.versusMoney += reward.money;
     club.versusCoin += reward.coin;
+    club.budget += reward.money;
     profile.versus.history.push({ seasonId: season.id, rank: reward.rank, points: season.standings.find((item) => item.clubId === club.id)?.points ?? 0, rewards: clone(reward) });
+  } else if (appliedSeasonReward) {
+    club.versusMoney += appliedSeasonReward.money;
+    club.versusCoin += appliedSeasonReward.coin;
+    club.budget += appliedSeasonReward.money;
   }
-  profile.versus.club = clone(club);
+
+  profile.versus.ledger ??= [];
+  const battleRewards = season.battles
+    .filter((battle) => battle.settlement && (battle.homeClubId === club.id || battle.awayClubId === club.id))
+    .sort((a, b) => a.roundId - b.roundId || a.id.localeCompare(b.id))
+    .map((battle) => ({
+      battle,
+      reward: battle.homeClubId === club.id ? battle.settlement!.homeReward : battle.settlement!.awayReward
+    }));
+  let moneyBalance = club.versusMoney - battleRewards.reduce((sum, item) => sum + item.reward.money, 0) - (appliedSeasonReward?.money ?? 0);
+  let coinBalance = club.versusCoin - battleRewards.reduce((sum, item) => sum + item.reward.coin, 0) - (appliedSeasonReward?.coin ?? 0);
+  for (const { battle, reward: battleReward } of battleRewards) {
+    moneyBalance += battleReward.money;
+    coinBalance += battleReward.coin;
+    const battleMoneyId = `versus:${season.id}:${battle.id}:${club.id}:MONEY`;
+    const battleCoinId = `versus:${season.id}:${battle.id}:${club.id}:COIN`;
+    if (!profile.versus.ledger.some((entry) => entry.id === battleMoneyId)) profile.versus.ledger.push({ id: battleMoneyId, createdAt: battle.settlement!.settledAt, seasonId: season.id, battleId: battle.id, currency: 'MONEY', amount: battleReward.money, balanceAfter: moneyBalance, note: `Versus battle reward · ${battle.id}` });
+    if (!profile.versus.ledger.some((entry) => entry.id === battleCoinId)) profile.versus.ledger.push({ id: battleCoinId, createdAt: battle.settlement!.settledAt, seasonId: season.id, battleId: battle.id, currency: 'COIN', amount: battleReward.coin, balanceAfter: coinBalance, note: `Versus battle reward · ${battle.id}` });
+  }
+  if (appliedSeasonReward) {
+    moneyBalance += appliedSeasonReward.money;
+    coinBalance += appliedSeasonReward.coin;
+    const seasonMoneyId = `versus:${season.id}:season:${club.id}:MONEY`;
+    const seasonCoinId = `versus:${season.id}:season:${club.id}:COIN`;
+    if (!profile.versus.ledger.some((entry) => entry.id === seasonMoneyId)) profile.versus.ledger.push({ id: seasonMoneyId, createdAt: season.endAt ?? now.toISOString(), seasonId: season.id, currency: 'MONEY', amount: appliedSeasonReward.money, balanceAfter: moneyBalance, note: `Versus season reward · rank ${reward?.rank ?? historyEntry?.rank ?? '-'}` });
+    if (!profile.versus.ledger.some((entry) => entry.id === seasonCoinId)) profile.versus.ledger.push({ id: seasonCoinId, createdAt: season.endAt ?? now.toISOString(), seasonId: season.id, currency: 'COIN', amount: appliedSeasonReward.coin, balanceAfter: coinBalance, note: `Versus season reward · rank ${reward?.rank ?? historyEntry?.rank ?? '-'}` });
+  }
+  profile.versus.ledger.sort((a, b) => b.createdAt.localeCompare(a.createdAt) || b.id.localeCompare(a.id));
+  profile.versus.ledger = profile.versus.ledger.slice(0, 500);
+  profile.versus.club = club;
   profile.versus.season = clone(season);
   profile.versus.status = season.state === 'FINISHED' ? 'GAMEOVER' : 'IN_GAME';
   profile.versus.lastProcessedAt = now.toISOString();

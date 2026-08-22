@@ -1,6 +1,6 @@
 import { ensureClubState } from './club-engine.js';
 import { MathRandomSource, type RandomSource } from './engine.js';
-import type { AchievementState, ChampionsLeagueState, MatchOutcome, PlayerProfile } from './types.js';
+import type { AchievementState, ChampionsLeagueState, CareerMode, MatchOutcome, PlayerProfile } from './types.js';
 
 const CHAMPIONS_OPPONENTS = ['Royal County', 'Capital Sporting', 'Golden Valley', 'Northbridge United'];
 
@@ -25,27 +25,67 @@ function result(forGoals: number, againstGoals: number): MatchOutcome {
   return 'DRAW';
 }
 
-export function startChampionsLeague(profileInput: PlayerProfile, now = new Date()): PlayerProfile {
-  const profile = ensureClubState(profileInput, now);
-  if (!profile.clubState!.championsLeagueQualified) throw new Error('Klub belum lolos Champions League. Selesaikan season dengan poin kualifikasi terlebih dahulu.');
-  if (profile.championsLeague?.status === 'ACTIVE') return profile;
-  profile.championsLeague = {
-    season: profile.league.season,
+export type ChampionsLeagueMode = Extract<CareerMode, 'PLAYER' | 'COACH'>;
+
+function competitionState(profile: PlayerProfile, mode: ChampionsLeagueMode): ChampionsLeagueState | undefined {
+  return mode === 'COACH' ? profile.coach?.championsLeague : profile.championsLeague;
+}
+
+function setCompetitionState(profile: PlayerProfile, mode: ChampionsLeagueMode, state: ChampionsLeagueState): void {
+  if (mode === 'COACH') {
+    if (!profile.coach) throw new Error('Karier Coach belum dibuat.');
+    profile.coach.championsLeague = state;
+  } else {
+    profile.championsLeague = state;
+  }
+}
+
+function competitionSeason(profile: PlayerProfile, mode: ChampionsLeagueMode): number {
+  if (mode === 'COACH') {
+    if (!profile.coach) throw new Error('Karier Coach belum dibuat. Jalankan `/coach-career action:start` terlebih dahulu.');
+    return profile.coach.season;
+  }
+  return profile.league.season;
+}
+
+function competitionClub(profile: PlayerProfile, mode: ChampionsLeagueMode) {
+  const club = mode === 'COACH' ? profile.coachClubState : profile.clubState;
+  if (!club) throw new Error('State klub belum dibuat.');
+  return club;
+}
+
+export function startChampionsLeague(profileInput: PlayerProfile, now = new Date(), mode: ChampionsLeagueMode = 'PLAYER'): PlayerProfile {
+  const profile = ensureClubState(profileInput, now, undefined, mode === 'COACH' ? 'coachClubState' : 'clubState');
+  if (mode === 'COACH' && profile.coach?.status !== 'EMPLOYED') throw new Error('Coach harus employed untuk mengikuti Champions League.');
+  const club = competitionClub(profile, mode);
+  if (!club.championsLeagueQualified) throw new Error('Klub belum lolos Champions League. Selesaikan season dengan poin kualifikasi terlebih dahulu.');
+  const season = competitionSeason(profile, mode);
+  const current = competitionState(profile, mode);
+  if (current?.season === season) {
+    if (current.status === 'ACTIVE') return profile;
+    throw new Error('Champions League season ini sudah selesai. Tunggu season berikutnya untuk mencoba lagi.');
+  }
+  setCompetitionState(profile, mode, {
+    season,
     round: 1,
     opponent: CHAMPIONS_OPPONENTS[0],
     homeGoals: 0,
     awayGoals: 0,
     aggregate: 0,
     status: 'ACTIVE'
-  };
+  });
   profile.updatedAt = now.toISOString();
   return profile;
 }
 
-export function playChampionsLeague(profileInput: PlayerProfile, now = new Date(), rng: RandomSource = new MathRandomSource()): { profile: PlayerProfile; homeGoals: number; awayGoals: number; status: ChampionsLeagueState['status']; commentary: string[] } {
-  const profile = startChampionsLeague(profileInput, now);
-  const state = profile.championsLeague!;
-  const clubRating = profile.clubState!.level * 8 + profile.clubState!.prestige / 10 + profile.stats.atk * 0.15 + profile.stats.def * 0.15 + 45;
+export function playChampionsLeague(profileInput: PlayerProfile, now = new Date(), rng: RandomSource = new MathRandomSource(), mode: ChampionsLeagueMode = 'PLAYER'): { profile: PlayerProfile; homeGoals: number; awayGoals: number; status: ChampionsLeagueState['status']; commentary: string[] } {
+  const profile = startChampionsLeague(profileInput, now, mode);
+  const club = competitionClub(profile, mode);
+  const state = competitionState(profile, mode)!;
+  const rosterRating = club.roster.length ? club.roster.reduce((sum, player) => sum + player.overall, 0) / club.roster.length : 50;
+  const clubRating = mode === 'COACH'
+    ? club.level * 8 + club.prestige / 10 + rosterRating * 0.25 + (profile.coach?.abilities.tactics.level ?? 1) * 1.5 + 45
+    : club.level * 8 + club.prestige / 10 + profile.stats.atk * 0.15 + profile.stats.def * 0.15 + 45;
   const opponentRating = 55 + state.round * 4 + Math.floor(rng.next() * 18);
   const homeGoals = goal(clubRating + 5, opponentRating, rng);
   const awayGoals = goal(opponentRating, clubRating, rng);
@@ -58,8 +98,8 @@ export function playChampionsLeague(profileInput: PlayerProfile, now = new Date(
     status = 'ELIMINATED';
   } else if (state.round >= 4) {
     status = 'CHAMPION';
-    profile.clubState!.assets += 2_500;
-    profile.clubState!.prestige = clamp(profile.clubState!.prestige + 25, 0, 1_000);
+    club.assets += 2_500;
+    club.prestige = clamp(club.prestige + 25, 0, 1_000);
   } else {
     state.round += 1;
     state.opponent = CHAMPIONS_OPPONENTS[state.round - 1] ?? `Continental Club ${state.round}`;
@@ -72,7 +112,7 @@ export function playChampionsLeague(profileInput: PlayerProfile, now = new Date(
     awayGoals,
     status,
     commentary: [
-      `Champions League round ${state.round}: ${profile.club} vs ${state.opponent}.`,
+      `Champions League round ${state.round}: ${club.name} vs ${state.opponent}.`,
       `Skor leg: ${homeGoals}–${awayGoals}; aggregate: ${state.aggregate}.`,
       status === 'CHAMPION' ? 'Klub menjadi juara Champions League.' : status === 'ELIMINATED' ? 'Klub tersingkir dari Champions League.' : `Klub melaju ke round ${state.round}.`
     ]
@@ -108,6 +148,10 @@ export function claimAchievement(profileInput: PlayerProfile, achievementId: str
   achievement.claimed = true;
   profile.money += achievement.rewardMoney;
   profile.totalExp += achievement.rewardExp;
+  profile.level = Math.max(profile.level, Math.floor(profile.totalExp / 100) + 1);
+  profile.ledger ??= [];
+  profile.ledger.unshift({ id: `${profile.userId}-ACHIEVEMENT-${achievement.id}-${now.getTime()}-${profile.ledger.length}`, createdAt: now.toISOString(), type: 'ACHIEVEMENT_REWARD', amount: achievement.rewardMoney, balanceAfter: profile.money, note: `Achievement ${achievement.title}` });
+  profile.ledger = profile.ledger.slice(0, 100);
   profile.updatedAt = now.toISOString();
   return { profile, achievement };
 }

@@ -1,5 +1,5 @@
 import { createInitialProfile, getRating, MathRandomSource, type RandomSource } from './engine.js';
-import { FORMATIONS, TACTICS, type ClubFixture, type ClubMatchResult, type ClubPlayer, type FormationId, type MatchOutcome, type PlayerProfile, type Position, type TacticId } from './types.js';
+import { FORMATIONS, TACTICS, type ClubFixture, type ClubMatchResult, type ClubPlayer, type ClubState, type FormationId, type MatchOutcome, type PlayerProfile, type Position, type TacticId } from './types.js';
 import { SEED_CLUB_NAMES, SEED_PLAYER_NAMES, SEED_ROSTER_POSITIONS } from '../config/seed-data.js';
 import { RECOVERY_CLUBS, RECOVERY_PLAYERS_BY_CLUB, type RecoveryPlayerRecord } from '../config/recovery-data.js';
 import { GAME_BALANCE } from '../config/game-balance.js';
@@ -18,7 +18,7 @@ function dateKey(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
 
-function userAsClubPlayer(profile: PlayerProfile): ClubPlayer {
+function userAsClubPlayer(profile: PlayerProfile, now: Date): ClubPlayer {
   return {
     id: `user-${profile.userId}`,
     name: profile.displayName,
@@ -30,7 +30,7 @@ function userAsClubPlayer(profile: PlayerProfile): ClubPlayer {
     hp: profile.hp,
     maxHp: profile.maxHp,
     salary: 0,
-    contractUntil: new Date(Date.now() + 365 * 86_400_000).toISOString(),
+    contractUntil: new Date(now.getTime() + 365 * 86_400_000).toISOString(),
     isUserPlayer: true,
     goals: profile.career.goals,
     assists: profile.career.assists,
@@ -49,7 +49,7 @@ function recoveryOverall(record: RecoveryPlayerRecord): number {
   return clamp(52 + Math.abs(record.normalValue % 38), 45, 92);
 }
 
-function recoveryClubPlayer(record: RecoveryPlayerRecord, level: number): ClubPlayer {
+function recoveryClubPlayer(record: RecoveryPlayerRecord, level: number, now: Date): ClubPlayer {
   const overall = recoveryOverall(record);
   const position = recoveryPosition(record.positionCode);
   const stats = {
@@ -71,7 +71,7 @@ function recoveryClubPlayer(record: RecoveryPlayerRecord, level: number): ClubPl
     hp: 100,
     maxHp: 100,
     salary: Math.max(40, Math.round(record.price + level * 10)),
-    contractUntil: new Date(Date.now() + 180 * 86_400_000).toISOString(),
+    contractUntil: new Date(now.getTime() + 180 * 86_400_000).toISOString(),
     isUserPlayer: false,
     goals: 0,
     assists: 0,
@@ -79,7 +79,7 @@ function recoveryClubPlayer(record: RecoveryPlayerRecord, level: number): ClubPl
   };
 }
 
-function npcPlayer(index: number, level: number, rng: RandomSource): ClubPlayer {
+function npcPlayer(index: number, level: number, rng: RandomSource, now: Date): ClubPlayer {
   const position = POSITIONS[index % POSITIONS.length];
   const base = 45 + level * 2 + Math.floor(rng.next() * 14);
   const stats = {
@@ -102,7 +102,7 @@ function npcPlayer(index: number, level: number, rng: RandomSource): ClubPlayer 
     hp: 100,
     maxHp: 100,
     salary: 50 + level * 15 + Math.floor(rng.next() * 50),
-    contractUntil: new Date(Date.now() + 180 * 86_400_000).toISOString(),
+    contractUntil: new Date(now.getTime() + 180 * 86_400_000).toISOString(),
     isUserPlayer: false,
     goals: 0,
     assists: 0,
@@ -121,14 +121,39 @@ function recoveredTactic(officialClub: typeof RECOVERY_CLUBS[number] | undefined
   return tacticIds[Math.abs(officialClub?.tacticsId ?? 0) % tacticIds.length];
 }
 
-function buildOpponentRoster(officialClub: typeof RECOVERY_CLUBS[number] | undefined, level: number, rng: RandomSource): ClubPlayer[] {
-  const officialPlayers = officialClub ? (RECOVERY_PLAYERS_BY_CLUB.get(officialClub.id) ?? []).slice(0, 18).map((record) => recoveryClubPlayer(record, level)) : [];
-  const fallbackPlayers = Array.from({ length: Math.max(0, 15 - officialPlayers.length) }, (_, index) => npcPlayer(index, level, rng));
-  return [...officialPlayers, ...fallbackPlayers];
+const MINIMUM_ROSTER_DEPTH: Record<Position, number> = { GK: 1, DF: 5, MF: 5, FW: 3 };
+
+function ensureRosterDepth(rosterInput: ClubPlayer[], level: number, rng: RandomSource, now: Date): ClubPlayer[] {
+  const roster = [...rosterInput];
+  const counts = { GK: 0, DF: 0, MF: 0, FW: 0 };
+  for (const player of roster) counts[player.position] += 1;
+  let fallbackIndex = 1_000;
+  for (const position of Object.keys(MINIMUM_ROSTER_DEPTH) as Position[]) {
+    while (counts[position] < MINIMUM_ROSTER_DEPTH[position]) {
+      const positionIndex = Math.max(0, POSITIONS.indexOf(position));
+      const player = npcPlayer(fallbackIndex + positionIndex, level, rng, now);
+      player.position = position;
+      player.id = `npc-${fallbackIndex + positionIndex + 1}`;
+      roster.push(player);
+      counts[position] += 1;
+      fallbackIndex += POSITIONS.length;
+    }
+  }
+  return roster;
 }
 
-function buildFixtures(clubId: string, season: number, now: Date): ClubFixture[] {
-  const opponents = CLUB_NAMES.filter((name) => name !== clubId);
+function buildOpponentRoster(officialClub: typeof RECOVERY_CLUBS[number] | undefined, level: number, rng: RandomSource, now: Date): ClubPlayer[] {
+  const officialPlayers = officialClub ? (RECOVERY_PLAYERS_BY_CLUB.get(officialClub.id) ?? []).slice(0, 18).map((record) => recoveryClubPlayer(record, level, now)) : [];
+  return ensureRosterDepth(officialPlayers, level, rng, now);
+}
+
+function leagueClubNames(officialClub: typeof RECOVERY_CLUBS[number] | undefined): string[] {
+  const names = officialClub ? RECOVERY_CLUBS.filter((club) => club.league === officialClub.league).map((club) => club.nameEn) : [];
+  return names.length >= 2 ? names : CLUB_NAMES;
+}
+
+function buildFixtures(clubId: string, season: number, now: Date, participants: string[] = CLUB_NAMES): ClubFixture[] {
+  const opponents = participants.filter((name) => name !== clubId);
   const fixtures: ClubFixture[] = [];
   for (const leg of [0, 1]) {
     for (const [index, opponent] of opponents.entries()) {
@@ -155,9 +180,11 @@ export function ensureClubState(profileInput: PlayerProfile, now = new Date(), r
   const officialClub = RECOVERY_CLUBS.find((club) => club.nameEn === requestedClub) ?? RECOVERY_CLUBS.find((club) => club.league === 1011);
   const clubName = officialClub?.nameEn ?? requestedClub;
   if (stateField === 'clubState' && profile.club === 'Rising City FC') profile.club = clubName;
-  const officialPlayers = officialClub ? (RECOVERY_PLAYERS_BY_CLUB.get(officialClub.id) ?? []).slice(0, 15).map((record) => recoveryClubPlayer(record, profile.level)) : [];
-  const fallbackPlayers = Array.from({ length: Math.max(0, 15 - officialPlayers.length) }, (_, index) => npcPlayer(index, profile.level, rng));
-  const roster = [userAsClubPlayer(profile), ...officialPlayers, ...fallbackPlayers];
+  const participants = leagueClubNames(officialClub);
+  const officialPlayers = officialClub ? (RECOVERY_PLAYERS_BY_CLUB.get(officialClub.id) ?? []).slice(0, 15).map((record) => recoveryClubPlayer(record, profile.level, now)) : [];
+  const fallbackPlayers = Array.from({ length: Math.max(0, 15 - officialPlayers.length) }, (_, index) => npcPlayer(index, profile.level, rng, now));
+  const baseRoster = [userAsClubPlayer(profile, now), ...officialPlayers, ...fallbackPlayers];
+  const roster = stateField === 'coachClubState' ? ensureRosterDepth(baseRoster, profile.level, rng, now) : baseRoster;
   profile[stateField] = {
     id: clubName,
     officialId: officialClub?.id,
@@ -172,8 +199,8 @@ export function ensureClubState(profileInput: PlayerProfile, now = new Date(), r
     formation: '4-4-2',
     tactic: 'balanced',
     roster,
-    fixtures: buildFixtures(clubName, profile.league.season, now),
-    standings: CLUB_NAMES.map((clubName) => ({ clubId: clubName, clubName, played: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, points: 0 })),
+    fixtures: buildFixtures(clubName, profile.league.season, now, participants),
+    standings: participants.map((participant) => ({ clubId: participant, clubName: participant, played: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, points: 0 })),
     nextFixtureAt: new Date(now.getTime() + 86_400_000).toISOString(),
     championsLeagueQualified: false,
     championsLeagueRound: 0
@@ -205,6 +232,12 @@ export function setClubTactic(profileInput: PlayerProfile, tactic: TacticId, now
   profile[stateField]!.tactic = tactic;
   profile.updatedAt = now.toISOString();
   return profile;
+}
+
+function recoverClubRoster(roster: ClubPlayer[]): void {
+  // ClubPlayer condition recovery between scheduled fixtures is RECOVERY_INFERRED;
+  // without it, a 38-round Coach season can permanently exhaust the only GK.
+  for (const player of roster) player.hp = clamp(player.hp + 5, 0, player.maxHp);
 }
 
 function selectPlayingSquad(roster: ClubPlayer[], formationId: FormationId): ClubPlayer[] {
@@ -254,6 +287,40 @@ function updateStanding(standing: { played: number; wins: number; draws: number;
   else standing.losses += 1;
 }
 
+function stableClubHash(value: string): number {
+  return [...value].reduce((hash, character) => (hash * 31 + character.charCodeAt(0)) >>> 0, 7);
+}
+
+export function projectCoachLeagueStandings(club: ClubState): void {
+  // The recovered client exposes league/round structures but not authoritative
+  // server results for matches between two non-user clubs. This deterministic
+  // projection fills those missing rows and remains explicitly RECOVERY_INFERRED.
+  const seasonMatches = Math.max(1, club.fixtures.length);
+  for (const standing of club.standings) {
+    if (standing.clubId === club.id) continue;
+    const remaining = Math.max(0, seasonMatches - standing.played);
+    if (remaining === 0) continue;
+    const official = RECOVERY_CLUBS.find((item) => item.nameEn === standing.clubName);
+    const grade = official?.grade ?? 1;
+    const prestige = official?.prestige ?? 0;
+    const strength = clamp(0.78 + grade * 0.055 + prestige / 2_000 + (stableClubHash(standing.clubId) % 9) / 100, 0.75, 1.25);
+    const winRate = clamp(0.18 + (strength - 0.75) * 0.55, 0.16, 0.44);
+    const drawRate = clamp(0.28 - Math.abs(strength - 1) * 0.08, 0.16, 0.30);
+    const wins = Math.min(remaining, Math.floor(remaining * winRate));
+    const draws = Math.min(remaining - wins, Math.floor(remaining * drawRate));
+    const losses = remaining - wins - draws;
+    const goalsFor = Math.max(0, Math.round(remaining * (0.85 + strength * 0.55)));
+    const goalsAgainst = Math.max(0, Math.round(remaining * (1.55 - strength * 0.45)));
+    standing.played += remaining;
+    standing.wins += wins;
+    standing.draws += draws;
+    standing.losses += losses;
+    standing.goalsFor += goalsFor;
+    standing.goalsAgainst += goalsAgainst;
+    standing.points += wins * 3 + draws;
+  }
+}
+
 export function playClubMatch(profileInput: PlayerProfile, now = new Date(), rng: RandomSource = new MathRandomSource(), stateField: ClubStateField = 'clubState'): ClubMatchResult {
   const profile = ensureClubState(profileInput, now, rng, stateField);
   const club = profile[stateField]!;
@@ -266,8 +333,10 @@ export function playClubMatch(profileInput: PlayerProfile, now = new Date(), rng
   const awayFormation = userClubIsHome ? recoveredFormation(awayOfficial) : club.formation;
   const homeTactic = userClubIsHome ? club.tactic : recoveredTactic(homeOfficial);
   const awayTactic = userClubIsHome ? recoveredTactic(awayOfficial) : club.tactic;
-  const homeRoster = userClubIsHome ? club.roster : buildOpponentRoster(homeOfficial, club.level, rng);
-  const awayRoster = userClubIsHome ? buildOpponentRoster(awayOfficial, club.level, rng) : club.roster;
+  const homeRoster = userClubIsHome ? club.roster : buildOpponentRoster(homeOfficial, club.level, rng, now);
+  const awayRoster = userClubIsHome ? buildOpponentRoster(awayOfficial, club.level, rng, now) : club.roster;
+  recoverClubRoster(homeRoster);
+  recoverClubRoster(awayRoster);
   const homeSquad = selectPlayingSquad(homeRoster, homeFormation);
   const awaySquad = selectPlayingSquad(awayRoster, awayFormation);
   if (homeSquad.length < 7 || awaySquad.length < 7) throw new Error('Salah satu club tidak memiliki pemain yang cukup sehat untuk pertandingan.');
@@ -300,7 +369,7 @@ export function playClubMatch(profileInput: PlayerProfile, now = new Date(), rng
     player.appearances += 1;
     player.hp = clamp(player.hp - 5, 0, player.maxHp);
     player.morale = clamp(player.morale + (result === 'WIN' ? 3 : result === 'LOSS' ? -3 : 1), 0, 100);
-    if (player.isUserPlayer) {
+    if (player.isUserPlayer && stateField === 'clubState') {
       player.goals += clubGoals > 0 && profile.position === 'FW' ? 1 : 0;
       profile.hp = player.hp;
       profile.career.appearances += 1;
@@ -310,13 +379,15 @@ export function playClubMatch(profileInput: PlayerProfile, now = new Date(), rng
       else profile.career.losses += 1;
     }
   }
-  profile.league.points = currentStanding.points;
-  profile.league.matchday = fixture.matchday + 1;
-  profile.league.wins = currentStanding.wins;
-  profile.league.draws = currentStanding.draws;
-  profile.league.losses = currentStanding.losses;
-  profile.league.goalsFor = currentStanding.goalsFor;
-  profile.league.goalsAgainst = currentStanding.goalsAgainst;
+  if (stateField === 'clubState') {
+    profile.league.points = currentStanding.points;
+    profile.league.matchday = fixture.matchday + 1;
+    profile.league.wins = currentStanding.wins;
+    profile.league.draws = currentStanding.draws;
+    profile.league.losses = currentStanding.losses;
+    profile.league.goalsFor = currentStanding.goalsFor;
+    profile.league.goalsAgainst = currentStanding.goalsAgainst;
+  }
   profile.updatedAt = now.toISOString();
   return {
     profile,
@@ -344,6 +415,7 @@ export function finishSeason(profileInput: PlayerProfile, now = new Date(), stat
   const profile = ensureClubState(profileInput, now, new MathRandomSource(), stateField);
   const club = profile[stateField]!;
   const standing = club.standings.find((item) => item.clubId === club.id)!;
+  if (stateField === 'coachClubState') projectCoachLeagueStandings(club);
   profile.league.season += 1;
   profile.league.matchday = 1;
   profile.league.points = 0;
@@ -352,8 +424,10 @@ export function finishSeason(profileInput: PlayerProfile, now = new Date(), stat
   profile.league.losses = 0;
   profile.league.goalsFor = 0;
   profile.league.goalsAgainst = 0;
-  club.fixtures = buildFixtures(club.id, profile.league.season, now);
-  club.standings = CLUB_NAMES.map((clubName) => ({ clubId: clubName, clubName, played: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, points: 0 }));
+  const officialClub = RECOVERY_CLUBS.find((item) => item.id === club.officialId) ?? RECOVERY_CLUBS.find((item) => item.nameEn === club.name);
+  const participants = leagueClubNames(officialClub);
+  club.fixtures = buildFixtures(club.id, profile.league.season, now, participants);
+  club.standings = participants.map((participant) => ({ clubId: participant, clubName: participant, played: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, points: 0 }));
   const currentTier = club.leagueTier ?? 1;
   const maximumPoints = Math.max(3, (club.fixtures.length || 1) * 3);
   // Coach videos show promotion, QCL qualification, and relegation targets;

@@ -7,14 +7,27 @@ import { advanceWeek, assignMatchExp, ensureGameplayState, formatDetailedSkills,
 import { formatContract, getContractStatus, renewContract, signContract } from '../domain/contract-engine.js';
 import { joinOfficialClub, listOfficialClubs } from '../domain/official-club-engine.js';
 import { acceptJobOffer, advanceCoachRound, assignCoachExp, createCoachCareer, declineJobOffer, formatCoachProfile, generateJobOffer, rebirthCoach, resolveCoachEvent, retireCoach, settleCoachSeason } from '../domain/coach-career-engine.js';
-import { createVersusClub, createVersusSeason, enrollVersus, formatVersusBattle, formatVersusProfile, getVersusStandings, processVersusRound, settleVersusSeason, syncVersusProfileWithSeason } from '../domain/versus-engine.js';
-import { ABILITY_LABELS, COACH_ABILITIES, COACH_ABILITY_LABELS, DETAILED_SKILL_LABELS, DETAILED_SKILLS, FORMATIONS, HONOR_CATEGORY_LABELS, POSITION_LABELS, TACTICS, TRAINER_CATALOG, TRICK_CATALOG, type AbilityId, type CoachAbilityId, type CultureSubject, type DetailedSkillId, type PlayerProfile, type Position } from '../domain/types.js';
-import type { PlayerStore } from '../storage/json-store.js';
-import { careerControls, detailedTrainingControls, trainingControls } from './components.js';
+import { createVersusClub, createVersusSeason, enrollVersus, formatVersusBattle, getVersusStandings, processVersusRound, settleVersusSeason, submitVersusLineup, syncVersusProfileWithSeason } from '../domain/versus-engine.js';
+import { ABILITY_LABELS, COACH_ABILITIES, COACH_ABILITY_LABELS, DETAILED_SKILL_LABELS, DETAILED_SKILLS, FORMATIONS, HONOR_CATEGORY_LABELS, POSITION_LABELS, TACTICS, TRAINER_CATALOG, TRICK_CATALOG, type AbilityId, type CoachAbilityId, type CultureSubject, type DetailedSkillId, type FormationId, type PlayerProfile, type Position, type TacticId, type VersusSeason } from '../domain/types.js';
+import type { BatchPlayerStore, PlayerStore, VersusGroupLockStore } from '../storage/json-store.js';
+import { careerControls, detailedTrainingControls, trainingControls, versusFinalizeControls, versusHomeControls, versusMarketControls, versusPositionControls, versusRankingControls, versusSetupControls, versusSponsorControls } from './components.js';
 import { log } from '../observability/logger.js';
 
 const BRAND_COLOR: ColorResolvable = '#1f8b4c';
 const ADMIN_USER_IDS = new Set((process.env.ADMIN_USER_IDS ?? '').split(',').map((value) => value.trim()).filter(Boolean));
+
+type VersusPosition = 'GK' | 'DF' | 'MF' | 'FW';
+type VersusDraft = {
+  groupCode: string;
+  battleId: string;
+  rosterVersion: number;
+  formation: FormationId;
+  tactic: TacticId;
+  selected: Record<VersusPosition, string[]>;
+  captain?: string;
+  substitutes: string[];
+};
+const versusDrafts = new Map<string, VersusDraft>();
 
 function profileEmbed(profile: PlayerProfile): EmbedBuilder {
   const abilities = Object.entries(profile.abilities)
@@ -56,17 +69,26 @@ async function versusSeasonFor(store: PlayerStore, groupCode: string, now: Date)
   const members = await versusMembers(store, groupCode);
   if (members.length === 0) throw new Error('Belum ada anggota pada Versus group ini.');
   const existing = members.find((profile) => profile.versus?.season)?.versus?.season;
-  return { season: existing && existing.state !== 'FINISHED' ? structuredClone(existing) : createVersusSeason(groupCode, members, now), members };
+  return { season: existing ? structuredClone(existing) : createVersusSeason(groupCode, members, now), members };
 }
 
 async function persistVersusSeason(store: PlayerStore, season: import('../domain/types.js').VersusSeason, now: Date): Promise<void> {
   const members = await versusMembers(store, season.groupCode);
-  for (const member of members) await store.save(syncVersusProfileWithSeason(member, season, now));
+  const nextProfiles = members.map((member) => syncVersusProfileWithSeason(member, season, now));
+  const batchStore = store as Partial<BatchPlayerStore>;
+  if (typeof batchStore.saveBatch !== 'function') throw new Error('Versus persistence backend tidak menyediakan atomic batch save. Operasi dihentikan untuk mencegah partial season write.');
+  await batchStore.saveBatch(nextProfiles);
 }
 
 const versusGroupQueues = new Map<string, Promise<void>>();
 
-async function withVersusGroupLock<T>(groupCode: string, operation: () => Promise<T>): Promise<T> {
+function parseIdList(value: string | null): string[] {
+  return [...new Set((value ?? '').split(',').map((id) => id.trim()).filter(Boolean))];
+}
+
+async function withVersusGroupLock<T>(store: PlayerStore, groupCode: string, operation: () => Promise<T>): Promise<T> {
+  const lockStore = store as Partial<VersusGroupLockStore>;
+  if (typeof lockStore.withVersusGroupLock === 'function') return lockStore.withVersusGroupLock(groupCode, operation);
   const previous = versusGroupQueues.get(groupCode) ?? Promise.resolve();
   let release!: () => void;
   const current = new Promise<void>((resolve) => { release = resolve; });
@@ -79,6 +101,175 @@ async function withVersusGroupLock<T>(groupCode: string, operation: () => Promis
     release();
     if (versusGroupQueues.get(groupCode) === queued) versusGroupQueues.delete(groupCode);
   }
+}
+
+function activeVersusBattle(season: VersusSeason | undefined, clubId: string): import('../domain/types.js').VersusBattle | undefined {
+  if (!season || season.state !== 'ACTIVE') return undefined;
+  return season.battles.find((battle) => battle.roundId === season.currentRound && (battle.homeClubId === clubId || battle.awayClubId === clubId));
+}
+
+function versusOpponentName(season: VersusSeason | undefined, battle: import('../domain/types.js').VersusBattle | undefined, clubId: string): string {
+  if (!season || !battle) return '-';
+  const opponentId = battle.homeClubId === clubId ? battle.awayClubId : battle.homeClubId;
+  return season.clubs.find((club) => club.id === opponentId)?.name ?? opponentId;
+}
+
+function versusAverageRating(club: import('../domain/types.js').VersusClub): number {
+  const players = club.roster;
+  const total = players.reduce((sum, player) => sum + Object.values(player.abilities).reduce((inner, value) => inner + value, 0) / 6, 0);
+  return Math.round(total / Math.max(1, players.length));
+}
+
+function versusAttackRating(club: import('../domain/types.js').VersusClub): number {
+  const players = club.roster.filter((player) => player.position === 'FW' || player.position === 'MF');
+  return Math.round(players.reduce((sum, player) => sum + player.abilities.atk, 0) / Math.max(1, players.length));
+}
+
+function versusDefenceRating(club: import('../domain/types.js').VersusClub): number {
+  const players = club.roster.filter((player) => player.position === 'GK' || player.position === 'DF');
+  return Math.round(players.reduce((sum, player) => sum + player.abilities.def, 0) / Math.max(1, players.length));
+}
+
+function versusHomeEmbed(profile: PlayerProfile, season?: VersusSeason): EmbedBuilder {
+  const versus = profile.versus!;
+  const club = versus.club;
+  const battle = activeVersusBattle(season, club.id);
+  const standing = season ? getVersusStandings(season).find((item) => item.clubId === club.id) : undefined;
+  const submission = battle ? battle.homeClubId === club.id ? battle.homeSubmission : battle.awaySubmission : undefined;
+  const totalRounds = season ? 2 * (season.clubs.length - 1) : 0;
+  const submissionLabel = submission ? `LOCKED · ${submission.formation} · ${TACTICS[submission.tactic].name}` : 'NOT SUBMITTED';
+  return new EmbedBuilder()
+    .setColor(BRAND_COLOR)
+    .setTitle(`${club.name} · Versus Home`)
+    .setDescription(`Group **${versus.groupCode ?? '-'}** · Season **${season?.id ?? versus.season?.id ?? '-'}**\n${season ? `Round **${Math.min(season.currentRound, totalRounds)}/${totalRounds}**` : 'Season belum aktif'}`)
+    .addFields(
+      { name: 'Record', value: `${club.wins}-${club.draws}-${club.losses} · ${club.goalsFor}-${club.goalsAgainst}`, inline: true },
+      { name: 'Standing', value: standing ? `#${standing.rank} · ${standing.points} pts · GD ${standing.goalDifference}` : '-', inline: true },
+      { name: 'Versus wallet', value: `${formatMoney(versus.versusMoney)} money · ${versus.versusCoin} coin`, inline: true },
+      { name: 'Next battle', value: battle ? `**${battle.id}** vs **${versusOpponentName(season, battle, club.id)}**` : 'Tidak ada battle aktif', inline: true },
+      { name: 'Deadline', value: season?.roundDeadline ?? '-', inline: true },
+      { name: 'Submission', value: submissionLabel, inline: true }
+    )
+    .setFooter({ text: 'Pilih Lineup untuk setup XI seperti pre-match screen. Estimasi strength tetap RECOVERY_INFERRED.' });
+}
+
+function versusRegistrationEmbed(profile: PlayerProfile, season?: VersusSeason): EmbedBuilder {
+  const versus = profile.versus!;
+  const club = versus.club;
+  return new EmbedBuilder()
+    .setColor(BRAND_COLOR)
+    .setTitle(`${club.name} · Versus Registration`)
+    .setDescription(`Status **${versus.status}**\nGroup code **${versus.groupCode ?? '-'}**\n\nBagikan group code ini kepada teman yang ingin masuk kompetisi yang sama. Registrasi dan settlement tetap dikelola oleh server season.`)
+    .addFields(
+      { name: 'Competition', value: season ? `${season.leagueId} · Grade ${season.grade}` : '-', inline: true },
+      { name: 'Capacity', value: season ? `${season.clubs.length}/${season.capacity} clubs` : '-', inline: true },
+      { name: 'Season state', value: season?.state ?? '-', inline: true },
+      { name: 'Club', value: club.name, inline: true },
+      { name: 'Current round', value: season ? `${Math.min(season.currentRound, 2 * (season.clubs.length - 1))}/${2 * (season.clubs.length - 1)}` : '-', inline: true },
+      { name: 'Next action', value: season?.state === 'ACTIVE' ? 'Open Next Battle or Lineup' : 'Wait for competition state', inline: true }
+    )
+    .setFooter({ text: 'Group-code registration is public evidence; exact original registration copy remains unverified.' });
+}
+
+function versusResultEmbed(profile: PlayerProfile, season?: VersusSeason): EmbedBuilder {
+  const clubId = profile.versus!.clubId;
+  const battles = season?.battles.filter((battle) => battle.state === 'PUBLISHED' && (battle.homeClubId === clubId || battle.awayClubId === clubId)).slice(-3).reverse() ?? [];
+  const description = battles.length ? battles.map((battle) => `**Round ${battle.roundId}** · ${formatVersusBattle(battle)}`).join('\n\n') : 'Belum ada hasil battle yang dipublikasikan.';
+  return new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`${profile.versus!.club.name} · Results`).setDescription(description).setFooter({ text: 'Hasil disusun dari settlement battle yang sudah published.' });
+}
+
+function versusStandingsEmbed(season: VersusSeason): EmbedBuilder {
+  const lines = getVersusStandings(season).map((standing) => `${standing.rank}. **${standing.clubName}** · ${standing.points} pts · ${standing.wins}-${standing.draws}-${standing.losses} · GD ${standing.goalDifference}${standing.isNpc ? ' · NPC' : ''}`).join('\n');
+  return new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`Versus Standings · ${season.groupCode}`).setDescription(lines).setFooter({ text: `Round ${season.currentRound}/${2 * (season.clubs.length - 1)} · points, GD, goals scored, stable club ID.` });
+}
+
+function versusMarketEmbed(profile: PlayerProfile, tab: 'DEAL' | 'SCOUT' = 'DEAL'): EmbedBuilder {
+  const roster = profile.versus!.club.roster
+    .slice()
+    .sort((a, b) => b.value - a.value || a.name.localeCompare(b.name))
+    .slice(0, 8)
+    .map((player) => `**${player.name}** · ${player.position} · value ${player.value} · HP ${player.hp}/${player.maxHp}`)
+    .join('\n');
+  return new EmbedBuilder()
+    .setColor(BRAND_COLOR)
+    .setTitle(`${profile.versus!.club.name} · Versus Market`)
+    .setDescription(`**${tab === 'DEAL' ? 'Deal' : 'Scout'} tab**\n${tab === 'DEAL' ? 'Roster valuation and deal surface.' : 'Scouting surface for candidate players.'}\n\n${roster || 'Belum ada player.'}`)
+    .addFields({ name: 'Current state', value: 'Read-only market preview menggunakan data roster Versus yang tersedia.' }, { name: 'Evidence boundary', value: 'Advanced Scout, offer generation, price, and purchase effects belum dipulihkan; tidak ada transaksi palsu yang dijalankan.' })
+    .setFooter({ text: 'Deal/Scout tabs observed in public Versus review · unrecovered mechanics remain RECOVERY_INFERRED.' });
+}
+
+function versusSponsorEmbed(profile: PlayerProfile, selection?: 'Junior' | 'Senior' | 'Top'): EmbedBuilder {
+  return new EmbedBuilder()
+    .setColor(BRAND_COLOR)
+    .setTitle(`${profile.versus!.club.name} · Sponsor`)
+    .setDescription(`${selection ? `Selected **${selection} Sponsor**.` : 'Choose a sponsor tier for the next reward cycle.'}\n\nJunior Sponsor · Senior Sponsor · Top Sponsor`)
+    .addFields(
+      { name: 'Available balance', value: `${formatMoney(profile.versus!.versusMoney)} money · ${profile.versus!.versusCoin} coin`, inline: true },
+      { name: 'Current state', value: 'Preview only', inline: true },
+      { name: 'Why no claim button?', value: 'The public footage shows sponsor tiers and reward visuals, but does not expose complete cost, cooldown, payout, or persistence rules. No balance mutation is performed.' }
+    )
+    .setFooter({ text: 'Sponsor tiers observed in the verified Versus walkthrough · mechanics remain RECOVERY_INFERRED.' });
+}
+
+function versusRewardsEmbed(profile: PlayerProfile, season?: VersusSeason): EmbedBuilder {
+  const clubId = profile.versus!.clubId;
+  const reward = season?.rewards.find((item) => item.clubId === clubId);
+  const ledger = (profile.versus!.ledger ?? []).filter((entry) => entry.seasonId === season?.id).slice(0, 6);
+  const ledgerText = ledger.length ? ledger.map((entry) => `${entry.currency} +${entry.amount} · ${entry.note}`).join('\n') : 'Belum ada reward ledger pada season ini.';
+  return new EmbedBuilder()
+    .setColor(BRAND_COLOR)
+    .setTitle(`${profile.versus!.club.name} · Versus Rewards`)
+    .setDescription(reward ? `Final rank **#${reward.rank}** · ${reward.promoted ? 'Promoted' : reward.relegated ? 'Relegated' : 'Stable'}\nMoney **+${reward.money}** · Coin **+${reward.coin}**` : 'Reward season akan ditampilkan setelah seluruh round diselesaikan dan season dipublikasikan.')
+    .addFields({ name: 'Reward history', value: ledgerText }, { name: 'Reward state', value: season?.state === 'FINISHED' ? 'PUBLISHED' : 'PENDING' })
+    .setFooter({ text: 'Rewards surface mengikuti hasil settlement; angka yang belum dipublikasikan tidak diproyeksikan.' });
+}
+
+function versusScheduleEmbed(profile: PlayerProfile, season?: VersusSeason): EmbedBuilder {
+  const clubId = profile.versus!.clubId;
+  const battles = season?.battles.filter((battle) => battle.homeClubId === clubId || battle.awayClubId === clubId).sort((a, b) => a.roundId - b.roundId || a.id.localeCompare(b.id)).slice(0, 12) ?? [];
+  const lines = battles.length ? battles.map((battle) => {
+    const opponentId = battle.homeClubId === clubId ? battle.awayClubId : battle.homeClubId;
+    const opponent = season?.clubs.find((club) => club.id === opponentId)?.name ?? opponentId;
+    const score = battle.settlement ? `${battle.settlement.homeGoals}-${battle.settlement.awayGoals}` : battle.state;
+    return `**R${battle.roundId}** · ${battle.homeClubId === clubId ? 'HOME' : 'AWAY'} vs **${opponent}** · ${score}`;
+  }).join('\n') : 'Belum ada schedule Versus.';
+  return new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`${profile.versus!.club.name} · My Schedule`).setDescription(lines).setFooter({ text: 'Schedule menampilkan fixture season yang tersimpan pada Versus aggregate.' });
+}
+
+function versusRankingsEmbed(season: VersusSeason | undefined, profile: PlayerProfile, category: 'CLUB' | 'MVP' | 'SCORERS' | 'ASSISTS' | 'GOALKEEPERS' = 'CLUB'): EmbedBuilder {
+  const clubs = season?.clubs ?? [];
+  const players = clubs.flatMap((club) => club.roster.map((player) => ({ ...player, clubName: club.name })));
+  const standings = season ? getVersusStandings(season).slice(0, 8).map((standing) => `${standing.rank}. **${standing.clubName}** · ${standing.points} pts · ${standing.wins}-${standing.draws}-${standing.losses}`).join('\n') : '-';
+  const sorted = category === 'ASSISTS' ? players.sort((a, b) => b.assists - a.assists || b.goals - a.goals) : category === 'MVP' ? players.sort((a, b) => (b.goals + b.assists) - (a.goals + a.assists) || b.appearances - a.appearances) : players.sort((a, b) => b.goals - a.goals || b.appearances - a.appearances);
+  const topPlayers = sorted.slice(0, 5);
+  const playerText = topPlayers.length ? topPlayers.map((player, index) => `${index + 1}. **${player.name}** · ${category === 'ASSISTS' ? `${player.assists} assists` : category === 'MVP' ? `${player.goals + player.assists} G+A` : `${player.goals} goals`} · ${player.clubName}`).join('\n') : 'Belum ada player telemetry.';
+  const title = category === 'CLUB' ? 'Club Ranking' : category === 'MVP' ? 'MVP Ranking' : category === 'SCORERS' ? 'Golden Boot · Top Scorers' : category === 'ASSISTS' ? 'Top Assists' : 'Goalkeeper Ranking';
+  const description = category === 'CLUB' ? standings : category === 'GOALKEEPERS' ? 'Kategori Raja GK terlihat pada video Versus, tetapi saves/clean-sheet telemetry belum tersedia dalam recovered domain; angka tidak dibuat-buat.' : playerText;
+  return new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`${profile.versus!.club.name} · ${title}`).setDescription(description).addFields({ name: 'Observed tabs', value: 'Champion · MVP · Golden Boot · Top Assist · Raja GK' }, { name: 'Evidence boundary', value: category === 'CLUB' || category === 'SCORERS' || category === 'ASSISTS' || category === 'MVP' ? 'Recovered season/player telemetry rendered; exact original ranking tie-breakers remain RECOVERY_INFERRED.' : 'GK metrics are not recovered.' }).setFooter({ text: 'Ranking tabs mirror the verified Versus walkthrough without inventing unavailable metrics.' });
+}
+
+function versusGlobalRankingEmbed(season: VersusSeason | undefined, profile: PlayerProfile): EmbedBuilder {
+  const standings = season ? getVersusStandings(season).sort((a, b) => b.points - a.points || b.goalDifference - a.goalDifference).map((standing, index) => `${index + 1}. **${standing.clubName}** · ${standing.points} pts · ${standing.wins}-${standing.draws}-${standing.losses}`).join('\n') : 'Belum ada global ranking.';
+  return new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`${profile.versus!.club.name} · Global Ranking`).setDescription(standings).setFooter({ text: 'Current implementation exposes the season-wide ranking; cross-season/global server aggregation requires a canonical shared ranking store.' });
+}
+
+function parseVersusComponentContext(action: string): { action: string; battleId: string; rosterVersion: number } | undefined {
+  const [name, encodedBattleId, versionText] = action.split(':');
+  if (!encodedBattleId || !versionText) return undefined;
+  const rosterVersion = Number(versionText);
+  if (!Number.isInteger(rosterVersion) || rosterVersion < 1) throw new Error('Versus component memiliki roster version yang tidak valid. Buka ulang Versus Home.');
+  return { action: name, battleId: decodeURIComponent(encodedBattleId), rosterVersion };
+}
+
+function draftLineup(draft: VersusDraft): string[] {
+  return (['GK', 'DF', 'MF', 'FW'] as VersusPosition[]).flatMap((position) => draft.selected[position]);
+}
+
+function draftSummary(draft: VersusDraft, club: import('../domain/types.js').VersusClub): string {
+  const names = new Map(club.roster.map((player) => [player.id, player.name]));
+  const lineup = draftLineup(draft).map((id) => names.get(id) ?? id).join(', ') || 'Belum lengkap';
+  const bench = draft.substitutes.map((id) => names.get(id) ?? id).join(', ') || 'Tidak ada';
+  return `Formation **${draft.formation}** · Tactic **${TACTICS[draft.tactic].name}**\nXI: ${lineup}\nCaptain: ${names.get(draft.captain ?? '') ?? 'Belum dipilih'}\nSubs: ${bench}`;
 }
 
 export async function handleCommand(interaction: ChatInputCommandInteraction, store: PlayerStore): Promise<void> {
@@ -479,7 +670,9 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
       await store.save(updated);
       const coachText = updated.coach ? ` Coach board: **${updated.coach.boardTarget.type}**, approval **${updated.coach.approval}/100**, status **${updated.coach.status}**.` : '';
       const seasonClub = updated.coachClubState ?? updated.clubState;
-      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`Season ${updated.league.season - 1} selesai`).setDescription(`Season baru **${updated.league.season}** dimulai. Champions League: **${seasonClub?.championsLeagueQualified ? 'qualified' : 'not qualified'}**.${coachText}`)] });
+      const completedSeason = updated.coach ? updated.coach.season - 1 : updated.league.season - 1;
+      const activeSeason = updated.coach ? updated.coach.season : updated.league.season;
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`Season ${completedSeason} selesai`).setDescription(`Season baru **${activeSeason}** dimulai. Champions League: **${seasonClub?.championsLeagueQualified ? 'qualified' : 'not qualified'}**.${coachText}`)] });
       return;
     }
 
@@ -487,23 +680,45 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
       const profile = await requireProfile(interaction, store);
       if (!profile) return;
       const groupCode = interaction.options.getString('group_code', true).trim().toUpperCase();
-      const currentMembers = await versusMembers(store, groupCode);
-      const existing = currentMembers.find((member) => member.versus?.season)?.versus?.season;
-      if (existing && (existing.currentRound > 1 || existing.battles.some((battle) => battle.state !== 'OPEN'))) throw new Error('Group Versus sudah mengunci season aktif; join baru berlaku pada season berikutnya.');
-      if (!currentMembers.some((member) => member.userId === profile.userId) && currentMembers.length >= 8) throw new Error('Group Versus sudah penuh (maksimal 8 user; NPC mengisi slot tersisa).');
-      const enrolled = enrollVersus(profile, groupCode);
-      await store.save(enrolled);
-      const members = await versusMembers(store, groupCode);
-      const season = createVersusSeason(groupCode, members);
-      await persistVersusSeason(store, season, new Date());
-      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle('Versus group joined').setDescription(`Club **${enrolled.versus!.club.name}** bergabung ke group **${groupCode}**.`).addFields({ name: 'Season', value: season.id, inline: true }, { name: 'League clubs', value: `${season.clubs.length}`, inline: true }, { name: 'Round', value: `1/${2 * (season.clubs.length - 1)}`, inline: true }).setFooter({ text: 'Versus memakai aggregate dan wallet terpisah dari Player/Coach.' })] });
+      const joined = await withVersusGroupLock(store, groupCode, async () => {
+        const currentMembers = await versusMembers(store, groupCode);
+        const existing = currentMembers.find((member) => member.versus?.season)?.versus?.season;
+        if (existing && existing.state === 'ACTIVE' && (existing.currentRound > 1 || existing.battles.some((battle) => battle.state !== 'OPEN'))) throw new Error('Group Versus sudah mengunci season aktif; join baru berlaku pada season berikutnya.');
+        if (!currentMembers.some((member) => member.userId === profile.userId) && currentMembers.length >= 8) throw new Error('Group Versus sudah penuh (maksimal 8 user; NPC mengisi slot tersisa).');
+        const enrolled = enrollVersus(profile, groupCode);
+        await store.save(enrolled);
+        const members = await versusMembers(store, groupCode);
+        const season = createVersusSeason(groupCode, members);
+        await persistVersusSeason(store, season, new Date());
+        return { enrolled, season };
+      });
+      const joinedHome = versusHomeEmbed(joined.enrolled, joined.season);
+      await interaction.editReply({ embeds: [joinedHome.setTitle('Versus group joined').setDescription(`Club **${joined.enrolled.versus!.club.name}** bergabung ke group **${groupCode}**.\n\n${joinedHome.data.description ?? ''}`)], components: versusHomeControls(interaction.user.id) });
       return;
     }
 
     if (command === 'versus-profile') {
       const profile = await requireProfile(interaction, store);
       if (!profile?.versus) throw new Error('Versus club belum dibuat. Jalankan `/versus-join group_code:<code>`.');
-      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`${profile.versus.club.name} · Versus Profile`).setDescription(formatVersusProfile(profile)).addFields({ name: 'Roster', value: `${profile.versus.club.roster.length} players`, inline: true }, { name: 'Group', value: profile.versus.groupCode ?? '-', inline: true }, { name: 'History', value: `${profile.versus.history.length} season`, inline: true })] });
+      const { season } = await versusSeasonFor(store, profile.versus.groupCode ?? '', new Date());
+      await interaction.editReply({ embeds: [versusHomeEmbed(profile, season)], components: versusHomeControls(interaction.user.id) });
+      return;
+    }
+
+    if (command === 'versus-roster') {
+      const profile = await requireProfile(interaction, store);
+      if (!profile?.versus?.groupCode) throw new Error('Versus club belum join group. Jalankan `/versus-join group_code:<code>`.');
+      const versus = profile.versus;
+      const season = versus.season;
+      const club = versus.club;
+      const activeBattle = season?.battles.find((battle) => battle.roundId === season.currentRound && (battle.homeClubId === club.id || battle.awayClubId === club.id));
+      const opponentId = activeBattle ? activeBattle.homeClubId === club.id ? activeBattle.awayClubId : activeBattle.homeClubId : undefined;
+      const opponent = opponentId ? season?.clubs.find((item) => item.id === opponentId)?.name ?? opponentId : '-';
+      const rosterLines = club.roster.map((player) => {
+        const eligible = player.hp > 0 && player.status === 'AVAILABLE' && player.redCardBan === 0;
+        return `**${player.id}** · ${player.position} · ${player.name} · HP ${player.hp}/${player.maxHp} · ${eligible ? 'ELIGIBLE' : `BLOCKED/${player.status}`}`;
+      }).join('\n');
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`${club.name} · Versus Roster`).setDescription(rosterLines).addFields({ name: 'Roster version', value: `${club.rosterVersion}`, inline: true }, { name: 'Battle ID', value: activeBattle?.id ?? '-', inline: true }, { name: 'Opponent', value: opponent, inline: true }, { name: 'Deadline', value: season?.roundDeadline ?? '-', inline: true }).setFooter({ text: 'Gunakan Lineup pada Versus Home untuk interactive setup. Command `/versus-lineup` tetap tersedia sebagai fallback.' })], components: versusHomeControls(interaction.user.id) });
       return;
     }
 
@@ -511,9 +726,29 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
       const profile = await requireProfile(interaction, store);
       if (!profile?.versus?.groupCode) throw new Error('Versus club belum join group. Jalankan `/versus-join group_code:<code>`.');
       const { season } = await versusSeasonFor(store, profile.versus.groupCode, new Date());
-      const standings = getVersusStandings(season);
-      const lines = standings.map((standing) => `${standing.rank}. **${standing.clubName}** · ${standing.points} pts · ${standing.wins}-${standing.draws}-${standing.losses} · GD ${standing.goalDifference}${standing.isNpc ? ' · NPC' : ''}`).join('\n');
-      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`Versus Standings · ${season.groupCode}`).setDescription(lines).setFooter({ text: `Round ${season.currentRound}/${2 * (season.clubs.length - 1)} · tie-break: points, goal difference, goals scored, stable club ID.` })] });
+      await interaction.editReply({ embeds: [versusStandingsEmbed(season)], components: versusHomeControls(interaction.user.id) });
+      return;
+    }
+
+    if (command === 'versus-lineup') {
+      const profile = await requireProfile(interaction, store);
+      if (!profile?.versus?.groupCode) throw new Error('Versus club belum join group. Jalankan `/versus-join group_code:<code>`.');
+      const groupCode = profile.versus.groupCode;
+      const battleId = interaction.options.getString('battle_id', true).trim();
+      const lineup = parseIdList(interaction.options.getString('lineup', true));
+      const substitutes = parseIdList(interaction.options.getString('substitutes'));
+      const captainId = interaction.options.getString('captain', true).trim();
+      const formation = interaction.options.getString('formation', true) as import('../domain/types.js').FormationId;
+      const tactic = interaction.options.getString('tactic', true) as import('../domain/types.js').TacticId;
+      const rosterVersion = interaction.options.getInteger('roster_version', true);
+      const season = await withVersusGroupLock(store, groupCode, async () => {
+        const current = await versusSeasonFor(store, groupCode, new Date());
+        const next = submitVersusLineup(current.season, battleId, profile.userId, lineup, substitutes, captainId, formation, tactic, rosterVersion, new Date());
+        await persistVersusSeason(store, next, new Date());
+        return next;
+      });
+      const battle = season.battles.find((item) => item.id === battleId)!;
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle('Versus lineup submitted').setDescription(`Battle **${battleId}** tersimpan untuk round **${season.currentRound}**. XI **${lineup.length}** · substitutes **${substitutes.length}** · formation **${formation}** · tactic **${tactic}**.`).addFields({ name: 'Roster version', value: `${rosterVersion}`, inline: true }, { name: 'Deadline', value: season.roundDeadline, inline: true }, { name: 'Battle state', value: battle.state, inline: true }).setFooter({ text: 'Submission dapat diperbarui sebelum deadline; roster version harus cocok.' })] });
       return;
     }
 
@@ -521,8 +756,9 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
       const profile = await requireProfile(interaction, store);
       if (!profile?.versus?.groupCode) throw new Error('Versus club belum join group. Jalankan `/versus-join group_code:<code>`.');
       const groupCode = profile.versus.groupCode;
-      const season = await withVersusGroupLock(groupCode, async () => {
+      const season = await withVersusGroupLock(store, groupCode, async () => {
         const current = await versusSeasonFor(store, groupCode, new Date());
+        if (current.season.state !== 'ACTIVE') throw new Error('Season Versus sudah selesai. Gunakan `/versus-join` untuk memulai season berikutnya.');
         const next = processVersusRound(current.season, current.season.currentRound, new Date());
         await persistVersusSeason(store, next, new Date());
         return next;
@@ -531,7 +767,7 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
       const roundId = season.currentRound - 1;
       const battles = season.battles.filter((battle) => battle.roundId === roundId && (battle.homeClubId === userClubId || battle.awayClubId === userClubId));
       const output = battles.map(formatVersusBattle).join('\n\n') || 'Round diproses, tetapi battle user tidak ditemukan.';
-      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`Versus Round ${roundId} settled`).setDescription(output).setFooter({ text: 'Settlement asynchronous, seeded, dan duplicate-guarded per battle ID.' })] });
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`Versus Round ${roundId} settled`).setDescription(output).setFooter({ text: 'Settlement asynchronous, seeded, dan duplicate-guarded per battle ID.' })], components: versusHomeControls(interaction.user.id) });
       return;
     }
 
@@ -540,9 +776,10 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
       if (!profile?.versus?.groupCode) throw new Error('Versus club belum join group. Jalankan `/versus-join group_code:<code>`.');
       const action = interaction.options.getString('action') ?? 'status';
       const groupCode = profile.versus.groupCode;
-      const season = await withVersusGroupLock(groupCode, async () => {
+      const season = await withVersusGroupLock(store, groupCode, async () => {
         const current = await versusSeasonFor(store, groupCode, new Date());
         if (action === 'settle') {
+          if (current.season.state === 'FINISHED') return current.season;
           const settled = settleVersusSeason(current.season);
           await persistVersusSeason(store, settled, new Date());
           return settled;
@@ -550,7 +787,7 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
         return current.season;
       });
       const standing = getVersusStandings(season).find((item) => item.clubId === profile.versus!.clubId);
-      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`Versus Season · ${season.state}`).setDescription(`Season **${season.id}** · group **${season.groupCode}**\nRound **${Math.min(season.currentRound, 2 * (season.clubs.length - 1) + 1)}/${2 * (season.clubs.length - 1)}** · deadline **${season.roundDeadline}**`).addFields({ name: 'Your standing', value: standing ? `rank ${standing.rank} · ${standing.points} points · ${standing.wins}-${standing.draws}-${standing.losses}` : '-', inline: true }, { name: 'Rewards', value: season.state === 'FINISHED' ? `${season.rewards.find((item) => item.clubId === profile.versus!.clubId)?.money ?? 0} money · ${season.rewards.find((item) => item.clubId === profile.versus!.clubId)?.coin ?? 0} coin` : 'Belum dibagikan', inline: true })] });
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`Versus Season · ${season.state}`).setDescription(`Season **${season.id}** · group **${season.groupCode}**\nRound **${Math.min(season.currentRound, 2 * (season.clubs.length - 1) + 1)}/${2 * (season.clubs.length - 1)}** · deadline **${season.roundDeadline}**`).addFields({ name: 'Your standing', value: standing ? `rank ${standing.rank} · ${standing.points} points · ${standing.wins}-${standing.draws}-${standing.losses}` : '-', inline: true }, { name: 'Rewards', value: season.state === 'FINISHED' ? `${season.rewards.find((item) => item.clubId === profile.versus!.clubId)?.money ?? 0} money · ${season.rewards.find((item) => item.clubId === profile.versus!.clubId)?.coin ?? 0} coin` : 'Belum dibagikan', inline: true })], components: versusHomeControls(interaction.user.id) });
       return;
     }
 
@@ -631,15 +868,18 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
       const profile = await requireProfile(interaction, store);
       if (!profile) return;
       const action = interaction.options.getString('action') ?? 'status';
+      const mode = (interaction.options.getString('mode') ?? 'PLAYER') as import('../domain/competition-engine.js').ChampionsLeagueMode;
+      const modeLabel = mode === 'COACH' ? 'Coach Mode' : 'Player Mode';
       if (action === 'play') {
-        const result = playChampionsLeague(profile);
+        const result = playChampionsLeague(profile, new Date(), undefined, mode);
         await store.save(result.profile);
-        await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`Champions League · ${result.status}`).setDescription(result.commentary.join('\\n')).addFields({ name: 'Reward state', value: result.status === 'CHAMPION' ? 'Club assets and prestige increased.' : 'Continue the competition from the next round.', inline: true })] });
+        await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`Champions League · ${modeLabel} · ${result.status}`).setDescription(result.commentary.join('\n')).addFields({ name: 'Reward state', value: result.status === 'CHAMPION' ? 'Club assets and prestige increased in the selected mode.' : 'Continue the competition from the next round.', inline: true })] });
       } else {
-        const enriched = startChampionsLeague(profile);
+        const enriched = startChampionsLeague(profile, new Date(), mode);
         await store.save(enriched);
-        const state = enriched.championsLeague!;
-        await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle('Champions League · Status').setDescription(`Status **${state.status}**\nRound **${state.round}**\nOpponent **${state.opponent}**\nAggregate **${state.aggregate}**`).setFooter({ text: 'Gunakan /champions action:play untuk memainkan ronde.' })] });
+        const state = mode === 'COACH' ? enriched.coach?.championsLeague : enriched.championsLeague;
+        if (!state) throw new Error('Champions League state tidak tersedia.');
+        await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`Champions League · ${modeLabel} · Status`).setDescription(`Status **${state.status}**\\nSeason **${state.season}**\\nRound **${state.round}**\\nOpponent **${state.opponent}**\\nAggregate **${state.aggregate}**`).setFooter({ text: `Gunakan /champions action:play mode:${mode} untuk memainkan ronde.` })] });
       }
       return;
     }
@@ -678,7 +918,7 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
     }
 
     if (command === 'help') {
-      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle('Football Rising Star — Panduan').setDescription('Bangun karier pemain dan kelola klub melalui loop mingguan yang terinspirasi dari gameplay publik dan client recovery. Formula yang belum memiliki method body resmi tetap diberi label RECOVERY_INFERRED.').addFields({ name: 'Player Mode', value: '`/start`, `/profile`, `/skills`, `/train-skill`, `/assign-exp`, `/match`, `/next-week`, `/league`' }, { name: 'Player progression', value: '`/injury`, `/trick`, `/trainer`, `/culture`, `/honors`, `/world-footballer`, `/retire`, `/rebirth`' }, { name: 'Coach Mode', value: '`/coach-career`, `/coach-profile`, `/coach-round`, `/coach-exp`, `/coach-event`, `/coach-job`, `/coach-retire`, `/coach-rebirth`' }, { name: 'Versus Mode', value: '`/versus-join`, `/versus-profile`, `/versus-round`, `/versus-standings`, `/versus-season` — asynchronous group league terpisah' }, { name: 'Club & economy', value: '`/club`, `/squad`, `/formation`, `/tactic`, `/club-match`, `/standings`, `/season-end`, `/daily`, `/event`, `/market`, `/buy-player`, `/sell-player`, `/contract`' })] });
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle('Football Rising Star — Panduan').setDescription('Bangun karier pemain dan kelola klub melalui loop mingguan yang terinspirasi dari gameplay publik dan client recovery. Formula yang belum memiliki method body resmi tetap diberi label RECOVERY_INFERRED.').addFields({ name: 'Player Mode', value: '`/start`, `/profile`, `/skills`, `/train-skill`, `/assign-exp`, `/match`, `/next-week`, `/league`' }, { name: 'Player progression', value: '`/injury`, `/trick`, `/trainer`, `/culture`, `/honors`, `/world-footballer`, `/retire`, `/rebirth`' }, { name: 'Coach Mode', value: '`/coach-career`, `/coach-profile`, `/coach-round`, `/coach-exp`, `/coach-event`, `/coach-job`, `/coach-retire`, `/coach-rebirth`' }, { name: 'Versus Mode', value: '`/versus-join`, `/versus-profile` → Versus Home, `/versus-roster`, `/versus-lineup`, `/versus-round`, `/versus-standings`, `/versus-season` — asynchronous group league dengan pre-match setup interaktif' }, { name: 'Club & economy', value: '`/club`, `/squad`, `/formation`, `/tactic`, `/club-match`, `/standings`, `/season-end`, `/daily`, `/event`, `/market`, `/buy-player`, `/sell-player`, `/contract`' })] });
       return;
     }
 
@@ -693,7 +933,8 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
 
 
 function componentOwner(customId: string, userId: string): string {
-  const [namespace, ownerId, action] = customId.split(':');
+  const [namespace, ownerId, ...parts] = customId.split(':');
+  const action = parts.join(':');
   if (namespace !== 'frs' || ownerId !== userId || !action) throw new Error('Komponen ini bukan milik profile Anda. Jalankan command dari profile Anda sendiri.');
   return action;
 }
@@ -711,9 +952,149 @@ export async function handleComponent(interaction: ButtonInteraction | StringSel
       return;
     }
 
-    if (action === 'versus-profile') {
-      if (!profile.versus) throw new Error('Versus club belum dibuat. Jalankan `/versus-join group_code:<code>`.');
-      await interaction.editReply({ content: formatVersusProfile(profile), components: careerControls(interaction.user.id) });
+    if (action === 'versus-profile' || action === 'versus-home' || action === 'versus-next' || action === 'versus-results' || action === 'versus-standings' || action === 'versus-registration' || action === 'versus-market' || action === 'versus-market-deal' || action === 'versus-market-scout' || action === 'versus-rewards' || action === 'versus-schedule' || action === 'versus-rankings' || action === 'versus-ranking-club' || action === 'versus-ranking-mvp' || action === 'versus-ranking-scorers' || action === 'versus-ranking-assists' || action === 'versus-ranking-goalkeepers' || action === 'versus-global-ranking' || action === 'versus-sponsor' || action === 'versus-sponsor-junior' || action === 'versus-sponsor-senior' || action === 'versus-sponsor-top') {
+      if (!profile.versus?.groupCode) throw new Error('Versus club belum dibuat. Jalankan `/versus-join group_code:<code>`.');
+      const { season } = await versusSeasonFor(store, profile.versus.groupCode, new Date());
+      const rankingCategory = action === 'versus-ranking-mvp' ? 'MVP' : action === 'versus-ranking-scorers' ? 'SCORERS' : action === 'versus-ranking-assists' ? 'ASSISTS' : action === 'versus-ranking-goalkeepers' ? 'GOALKEEPERS' : 'CLUB';
+      const marketTab = action === 'versus-market-scout' ? 'SCOUT' : 'DEAL';
+      const sponsorSelection = action === 'versus-sponsor-junior' ? 'Junior' : action === 'versus-sponsor-senior' ? 'Senior' : action === 'versus-sponsor-top' ? 'Top' : undefined;
+      const embed = action === 'versus-results' ? versusResultEmbed(profile, season) : action === 'versus-standings' ? versusStandingsEmbed(season) : action === 'versus-registration' ? versusRegistrationEmbed(profile, season) : action === 'versus-market' || action === 'versus-market-deal' || action === 'versus-market-scout' ? versusMarketEmbed(profile, marketTab) : action === 'versus-rewards' ? versusRewardsEmbed(profile, season) : action === 'versus-schedule' ? versusScheduleEmbed(profile, season) : action === 'versus-rankings' || action.startsWith('versus-ranking-') ? versusRankingsEmbed(season, profile, rankingCategory) : action === 'versus-sponsor' || action.startsWith('versus-sponsor-') ? versusSponsorEmbed(profile, sponsorSelection) : action === 'versus-global-ranking' ? versusGlobalRankingEmbed(season, profile) : versusHomeEmbed(profile, season);
+      const controls = action === 'versus-market' || action === 'versus-market-deal' || action === 'versus-market-scout' ? versusMarketControls(interaction.user.id, marketTab) : action === 'versus-rankings' || action.startsWith('versus-ranking-') ? versusRankingControls(interaction.user.id) : action === 'versus-sponsor' || action.startsWith('versus-sponsor-') ? versusSponsorControls(interaction.user.id) : versusHomeControls(interaction.user.id);
+      await interaction.editReply({ embeds: [embed], components: controls });
+      return;
+    }
+
+    if (action === 'versus-next' || action === 'versus-lineup-start' || action.startsWith('versus-lineup-start:')) {
+      if (!profile.versus?.groupCode) throw new Error('Versus club belum dibuat. Jalankan `/versus-join group_code:<code>`.');
+      const context = action === 'versus-lineup-start' ? undefined : parseVersusComponentContext(action);
+      const { season } = await versusSeasonFor(store, profile.versus.groupCode, new Date());
+      const club = season.clubs.find((item) => item.ownerId === profile.userId) ?? season.clubs.find((item) => item.id === profile.versus!.clubId);
+      if (!club) throw new Error('Club Versus tidak ditemukan pada season aktif.');
+      const battle = context ? season.battles.find((item) => item.id === context.battleId) : activeVersusBattle(season, club.id);
+      if (!battle) throw new Error('Tidak ada battle aktif untuk disusun.');
+      if (context && context.rosterVersion !== club.rosterVersion) throw new Error('Roster sudah berubah. Buka ulang Versus Home sebelum menyusun lineup.');
+      const currentSubmission = battle.homeClubId === club.id ? battle.homeSubmission : battle.awaySubmission;
+      if (action === 'versus-next' && currentSubmission) {
+        const deadline = new Date(season.roundDeadline);
+        if (new Date() < deadline) {
+          await interaction.editReply({ embeds: [versusHomeEmbed(profile, season).setTitle(`${club.name} · Submission Locked`).setDescription(`Battle **${battle.id}** vs **${versusOpponentName(season, battle, club.id)}** sudah memiliki submission. Round akan diproses setelah deadline **${season.roundDeadline}**.`)], components: versusHomeControls(interaction.user.id, 'Waiting') });
+          return;
+        }
+        const processed = await withVersusGroupLock(store, profile.versus.groupCode, async () => {
+          const current = await versusSeasonFor(store, profile.versus!.groupCode!, new Date());
+          const next = processVersusRound(current.season, current.season.currentRound, new Date());
+          await persistVersusSeason(store, next, new Date());
+          return next;
+        });
+        const roundId = processed.currentRound - 1;
+        const resultBattles = processed.battles.filter((item) => item.roundId === roundId && (item.homeClubId === club.id || item.awayClubId === club.id));
+        await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`Versus Round ${roundId} · Results`).setDescription(resultBattles.map(formatVersusBattle).join('\n\n') || 'Round selesai, tetapi result belum tersedia.')], components: versusHomeControls(interaction.user.id) });
+        return;
+      }
+      const existingDraft = versusDrafts.get(interaction.user.id);
+      const draft = context && existingDraft?.battleId === battle.id && existingDraft.rosterVersion === club.rosterVersion ? existingDraft : { groupCode: profile.versus.groupCode, battleId: battle.id, rosterVersion: club.rosterVersion, formation: club.formation, tactic: club.tactic, selected: { GK: [], DF: [], MF: [], FW: [] }, substitutes: [] };
+      versusDrafts.set(interaction.user.id, draft);
+      const opponentId = battle.homeClubId === club.id ? battle.awayClubId : battle.homeClubId;
+      const opponentClub = season.clubs.find((item) => item.id === opponentId);
+      const preview = new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`${club.name} · Pre-match Preview`).setDescription(`**${club.name}** vs **${opponentClub?.name ?? versusOpponentName(season, battle, club.id)}**\nBattle **${battle.id}**\nDeadline **${season.roundDeadline}**\nRoster version **${club.rosterVersion}**\n\nPilih formation dan tactic sebelum memilih XI.`).addFields(
+        { name: 'Club rating (est.)', value: `${versusAverageRating(club)}`, inline: true },
+        { name: 'Opponent rating (est.)', value: `${opponentClub ? versusAverageRating(opponentClub) : '-'}`, inline: true },
+        { name: 'Attack / Defence', value: `${versusAttackRating(club)} / ${versusDefenceRating(club)}`, inline: true },
+        { name: 'Opponent A / D', value: opponentClub ? `${versusAttackRating(opponentClub)} / ${versusDefenceRating(opponentClub)}` : '-', inline: true },
+        { name: 'Next step', value: 'Formation → tactic → XI → captain/substitutes → confirm', inline: false }
+      ).setFooter({ text: 'Rating preview is RECOVERY_INFERRED and is not an official server formula.' });
+      await interaction.editReply({ embeds: [preview], components: versusSetupControls(interaction.user.id, draft.battleId, draft.rosterVersion, draft.formation, draft.tactic) });
+      return;
+    }
+
+    if (action.startsWith('versus-pick-formation:') || action.startsWith('versus-pick-tactic:')) {
+      if (!profile.versus?.groupCode || !interaction.isStringSelectMenu()) throw new Error('Setup Versus tidak valid. Buka ulang Versus Home.');
+      const context = parseVersusComponentContext(action);
+      if (!context) throw new Error('Setup Versus kedaluwarsa. Buka ulang Versus Home.');
+      const draft = versusDrafts.get(interaction.user.id);
+      if (!draft || draft.battleId !== context.battleId || draft.rosterVersion !== context.rosterVersion) throw new Error('Draft lineup tidak ditemukan atau sudah kedaluwarsa. Buka ulang Versus Home.');
+      if (context.action === 'versus-pick-formation') {
+        draft.formation = interaction.values[0] as FormationId;
+        draft.selected = { GK: [], DF: [], MF: [], FW: [] };
+        draft.captain = undefined;
+        draft.substitutes = [];
+      } else {
+        draft.tactic = interaction.values[0] as TacticId;
+      }
+      const club = profile.versus.club;
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle('Versus Setup').setDescription(draftSummary(draft, club))], components: versusSetupControls(interaction.user.id, draft.battleId, draft.rosterVersion, draft.formation, draft.tactic) });
+      return;
+    }
+
+    if (action.startsWith('versus-lineup-squad:')) {
+      if (!profile.versus || !profile.versus.groupCode) throw new Error('Versus club belum dibuat.');
+      const context = parseVersusComponentContext(action);
+      if (!context) throw new Error('Lineup draft kedaluwarsa. Buka ulang Versus Home.');
+      const draft = versusDrafts.get(interaction.user.id);
+      if (!draft || draft.battleId !== context.battleId || draft.rosterVersion !== context.rosterVersion) throw new Error('Draft lineup tidak ditemukan. Buka ulang Versus Home.');
+      const club = profile.versus.club;
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`${club.name} · Choose Starting XI`).setDescription(`Formation **${draft.formation}** membutuhkan ${Object.entries(FORMATIONS[draft.formation].slots).map(([position, count]) => `${count} ${position}`).join(', ')}.\n\n${draftSummary(draft, club)}`)], components: versusPositionControls(interaction.user.id, draft.battleId, draft.rosterVersion, draft.formation, club.roster, draft.selected) });
+      return;
+    }
+
+    if (action.startsWith('versus-pick-gk:') || action.startsWith('versus-pick-df:') || action.startsWith('versus-pick-mf:') || action.startsWith('versus-pick-fw:')) {
+      if (!profile.versus || !interaction.isStringSelectMenu()) throw new Error('Lineup selection tidak valid. Buka ulang Versus Home.');
+      const context = parseVersusComponentContext(action);
+      if (!context) throw new Error('Lineup selection kedaluwarsa. Buka ulang Versus Home.');
+      const draft = versusDrafts.get(interaction.user.id);
+      if (!draft || draft.battleId !== context.battleId || draft.rosterVersion !== context.rosterVersion) throw new Error('Draft lineup tidak ditemukan atau roster sudah berubah.');
+      const position = context.action.replace('versus-pick-', '').toUpperCase() as VersusPosition;
+      if (!['GK', 'DF', 'MF', 'FW'].includes(position)) throw new Error('Posisi lineup tidak valid.');
+      draft.selected[position] = [...interaction.values];
+      draft.captain = undefined;
+      draft.substitutes = [];
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`${profile.versus.club.name} · Starting XI`).setDescription(draftSummary(draft, profile.versus.club))], components: versusPositionControls(interaction.user.id, draft.battleId, draft.rosterVersion, draft.formation, profile.versus.club.roster, draft.selected) });
+      return;
+    }
+
+    if (action.startsWith('versus-lineup-final:')) {
+      if (!profile.versus) throw new Error('Versus club belum dibuat.');
+      const context = parseVersusComponentContext(action);
+      if (!context) throw new Error('Lineup review kedaluwarsa. Buka ulang Versus Home.');
+      const draft = versusDrafts.get(interaction.user.id);
+      if (!draft || draft.battleId !== context.battleId || draft.rosterVersion !== context.rosterVersion) throw new Error('Draft lineup tidak ditemukan atau roster sudah berubah.');
+      const required = FORMATIONS[draft.formation].slots;
+      if ((['GK', 'DF', 'MF', 'FW'] as VersusPosition[]).some((position) => draft.selected[position].length !== required[position])) {
+        await interaction.editReply({ content: `Lineup belum lengkap untuk formation **${draft.formation}**. Pilih jumlah pemain sesuai slot di setiap menu.`, components: versusPositionControls(interaction.user.id, draft.battleId, draft.rosterVersion, draft.formation, profile.versus.club.roster, draft.selected) });
+        return;
+      }
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`${profile.versus.club.name} · Review Submission`).setDescription(`${draftSummary(draft, profile.versus.club)}\n\n**Roster version:** ${draft.rosterVersion}\n**Battle:** ${draft.battleId}\n\nPilih captain dan substitutes, lalu konfirmasi submission.`)], components: versusFinalizeControls(interaction.user.id, draft.battleId, draft.rosterVersion, draftLineup(draft), profile.versus.club.roster, draft.captain, draft.substitutes) });
+      return;
+    }
+
+    if (action.startsWith('versus-pick-captain:') || action.startsWith('versus-pick-substitutes:')) {
+      if (!profile.versus || !interaction.isStringSelectMenu()) throw new Error('Finalisasi lineup tidak valid.');
+      const context = parseVersusComponentContext(action);
+      if (!context) throw new Error('Finalisasi lineup kedaluwarsa.');
+      const draft = versusDrafts.get(interaction.user.id);
+      if (!draft || draft.battleId !== context.battleId || draft.rosterVersion !== context.rosterVersion) throw new Error('Draft lineup tidak ditemukan atau roster sudah berubah.');
+      if (context.action === 'versus-pick-captain') draft.captain = interaction.values[0];
+      else draft.substitutes = [...interaction.values];
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`${profile.versus.club.name} · Review Submission`).setDescription(draftSummary(draft, profile.versus.club))], components: versusFinalizeControls(interaction.user.id, draft.battleId, draft.rosterVersion, draftLineup(draft), profile.versus.club.roster, draft.captain, draft.substitutes) });
+      return;
+    }
+
+    if (action.startsWith('versus-lineup-confirm:')) {
+      if (!profile.versus?.groupCode) throw new Error('Versus club belum dibuat.');
+      const context = parseVersusComponentContext(action);
+      if (!context) throw new Error('Submission kedaluwarsa. Buka ulang Versus Home.');
+      const draft = versusDrafts.get(interaction.user.id);
+      if (!draft || draft.battleId !== context.battleId || draft.rosterVersion !== context.rosterVersion || !draft.captain) throw new Error('Submission belum lengkap. Pilih captain sebelum konfirmasi.');
+      const next = await withVersusGroupLock(store, profile.versus.groupCode, async () => {
+        const current = await versusSeasonFor(store, profile.versus!.groupCode!, new Date());
+        const submitted = submitVersusLineup(current.season, draft.battleId, profile.userId, draftLineup(draft), draft.substitutes, draft.captain!, draft.formation, draft.tactic, draft.rosterVersion, new Date());
+        await persistVersusSeason(store, submitted, new Date());
+        return submitted;
+      });
+      versusDrafts.delete(interaction.user.id);
+      const saved = await store.get(interaction.user.id);
+      if (!saved?.versus) throw new Error('Submission tersimpan tetapi profile Versus tidak dapat dibaca ulang.');
+      await interaction.editReply({ embeds: [versusHomeEmbed(saved, next).setTitle(`${saved.versus.club.name} · Submission Locked`)], components: versusHomeControls(interaction.user.id) });
       return;
     }
 
@@ -734,7 +1115,7 @@ export async function handleComponent(interaction: ButtonInteraction | StringSel
     if (action === 'next-week') {
       const result = advanceWeek(profile);
       await store.save(result.profile);
-      await interaction.editReply({ content: `Week ${result.week} selesai.\\n${result.narrative.join('\\n')}\\nPending EXP: ${result.expAwaitingAssignment}.`, components: careerControls(interaction.user.id) });
+      await interaction.editReply({ content: `Week ${result.week} selesai.\\n${result.narrative.join('\n')}\\nPending EXP: ${result.expAwaitingAssignment}.`, components: careerControls(interaction.user.id) });
       return;
     }
 

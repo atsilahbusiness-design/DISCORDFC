@@ -1,0 +1,9 @@
+/tmp/frs_recovery_inspect/FootballRisingStar_2.8.0_Full_Recovery/original_xapk_components/manifest.json
+/tmp/frs_recovery_inspect/FootballRisingStar_2.8.0_Full_Recovery/system_structure_map/script.json
+/tmp/frs_recovery_inspect/FootballRisingStar_2.8.0_Full_Recovery/recovered_assets/raw_unity_data/ScriptingAssemblies.json
+/tmp/frs_recovery_inspect/FootballRisingStar_2.8.0_Full_Recovery/recovered_assets/raw_unity_data/RuntimeInitializeOnLoads.json
+/tmp/frs_recovery_inspect/FootballRisingStar_2.8.0_Full_Recovery/recovered_assets/asset_manifest.json
+/tmp/frs_recovery_inspect/FootballRisingStar_2.8.0_Full_Recovery/recovered_assets/RECOVERY_NOTES.txt
+/tmp/frs_recovery_inspect/FootballRisingStar_2.8.0_Full_Recovery/recovered_assets/RECOVERY_REPORT.md
+/tmp/frs_recovery_inspect/FootballRisingStar_2.8.0_Full_Recovery/README.md
+/tmp/frs_recovery_inspect/FootballRisingStar_2.8.0_Full_Recovery/SHA256SUMS.txt

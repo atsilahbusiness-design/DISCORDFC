@@ -298,6 +298,9 @@ export function playMatch(profileInput: PlayerProfile, now = new Date(), rng: Ra
   profile.energy -= MATCH_ENERGY_COST;
   profile.hp = clamp(profile.hp - MATCH_HP_COST, 0, profile.maxHp);
   profile.money += money;
+  profile.ledger ??= [];
+  profile.ledger.unshift({ id: `${profile.userId}-MATCH-${now.getTime()}-${profile.ledger.length}`, createdAt: isoNow(now), type: 'MATCH_REWARD', amount: money, balanceAfter: profile.money, note: `Match reward vs ${opponent}` });
+  profile.ledger = profile.ledger.slice(0, 100);
   // Career EXP is earned at the match result; the detailed skill destination
   // remains pending until the user assigns the observed "Exp left" pool.
   profile.totalExp += exp;

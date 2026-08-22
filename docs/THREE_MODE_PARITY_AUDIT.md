@@ -5,7 +5,7 @@
 
 ## Executive finding
 
-The repository currently has a strong Player expansion, a useful but synthetic Coach/club foundation, and no implemented Versus multiplayer aggregate. The research is now strong enough to implement a high-fidelity reconstruction, but the current source should not be described as parity-complete. The largest technical gap is not the battle formula; it is that Coach and Versus state are not yet modeled as the multi-club, mode-isolated structures exposed by recovery.
+The repository currently has a strong Player expansion, a separated Coach/club career aggregate, and a separate Versus multiplayer aggregate. The implementation is now a high-fidelity reconstruction with deterministic stress coverage, but it must not be described as parity-complete. The largest remaining gaps are authoritative server settlement, canonical shared Versus tables, complete recovered configuration values, and exact UI/network behavior.
 
 ## Current source versus target
 
@@ -14,28 +14,32 @@ The repository currently has a strong Player expansion, a useful but synthetic C
 | Player creation | Starts age 15 with detailed initial skills and legacy six macro abilities. | Preserve age 15, position presets, detailed skills, weekly career state, and migration. | P1 |
 | Player match | Simulates one personal opponent with old macro rating; queues manual EXP through the expansion path. | Use detailed skill/position/condition-aware match inputs and preserve original weekly/post-match decisions. | P1 |
 | Player progression | Detailed training, manual EXP, injury, trainers, culture, tricks, awards, retirement, rebirth exist. | Calibrate against recovered config and preserve event/season cadence. | P1 |
-| Coach roster | Embedded inside `PlayerProfile.clubState`; includes the user player, recovered players, and generated NPCs. | Separate Coach career and managed club aggregate with persistent squad, staff, objectives, jobs, and season history. | P0 |
-| Coach fixture | `buildFixtures` uses a fixed recovered primary-club name list, but match opponent strength is synthetic and only the user's aggregate is mutated. | Resolve both club aggregates from dynamic recovery/config data and settle the whole competition. | P0 |
-| Coach season | `finishSeason` uses hard-coded point thresholds and qualification rules. | Use configurable/recovered league and competition rules; preserve final standings/history. | P0 |
-| Coach competitions | Champions League engine uses a fixed opponent array and linear round counter. | Use recovered round/league/CL rules and structured fixtures. | P1 |
-| Versus mode | No separate `VersusUser`, `VersusSeason`, `VersusClub`, `VersusPlayer`, battle, or settlement aggregate in TypeScript. | Implement separate online group/season/league with many clubs, round schedule, battle snapshots, settlement, standings, and rewards. | P0 |
-| Persistence | One JSONB `PlayerProfile` row per user; JSON fallback has the same contract. | Add mode namespaces/aggregates and shared competition rows with optimistic concurrency and transactions. | P0 |
-| Discord UX | Legacy top-level commands and Player/Coach controls; no `/versus` command namespace. | Explicit mode context and owner/version-bound Versus commands/components. | P0 |
+| Coach roster | Separate `coachClubState`; uses recovered players plus normalized fallback depth and includes a profile-linked player snapshot. | Separate Coach career and managed club aggregate with fully recovered squad/staff/objective semantics. | P1 |
+| Coach fixture | Home-away fixtures use recovered league clubs; opponent roster, formation, tactic, halftime, and standings are simulated with inferred formulas. | Resolve authoritative opponent aggregates, substitutions, staff effects, and server settlement rules. | P1 |
+| Coach season | About 38 rounds and percentage thresholds are centralized but still `RECOVERY_INFERRED`; Coach season counter is isolated from Player season. | Calibrate league rules from authoritative config and preserve complete historical seasons. | P1 |
+| Coach competitions | Champions League has a Coach-specific state/season/reward aggregate and `/champions mode:COACH`; bracket/formula remain inferred. | Use recovered round/league/CL rules and structured fixtures. | P1 |
+| Versus mode | Separate user/club/player/season/battle aggregates with group enrollment, multi-club home-away schedule, legal lineup submission, snapshots, settlement, standings, rewards, ledger, and lifecycle. | Add authoritative server synchronization, canonical shared repository/tables, and exact ruleset calibration. | P1 |
+| Persistence | Mode aggregates live in one JSONB profile row; PostgreSQL now provides optimistic CAS, atomic `saveBatch`, and advisory group lock for Versus projection writes. | Add canonical competition repositories/tables and cross-service repair/settlement workflow. | P0 |
+| Discord UX | Explicit Player, Coach, and Versus commands exist. Versus Home now exposes Home/Next Battle/Lineup/Results/Standings/Registration/Market/Rewards/Schedule/Rankings/Global Ranking/Sponsor; Market has Deal/Scout tabs; pre-match setup uses formation/tactic/position/captain/substitute selectors and a rating/attack/defence preview with owner/battle/roster-version/deadline guards. | Add expected-version guards for legacy dashboard actions, background reminders, club-creation modal, auction bid settlement, sponsor/diamond mechanics, and richer result/fixture cards. | P1 |
 | Balance provenance | Centralized balance and `RECOVERY_INFERRED` source marker. | Extend with per-mode ruleset version; store ruleset version on every historical battle. | P1 |
 
 ## Concrete blockers
 
 ### Coach blocker
 
-`src/domain/club-engine.ts` currently builds fixtures from a fixed `CLUB_NAMES` list and creates standings for every name, but `playClubMatch` generates only a synthetic opponent rating. The opponent's actual club roster, formation, tactic, condition, and budget are not loaded or mutated. This cannot produce a true multi-club season because the engine is modeling one managed club against a fictional rating stream.
+`src/domain/club-engine.ts` now builds home-away fixtures from recovered clubs in the selected league and loads recovered opponent rosters/formations/tactics with normalized fallback depth. The remaining limitation is that opponent condition, substitutions, staff effects, budgets, and numeric match formulas are reconstructed rather than authoritative server behavior.
+
+### Versus UX evidence update
+
+An explicit Versus-only walkthrough is now available at [Footy Star Versus Mode | No Commentary | Day1](https://www.youtube.com/watch?v=V8MsDUXNl8A). It shows the three-mode selector, club creation with country/logo/name, cash/coin/energy status, Sign-up/Registered state, auction Deal listings with countdown, normal Scout, pitch lineup and formation, tactical instructions, sponsor tiers, rewards, and multi-category rankings. The review [Football Rising Star review (Android game, 2021)](https://www.youtube.com/watch?v=KQiUcv9d25c) independently shows dashboard, next match/result, lineup, match preview, Deal/Scout, sponsor, rewards, club detail, schedule, and global ranking. DISCORDFC now mirrors the corresponding navigation and preview surfaces. Exact bid costs, sponsor payout rules, Scout refresh effects, diamond spending, status boosts, and club-creation persistence remain unverified and are intentionally read-only.
 
 ### Versus blocker
 
-`src/domain/types.ts` contains Player/Coach-era structures but no first-class Versus structures. The recovered client exposes separate online state, so continuing to reuse `PlayerProfile.clubState` would cause wallet, roster, version, and fixture collisions. Versus requires its own aggregate, or a storage namespace with the same isolation guarantees.
+`src/domain/types.ts` now contains first-class Player, Coach, and Versus structures. The current PostgreSQL projection path uses one atomic batch transaction plus an advisory lock per group, so repeated profile saves are no longer used by the Discord Versus path. The remaining persistence gap is canonical shared season/battle rows: the Versus aggregate is still embedded in user JSONB projections rather than an authoritative shared repository.
 
 ### Persistence blocker
 
-`PostgresPlayerStore` is intentionally a one-profile-per-user store. It is safe for the existing career loop but cannot atomically update two user-owned clubs, a shared battle, standings, player conditions, and reward ledgers as one settlement. Add competition-specific repositories/transactions rather than overloading `PlayerProfile`.
+`PostgresPlayerStore` remains fundamentally a profile store, but now exposes `saveBatch` and a group advisory-lock method that make the current Versus projection settlement atomic across member profiles. It still does not provide canonical shared season/battle tables or a repairable event-sourced settlement record. Add competition-specific repositories/transactions rather than treating profile JSONB as the long-term source of truth.
 
 ### Formula blocker
 
@@ -50,8 +54,10 @@ The current `engine.ts`, `club-engine.ts`, and `competition-engine.ts` use synth
 5. Generate fixtures from `RoundBattleRuleConfig`/recovered schedules where available; use configurable fallback only when no recovery row exists.
 6. Validate Versus player eligibility using HP, injury, cards, bans, position, captain, ability map, and roster version.
 7. Implement two-half battle simulation and atomic settlement with a ruleset version and deterministic seed.
-8. Connect Discord commands and components with mode/group/battle/version guards.
-9. Add integration tests for multi-user concurrency, duplicate settlement, stale input, full league standings, season rollover, and isolated wallets.
+8. Connect Discord commands and components with mode/group/battle/version/deadline guards, including Home and pre-match setup.
+9. Persist profile projections with batch transaction, distributed group locking, and idempotent reward ledger.
+10. Add canonical Versus repository/tables before high-scale multi-replica operation.
+11. Add integration tests for multi-user concurrency, duplicate settlement, stale input, full league standings, season rollover, and isolated wallets.
 
 ## Definition of parity for the next milestone
 
