@@ -2,11 +2,11 @@
 
 **Date:** 2026-08-23
 **Branch:** `main`
-**Commit at start:** `2cc7d9e`
+**Commit at start:** `73d05c7`
 
 ## Work completed in this pass
 
-The repository was verified against `origin/main` before work began. Public evidence was rechecked from the official App Store/Google Play listings, the NamuWiki gameplay reference, and a publicly indexed Football Rising Star walkthrough. The official store listings explicitly describe Player and Coach as the two documented core modes, while the community reference describes a separate match mode that unlocks after a Coach season; this is evidence of a public mode surface, not proof of the exact live-service Versus flow requested for this reconstruction. The evidence confirms the Player career loop, timed recovery/injury pressure, club/league progression, and market/battle surfaces visible in public material, but it does not disclose the original numeric formulas or official matchmaking algorithm.
+The repository was verified against `origin/main` before work began. Public evidence was rechecked from the official App Store/Google Play listings, the NamuWiki gameplay reference, and a publicly indexed Football Rising Star walkthrough. The official store listings explicitly describe Player and Coach as the two documented core modes. A regional App Store listing for version 2.8.0 also confirms that a battle-mode surface exists in release history, but its current extracted release notes only say that bugs were fixed; this is evidence of a public battle surface, not proof of the exact live-service Versus flow requested for this reconstruction. The evidence confirms the Player career loop, timed recovery/injury pressure, club/league progression, and market/battle surfaces visible in public material, but it does not disclose the original numeric formulas or official matchmaking algorithm.
 
 The Versus Deal economy received an additional auditability improvement: when a bidder is outbid, the released reservation now emits an idempotent `BID_RELEASED` ledger event. The repository also has versioned Player formulas, deterministic calibration probes, queue tickets with TTL/rating/roster snapshots, deterministic matching, Deal reservation/expiry/settlement, PostgreSQL projection tables, and registry/schema regression guards. In this pass, audit found a stale unused `createVersusClub` import in the Discord handler and removed it. Stress replay then exposed Coach nondeterminism in job acceptance and season settlement because those paths created fresh `MathRandomSource` instances; optional seeded RNG injection now carries the harness RNG through `acceptJobOffer`, `finishSeason`, and `settleCoachSeason`. No gameplay coefficients were changed.
 
@@ -28,6 +28,6 @@ The public evidence used in this pass is limited to the [official App Store list
 
 ## Final state for this pass
 
-The final guarded commit is `b18b614`; branch `main` is clean and synchronized with `origin/main`. The Coach RNG hardening covers EXP allocation, job acceptance, and season settlement. No gameplay coefficients were changed, and Scout/Sponsor remain unimplemented beyond evidence-safe preview behavior.
+The previous guarded commit was `b18b614`; this pass adds a deterministic Coach job-acceptance regression test and refreshes stress artifacts. The current pending change covers 59 tests, seeded Coach replay, and the evidence boundary for battle mode. No gameplay coefficients were changed, and Scout/Sponsor remain unimplemented beyond evidence-safe preview behavior.
 
 — Manus AI

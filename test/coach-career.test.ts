@@ -65,6 +65,15 @@ test('Coach Champions League uses an isolated Coach aggregate and season', () =>
   assert.ok(played.profile.coachClubState!.assets >= coachStarted.coachClubState!.assets);
 });
 
+test('Coach job acceptance is deterministic with the same seeded RNG', () => {
+  const base = createCoachCareer(ensureClubState(createInitialProfile('coach-deterministic', 'Coach Deterministic', 'MF'), new Date('2026-01-01T00:00:00.000Z'), new SeededRandom(21)), 'Coach Deterministic', new Date('2026-01-01T00:00:00.000Z'));
+  const generated = generateJobOffer(base, new SeededRandom(22));
+  const now = new Date('2026-02-01T00:00:00.000Z');
+  const first = acceptJobOffer(generated.profile, generated.offer.id, now, new SeededRandom(23));
+  const second = acceptJobOffer(generated.profile, generated.offer.id, now, new SeededRandom(23));
+  assert.deepEqual(first, second);
+});
+
 test('Coach job, retirement, and rebirth preserve Player state while changing Coach state', () => {
   let profile = createCoachCareer(ensureClubState(createInitialProfile('coach-2', 'Coach Two', 'FW')), 'Coach Two');
   const playerClub = profile.club;
