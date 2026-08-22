@@ -290,7 +290,7 @@ export function declineJobOffer(profileInput: PlayerProfile, offerId: string): P
   return profile;
 }
 
-export function acceptJobOffer(profileInput: PlayerProfile, offerId: string, now = new Date()): PlayerProfile {
+export function acceptJobOffer(profileInput: PlayerProfile, offerId: string, now = new Date(), rng: RandomSource = new MathRandomSource()): PlayerProfile {
   const profile = clone(profileInput);
   const coach = coachOrThrow(profile);
   if (coach.status === 'RETIRED') throw new Error('Coach yang sudah pensiun tidak dapat menerima job offer. Gunakan `/coach-rebirth`.');
@@ -300,7 +300,7 @@ export function acceptJobOffer(profileInput: PlayerProfile, offerId: string, now
   const nextCoachSeason = coach.season + 1;
   delete profile.coachClubState;
   const seed = { ...profile, club: offer.clubName, league: { ...profile.league, season: nextCoachSeason, matchday: 1, points: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0 } };
-  const rebuiltState = ensureClubState(seed, now, new MathRandomSource(), 'coachClubState');
+  const rebuiltState = ensureClubState(seed, now, rng, 'coachClubState');
   profile.coachClubState = rebuiltState.coachClubState;
   const rebuilt = profile;
   const updatedCoach = coachOrThrow(rebuilt);
@@ -340,7 +340,7 @@ export function resolveCoachEvent(profileInput: PlayerProfile, choiceId: string,
   return profile;
 }
 
-export function settleCoachSeason(profileInput: PlayerProfile, now = new Date()): PlayerProfile {
+export function settleCoachSeason(profileInput: PlayerProfile, now = new Date(), rng: RandomSource = new MathRandomSource()): PlayerProfile {
   const snapshot = ensureCoachClubState(profileInput, now);
   const coach = coachOrThrow(snapshot);
   if (coach.status !== 'EMPLOYED') throw new Error('Coach tidak sedang employed sehingga season tidak dapat diselesaikan.');
@@ -368,7 +368,7 @@ export function settleCoachSeason(profileInput: PlayerProfile, now = new Date())
   }
   const playerLeague = clone(snapshot.league);
   const coachSeasonInput = { ...snapshot, league: { ...snapshot.league, season: coach.season } };
-  const updated = finishSeason(coachSeasonInput, now, 'coachClubState');
+  const updated = finishSeason(coachSeasonInput, now, 'coachClubState', rng);
   updated.league = playerLeague;
   const nextCoach = coachOrThrow(updated);
   nextCoach.careerYear += 1;

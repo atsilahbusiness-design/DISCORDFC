@@ -245,7 +245,7 @@ function runCoachTrial(trial: number): ModeResult {
     metrics.fullStandingsChecks += 1;
     const beforeHonors = profile.coach!.honors.length;
     const beforeTarget = profile.coach!.boardTarget;
-    profile = settleCoachSeason(profile, iso(start.getTime() + (metrics.rounds + 2) * 86_400_000));
+    profile = settleCoachSeason(profile, iso(start.getTime() + (metrics.rounds + 2) * 86_400_000), rng);
     actions += 1;
     metrics.seasons += 1;
     if (profile.coach!.honors.length > beforeHonors) metrics.boardSuccesses += 1;
@@ -255,7 +255,7 @@ function runCoachTrial(trial: number): ModeResult {
       profile = job.profile;
       actions += 1;
       metrics.offers += 1;
-      profile = acceptJobOffer(profile, job.offer.id, iso(start.getTime() + (metrics.rounds + 3) * 86_400_000));
+      profile = acceptJobOffer(profile, job.offer.id, iso(start.getTime() + (metrics.rounds + 3) * 86_400_000), rng);
       actions += 1;
     }
     coachInvariant(profile, `trial=${trial},season=${seasonIndex}`);

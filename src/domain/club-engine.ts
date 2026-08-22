@@ -411,8 +411,8 @@ export function getNextClubFixture(profileInput: PlayerProfile, now = new Date()
   return profile[stateField]?.fixtures.find((fixture) => !fixture.played);
 }
 
-export function finishSeason(profileInput: PlayerProfile, now = new Date(), stateField: ClubStateField = 'clubState'): PlayerProfile {
-  const profile = ensureClubState(profileInput, now, new MathRandomSource(), stateField);
+export function finishSeason(profileInput: PlayerProfile, now = new Date(), stateField: ClubStateField = 'clubState', rng: RandomSource = new MathRandomSource()): PlayerProfile {
+  const profile = ensureClubState(profileInput, now, rng, stateField);
   const club = profile[stateField]!;
   const standing = club.standings.find((item) => item.clubId === club.id)!;
   if (stateField === 'coachClubState') projectCoachLeagueStandings(club);

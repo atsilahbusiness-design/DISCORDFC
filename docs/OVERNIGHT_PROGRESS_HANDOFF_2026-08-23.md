@@ -2,17 +2,17 @@
 
 **Date:** 2026-08-23
 **Branch:** `main`
-**Commit at start:** `f2256de`
+**Commit at start:** `2cc7d9e`
 
 ## Work completed in this pass
 
 The repository was verified against `origin/main` before work began. Public evidence was rechecked from the official App Store/Google Play listings, the NamuWiki gameplay reference, and a publicly indexed Football Rising Star walkthrough. The official store listings explicitly describe Player and Coach as the two documented core modes, while the community reference describes a separate match mode that unlocks after a Coach season; this is evidence of a public mode surface, not proof of the exact live-service Versus flow requested for this reconstruction. The evidence confirms the Player career loop, timed recovery/injury pressure, club/league progression, and market/battle surfaces visible in public material, but it does not disclose the original numeric formulas or official matchmaking algorithm.
 
-The Versus Deal economy received an additional auditability improvement: when a bidder is outbid, the released reservation now emits an idempotent `BID_RELEASED` ledger event. The repository also has versioned Player formulas, deterministic calibration probes, queue tickets with TTL/rating/roster snapshots, deterministic matching, Deal reservation/expiry/settlement, PostgreSQL projection tables, and registry/schema regression guards. During this pass the stress harness exposed two Coach determinism failures because its EXP-allocation step used the wall clock; the harness now passes the same simulation timestamp into `assignCoachExp`, preserving deterministic replay without changing gameplay coefficients.
+The Versus Deal economy received an additional auditability improvement: when a bidder is outbid, the released reservation now emits an idempotent `BID_RELEASED` ledger event. The repository also has versioned Player formulas, deterministic calibration probes, queue tickets with TTL/rating/roster snapshots, deterministic matching, Deal reservation/expiry/settlement, PostgreSQL projection tables, and registry/schema regression guards. In this pass, audit found a stale unused `createVersusClub` import in the Discord handler and removed it. Stress replay then exposed Coach nondeterminism in job acceptance and season settlement because those paths created fresh `MathRandomSource` instances; optional seeded RNG injection now carries the harness RNG through `acceptJobOffer`, `finishSeason`, and `settleCoachSeason`. No gameplay coefficients were changed.
 
 ## Verification
 
-`pnpm build` passed. `pnpm test` passed with 58 tests and zero failures, including deterministic Coach reference-clock coverage. Targeted audit passed. After correcting the stress-harness clock injection, the final stress simulation completed 300 Player, 300 Coach, and 300 Versus trials with 115,770 total actions and zero failed trials, invariant failures, or determinism failures. `pnpm audit --prod --audit-level=high` reported no known vulnerabilities, and the baseline secret/artifact scan found only the intended `.env.example`. `git diff --check` passed before this handoff update.
+`pnpm build` passed. `pnpm test` passed with 58 tests and zero failures, including deterministic Coach reference-clock coverage. Targeted audit passed. After carrying seeded RNG through Coach job and season transitions, the final stress simulation completed 300 Player, 300 Coach, and 300 Versus trials with 115,770 total actions and zero failed trials, invariant failures, or determinism failures. `pnpm audit --prod --audit-level=high` reported no known vulnerabilities, and the baseline secret/artifact scan found only the intended `.env.example`. `git diff --check` passed before this handoff update. The working tree contains only the changes described in this pass and is ready for final guarded commit.
 
 ## Remaining known limitations
 
