@@ -228,7 +228,7 @@ function runCoachTrial(trial: number): ModeResult {
       metrics.halftimeChecks += Number(Number.isFinite(result.match.halftime.homeGoals) && Number.isFinite(result.match.halftime.awayGoals));
       if (result.event) metrics.events += 1;
       if (profile.coach!.unassignedExp > 0) {
-        const allocated = assignCoachExp(profile, { [COACH_ABILITY]: profile.coach.unassignedExp });
+        const allocated = assignCoachExp(profile, { [COACH_ABILITY]: profile.coach!.unassignedExp }, iso(start.getTime() + (metrics.rounds + 1) * 86_400_000));
         profile = allocated.profile;
         actions += 1;
       }

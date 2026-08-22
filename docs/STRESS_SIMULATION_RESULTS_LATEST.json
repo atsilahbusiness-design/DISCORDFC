@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-22T19:13:02.633Z",
+  "generatedAt": "2026-08-22T20:13:41.875Z",
   "config": {
     "trials": 300,
     "playerWeeks": 60,
@@ -51,13 +51,13 @@
         "losses": 0,
         "events": 13066,
         "offers": 0,
-        "boardSuccesses": 46,
+        "boardSuccesses": 49,
         "boardFailures": 0,
         "halftimeChecks": 22800,
         "fullStandingsChecks": 600,
-        "win": 5561,
-        "loss": 10212,
-        "draw": 7027
+        "win": 5600,
+        "loss": 10120,
+        "draw": 7080
       },
       "sampleFailures": [],
       "determinismChecks": 25,
