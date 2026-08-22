@@ -33,7 +33,9 @@ test('Versus bid reserves coin, raises safely, and releases prior bidder reserva
 
   const second = placeVersusBid(first.profiles, first.season, 'economy-b', listing.id, listing.openingBid + 1, new Date('2026-01-01T00:00:20.000Z'));
   assert.equal(second.listing.currentBidderId, 'economy-b');
-  assert.equal(second.profiles.find((profile) => profile.userId === 'economy-a')!.versus!.reservations?.length, 0);
+  const outbidUser = second.profiles.find((profile) => profile.userId === 'economy-a')!;
+  assert.equal(outbidUser.versus!.reservations?.length, 0);
+  assert.equal(outbidUser.versus!.ledger?.some((entry) => entry.type === 'BID_RELEASED'), true);
   assert.equal(second.profiles.find((profile) => profile.userId === 'economy-b')!.versus!.reservations?.[0].amount, listing.openingBid + 1);
 });
 

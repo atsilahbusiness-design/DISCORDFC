@@ -106,7 +106,10 @@ export function placeVersusBid(profilesInput: EconomyProfiles, seasonInput: Vers
 
   if (listing.currentBidderId && listing.currentBidderId !== bidderId) {
     const previousBidder = profiles.find((profile) => profile.userId === listing.currentBidderId);
-    if (previousBidder?.versus) previousBidder.versus.reservations = (previousBidder.versus.reservations ?? []).filter((reservation) => reservation.listingId !== listingId);
+    if (previousBidder?.versus) {
+      previousBidder.versus.reservations = (previousBidder.versus.reservations ?? []).filter((reservation) => reservation.listingId !== listingId);
+      appendLedger(previousBidder, { id: `release:${listingId}:${previousBidder.userId}:${amount}`, seasonId: season.id, currency: 'COIN', amount: 0, note: `Bid reservation released after outbid on ${listingId}`, type: 'BID_RELEASED', transactionId: `release:${listingId}:${previousBidder.userId}:${amount}` }, now);
+    }
   }
 
   bidder.versus.reservations ??= [];

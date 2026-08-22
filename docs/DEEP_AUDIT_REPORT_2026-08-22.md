@@ -2,7 +2,7 @@
 
 **Tanggal audit:** 22 Agustus 2026
 **Repository:** `atsilahbusiness-design/DISCORDFC`
-**Baseline commit terakhir yang sudah dipush:** `30c10bd`
+**Baseline commit terakhir yang sudah dipush:** `ac7ae9f` (implementation parity follow-up)
 **Status perubahan audit:** follow-up implementation lokal setelah baseline; commit final dilakukan setelah verification selesai.
 **Ruang lingkup:** Player Mode, Coach Mode, Versus Mode, Discord adapter, persistence, concurrency, security, balance, dan kesesuaian dengan bukti recovery.
 
@@ -20,7 +20,7 @@ Audit dilakukan melalui pembacaan statis domain engine dan adapter Discord, penc
 
 | Dimensi | Pemeriksaan | Hasil |
 |---|---|---|
-| Build dan unit/regression | `pnpm build` dan `pnpm test` | **55 passing, 0 failing** |
+| Build dan unit/regression | `pnpm build` dan `pnpm test` | **57 passing, 0 failing** |
 | Stress Player | 300 trial × 60 week | 300/300 sukses; 0 invariant/determinism failure |
 | Stress Coach | 300 trial × 2 season | 300/300 sukses; 0 invariant/determinism failure |
 | Stress Versus | 300 trial × capacity 8 | 300/300 sukses; 0 invariant/determinism failure |
@@ -51,6 +51,9 @@ Audit dilakukan melalui pembacaan statis domain engine dan adapter Discord, penc
 | FIX-16 | High | Coach board rank dihitung dari row opponent yang masih zero dan Champions command selalu memakai Player aggregate. | Klasemen Coach melengkapi row non-user secara deterministik `RECOVERY_INFERRED`; Champions engine menerima mode dan menyimpan state/season/reward Coach terpisah. |
 | FIX-17 | High | Versus group disimpan melalui save per profile dan hanya memiliki lock in-memory. | `saveBatch` menyimpan projection seluruh member dalam satu transaction; PostgreSQL memakai advisory lock per group, JSON fallback memakai queue lokal. |
 | FIX-18 | Medium | Versus money/coin reward sulit direkonsiliasi karena tidak memiliki event ledger. | Sync profile membuat ledger entry idempotent berbasis season/battle/club/currency dengan balance-after dan settlement timestamp. |
+| FIX-19 | Medium | Player formula dan detailed training tersebar sehingga sulit direplay atau dikalibrasi. | Formula dipusatkan pada versioned module, match menyimpan provenance, dan calibration probe menghasilkan deterministic observations. |
+| FIX-20 | High | Deal market belum memiliki reservation, outbid release, expiry, dan settlement yang dapat diaudit. | Economy domain menambahkan snapshot listing, reservation, `BID_RELEASED`, expiry, escrow-style settlement, roster transfer, dan idempotent ledger. |
+| FIX-21 | High | Versus queue belum memiliki expiry/rating snapshot dan matcher yang deterministic. | Queue ticket menyimpan TTL, rating/roster snapshot, assignment ID; matcher memperlebar rating window berdasarkan waktu tunggu dan menolak stale ticket. |
 
 Perbaikan tersebut telah diverifikasi oleh test suite permanen dan targeted audit. Artefak targeted audit menguji ulang hasil yang sebelumnya gagal, sehingga status PASS berarti invariant pasca-perbaikan benar-benar tercapai, bukan sekadar exception tidak muncul.
 

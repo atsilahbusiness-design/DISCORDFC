@@ -1,6 +1,6 @@
 # DISCORDFC Stress Simulation Report
 
-Generated: 2026-08-22T11:26:57.298Z
+Generated: 2026-08-22T19:13:02.633Z
 
 Result: **PASS**
 
@@ -32,18 +32,18 @@ The harness executed **300 trials per mode**, with 60 Player weeks per trial, 2 
 ### COACH
 
 - **boardFailures:** 0
-- **boardSuccesses:** 42
-- **draw:** 7040
+- **boardSuccesses:** 46
+- **draw:** 7027
 - **draws:** 0
 - **events:** 13066
 - **fullStandingsChecks:** 600
 - **halftimeChecks:** 22800
-- **loss:** 10183
+- **loss:** 10212
 - **losses:** 0
 - **offers:** 0
 - **rounds:** 22800
 - **seasons:** 600
-- **win:** 5577
+- **win:** 5561
 - **wins:** 0
 
 ### VERSUS
