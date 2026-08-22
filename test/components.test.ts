@@ -5,7 +5,8 @@ import { careerControls, detailedTrainingControls, trainingControls } from '../s
 test('career components are owner-bound and actionable', () => {
   const rows = careerControls('user-1').map((row) => row.toJSON());
   const ids = rows.flatMap((row) => row.components.map((component) => component.custom_id));
-  assert.deepEqual(ids, ['frs:user-1:profile', 'frs:user-1:train', 'frs:user-1:match', 'frs:user-1:club']);
+  assert.deepEqual(ids, ['frs:user-1:profile', 'frs:user-1:train', 'frs:user-1:match', 'frs:user-1:club', 'frs:user-1:coach-profile', 'frs:user-1:versus-profile']);
+  assert.equal(ids.every((id) => id.startsWith('frs:user-1:')), true);
 });
 
 test('training component exposes all six abilities', () => {

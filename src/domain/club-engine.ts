@@ -2,11 +2,13 @@ import { createInitialProfile, getRating, MathRandomSource, type RandomSource } 
 import { FORMATIONS, TACTICS, type ClubFixture, type ClubMatchResult, type ClubPlayer, type FormationId, type MatchOutcome, type PlayerProfile, type Position, type TacticId } from './types.js';
 import { SEED_CLUB_NAMES, SEED_PLAYER_NAMES, SEED_ROSTER_POSITIONS } from '../config/seed-data.js';
 import { RECOVERY_CLUBS, RECOVERY_PLAYERS_BY_CLUB, type RecoveryPlayerRecord } from '../config/recovery-data.js';
+import { GAME_BALANCE } from '../config/game-balance.js';
 
 const RECOVERY_PRIMARY_CLUB_NAMES = RECOVERY_CLUBS.filter((club) => club.league === 1011).map((club) => club.nameEn);
 const CLUB_NAMES = RECOVERY_PRIMARY_CLUB_NAMES.length >= 10 ? RECOVERY_PRIMARY_CLUB_NAMES : SEED_CLUB_NAMES;
 const POSITIONS: Position[] = SEED_ROSTER_POSITIONS;
 const PLAYER_NAMES = SEED_PLAYER_NAMES;
+type ClubStateField = 'clubState' | 'coachClubState';
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
@@ -108,30 +110,58 @@ function npcPlayer(index: number, level: number, rng: RandomSource): ClubPlayer 
   };
 }
 
-function buildFixtures(clubId: string, season: number, now: Date): ClubFixture[] {
-  return CLUB_NAMES.filter((name) => name !== clubId).map((opponent, index) => ({
-    id: `${season}-${index + 1}-${clubId}`,
-    season,
-    matchday: index + 1,
-    homeClub: index % 2 === 0 ? clubId : opponent,
-    awayClub: index % 2 === 0 ? opponent : clubId,
-    played: false,
-    playedAt: new Date(now.getTime() + (index + 1) * 86_400_000).toISOString()
-  }));
+function recoveredFormation(officialClub: typeof RECOVERY_CLUBS[number] | undefined): FormationId {
+  const formationIds: FormationId[] = ['4-4-2', '4-3-3', '3-5-2', '5-3-2', '4-1-3-2', '3-4-3', '4-2-3-1'];
+  const source = officialClub?.formations?.[0] ?? 0;
+  return formationIds[Math.abs(source) % formationIds.length];
 }
 
-export function ensureClubState(profileInput: PlayerProfile, now = new Date(), rng: RandomSource = new MathRandomSource()): PlayerProfile {
+function recoveredTactic(officialClub: typeof RECOVERY_CLUBS[number] | undefined): TacticId {
+  const tacticIds: TacticId[] = ['balanced', 'attacking', 'defensive', 'counter', 'down-wings', 'middle-thrust', 'tiki-taka', 'long-ball', 'offense-full', 'defense-full'];
+  return tacticIds[Math.abs(officialClub?.tacticsId ?? 0) % tacticIds.length];
+}
+
+function buildOpponentRoster(officialClub: typeof RECOVERY_CLUBS[number] | undefined, level: number, rng: RandomSource): ClubPlayer[] {
+  const officialPlayers = officialClub ? (RECOVERY_PLAYERS_BY_CLUB.get(officialClub.id) ?? []).slice(0, 18).map((record) => recoveryClubPlayer(record, level)) : [];
+  const fallbackPlayers = Array.from({ length: Math.max(0, 15 - officialPlayers.length) }, (_, index) => npcPlayer(index, level, rng));
+  return [...officialPlayers, ...fallbackPlayers];
+}
+
+function buildFixtures(clubId: string, season: number, now: Date): ClubFixture[] {
+  const opponents = CLUB_NAMES.filter((name) => name !== clubId);
+  const fixtures: ClubFixture[] = [];
+  for (const leg of [0, 1]) {
+    for (const [index, opponent] of opponents.entries()) {
+      const matchday = leg * opponents.length + index + 1;
+      const userIsHome = leg === 0 ? index % 2 === 0 : index % 2 !== 0;
+      fixtures.push({
+        id: `${season}-${matchday}-${clubId}`,
+        season,
+        matchday,
+        homeClub: userIsHome ? clubId : opponent,
+        awayClub: userIsHome ? opponent : clubId,
+        played: false,
+        playedAt: new Date(now.getTime() + matchday * 86_400_000).toISOString()
+      });
+    }
+  }
+  return fixtures;
+}
+
+export function ensureClubState(profileInput: PlayerProfile, now = new Date(), rng: RandomSource = new MathRandomSource(), stateField: ClubStateField = 'clubState', clubNameOverride?: string): PlayerProfile {
   const profile = structuredClone(profileInput);
-  if (profile.clubState) return profile;
-  const officialClub = RECOVERY_CLUBS.find((club) => club.nameEn === profile.club) ?? RECOVERY_CLUBS.find((club) => club.league === 1011);
-  if (officialClub && profile.club === 'Rising City FC') profile.club = officialClub.nameEn;
+  if (profile[stateField]) return profile;
+  const requestedClub = clubNameOverride ?? profile.club;
+  const officialClub = RECOVERY_CLUBS.find((club) => club.nameEn === requestedClub) ?? RECOVERY_CLUBS.find((club) => club.league === 1011);
+  const clubName = officialClub?.nameEn ?? requestedClub;
+  if (stateField === 'clubState' && profile.club === 'Rising City FC') profile.club = clubName;
   const officialPlayers = officialClub ? (RECOVERY_PLAYERS_BY_CLUB.get(officialClub.id) ?? []).slice(0, 15).map((record) => recoveryClubPlayer(record, profile.level)) : [];
   const fallbackPlayers = Array.from({ length: Math.max(0, 15 - officialPlayers.length) }, (_, index) => npcPlayer(index, profile.level, rng));
   const roster = [userAsClubPlayer(profile), ...officialPlayers, ...fallbackPlayers];
-  profile.clubState = {
-    id: profile.club,
+  profile[stateField] = {
+    id: clubName,
     officialId: officialClub?.id,
-    name: officialClub?.nameEn ?? profile.club,
+    name: clubName,
     level: 1,
     leagueTier: 1,
     officialGrade: officialClub?.grade,
@@ -142,7 +172,7 @@ export function ensureClubState(profileInput: PlayerProfile, now = new Date(), r
     formation: '4-4-2',
     tactic: 'balanced',
     roster,
-    fixtures: buildFixtures(profile.club, profile.league.season, now),
+    fixtures: buildFixtures(clubName, profile.league.season, now),
     standings: CLUB_NAMES.map((clubName) => ({ clubId: clubName, clubName, played: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, points: 0 })),
     nextFixtureAt: new Date(now.getTime() + 86_400_000).toISOString(),
     championsLeagueQualified: false,
@@ -151,8 +181,8 @@ export function ensureClubState(profileInput: PlayerProfile, now = new Date(), r
   return profile;
 }
 
-export function getClubRating(profile: PlayerProfile): number {
-  const club = profile.clubState;
+export function getClubRating(profile: PlayerProfile, stateField: ClubStateField = 'clubState'): number {
+  const club = profile[stateField];
   if (!club) return getRating(profile);
   const selected = selectPlayingSquad(club.roster, club.formation);
   const average = selected.reduce((sum, player) => sum + player.overall, 0) / Math.max(1, selected.length);
@@ -161,18 +191,18 @@ export function getClubRating(profile: PlayerProfile): number {
   return Math.round(average * (formation.controlMultiplier * tactic.controlMultiplier) + club.level * 2 + club.prestige / 50);
 }
 
-export function setClubFormation(profileInput: PlayerProfile, formation: FormationId, now = new Date()): PlayerProfile {
-  const profile = ensureClubState(profileInput, now);
+export function setClubFormation(profileInput: PlayerProfile, formation: FormationId, now = new Date(), stateField: ClubStateField = 'clubState'): PlayerProfile {
+  const profile = ensureClubState(profileInput, now, new MathRandomSource(), stateField);
   if (!FORMATIONS[formation]) throw new Error('Formasi tidak dikenal.');
-  profile.clubState!.formation = formation;
+  profile[stateField]!.formation = formation;
   profile.updatedAt = now.toISOString();
   return profile;
 }
 
-export function setClubTactic(profileInput: PlayerProfile, tactic: TacticId, now = new Date()): PlayerProfile {
-  const profile = ensureClubState(profileInput, now);
+export function setClubTactic(profileInput: PlayerProfile, tactic: TacticId, now = new Date(), stateField: ClubStateField = 'clubState'): PlayerProfile {
+  const profile = ensureClubState(profileInput, now, new MathRandomSource(), stateField);
   if (!TACTICS[tactic]) throw new Error('Taktik tidak dikenal.');
-  profile.clubState!.tactic = tactic;
+  profile[stateField]!.tactic = tactic;
   profile.updatedAt = now.toISOString();
   return profile;
 }
@@ -181,7 +211,7 @@ function selectPlayingSquad(roster: ClubPlayer[], formationId: FormationId): Clu
   const slots = FORMATIONS[formationId].slots;
   const selected: ClubPlayer[] = [];
   for (const position of Object.keys(slots) as Position[]) {
-    const players = roster.filter((player) => player.position === position).sort((a, b) => (Number(b.isUserPlayer) - Number(a.isUserPlayer)) || (b.overall + b.morale / 10) - (a.overall + a.morale / 10));
+    const players = roster.filter((player) => player.position === position && player.hp > 0).sort((a, b) => (Number(b.isUserPlayer) - Number(a.isUserPlayer)) || (b.overall + b.morale / 10) - (a.overall + a.morale / 10));
     selected.push(...players.slice(0, slots[position]));
   }
   return selected;
@@ -205,6 +235,11 @@ function goals(attack: number, defence: number, rng: RandomSource): number {
   return clamp(value, 0, 6);
 }
 
+function halfGoals(attack: number, defence: number, rng: RandomSource): number {
+  const fullMatch = goals(attack, defence, rng);
+  return clamp(Math.round(fullMatch * 0.5), 0, 3);
+}
+
 function outcome(homeGoals: number, awayGoals: number): MatchOutcome {
   if (homeGoals === awayGoals) return 'DRAW';
   return homeGoals > awayGoals ? 'WIN' : 'LOSS';
@@ -219,35 +254,49 @@ function updateStanding(standing: { played: number; wins: number; draws: number;
   else standing.losses += 1;
 }
 
-export function playClubMatch(profileInput: PlayerProfile, now = new Date(), rng: RandomSource = new MathRandomSource()): ClubMatchResult {
-  const profile = ensureClubState(profileInput, now, rng);
-  const club = profile.clubState!;
+export function playClubMatch(profileInput: PlayerProfile, now = new Date(), rng: RandomSource = new MathRandomSource(), stateField: ClubStateField = 'clubState'): ClubMatchResult {
+  const profile = ensureClubState(profileInput, now, rng, stateField);
+  const club = profile[stateField]!;
   const fixture = club.fixtures.find((item) => !item.played);
   if (!fixture) throw new Error('Musim klub telah selesai. Gunakan `/season-end` untuk memulai musim baru.');
-  const squad = selectPlayingSquad(club.roster, club.formation);
   const userClubIsHome = fixture.homeClub === club.id;
-  const userTeam = getAttackDefence(squad, club.id, club.formation, club.tactic, userClubIsHome);
-  const opponentRating = 52 + fixture.matchday * 2 + Math.floor(rng.next() * 24);
-  const opponentAttack = opponentRating * (0.8 + rng.next() * 0.25);
-  const opponentDefence = opponentRating * (0.8 + rng.next() * 0.25);
-  const homeGoals = userClubIsHome ? goals(userTeam.attack + 6, opponentDefence, rng) : goals(opponentAttack + 4, userTeam.defence, rng);
-  const awayGoals = userClubIsHome ? goals(opponentAttack, userTeam.defence, rng) : goals(userTeam.attack, opponentDefence, rng);
+  const homeOfficial = RECOVERY_CLUBS.find((item) => item.nameEn === fixture.homeClub);
+  const awayOfficial = RECOVERY_CLUBS.find((item) => item.nameEn === fixture.awayClub);
+  const homeFormation = userClubIsHome ? club.formation : recoveredFormation(homeOfficial);
+  const awayFormation = userClubIsHome ? recoveredFormation(awayOfficial) : club.formation;
+  const homeTactic = userClubIsHome ? club.tactic : recoveredTactic(homeOfficial);
+  const awayTactic = userClubIsHome ? recoveredTactic(awayOfficial) : club.tactic;
+  const homeRoster = userClubIsHome ? club.roster : buildOpponentRoster(homeOfficial, club.level, rng);
+  const awayRoster = userClubIsHome ? buildOpponentRoster(awayOfficial, club.level, rng) : club.roster;
+  const homeSquad = selectPlayingSquad(homeRoster, homeFormation);
+  const awaySquad = selectPlayingSquad(awayRoster, awayFormation);
+  if (homeSquad.length < 7 || awaySquad.length < 7) throw new Error('Salah satu club tidak memiliki pemain yang cukup sehat untuk pertandingan.');
+  const homeTeam = getAttackDefence(homeSquad, fixture.homeClub, homeFormation, homeTactic, true);
+  const awayTeam = getAttackDefence(awaySquad, fixture.awayClub, awayFormation, awayTactic, false);
+  const halftimeHomeGoals = halfGoals(homeTeam.attack, awayTeam.defence, rng);
+  const halftimeAwayGoals = halfGoals(awayTeam.attack, homeTeam.defence, rng);
+  const secondHalfHomeGoals = halfGoals(homeTeam.attack, awayTeam.defence, rng);
+  const secondHalfAwayGoals = halfGoals(awayTeam.attack, homeTeam.defence, rng);
+  const homeGoals = clamp(halftimeHomeGoals + secondHalfHomeGoals, 0, 6);
+  const awayGoals = clamp(halftimeAwayGoals + secondHalfAwayGoals, 0, 6);
   const clubGoals = userClubIsHome ? homeGoals : awayGoals;
   const opponentGoals = userClubIsHome ? awayGoals : homeGoals;
   const result = outcome(clubGoals, opponentGoals);
-  const mvp = [...squad].sort((a, b) => b.overall - a.overall)[0];
+  const userSquad = userClubIsHome ? homeSquad : awaySquad;
+  const mvp = [...userSquad].sort((a, b) => (b.overall + b.morale / 10) - (a.overall + a.morale / 10))[0];
   fixture.played = true;
   fixture.homeGoals = homeGoals;
   fixture.awayGoals = awayGoals;
   fixture.playedAt = now.toISOString();
-  const currentStanding = club.standings.find((standing) => standing.clubId === club.id)!;
+  const currentStanding = club.standings.find((standing) => standing.clubId === club.id);
   const opponentStanding = club.standings.find((standing) => standing.clubId === (userClubIsHome ? fixture.awayClub : fixture.homeClub));
+  if (!currentStanding) throw new Error('Klasemen club tidak memiliki baris untuk club pengguna.');
   updateStanding(currentStanding, clubGoals, opponentGoals);
   if (opponentStanding) updateStanding(opponentStanding, opponentGoals, clubGoals);
   club.assets += result === 'WIN' ? 900 : result === 'DRAW' ? 550 : 300;
   club.prestige = clamp(club.prestige + (result === 'WIN' ? 3 : result === 'DRAW' ? 1 : -1), 0, 1_000);
   club.nextFixtureAt = club.fixtures.find((item) => !item.played)?.playedAt ?? new Date(now.getTime() + 365 * 86_400_000).toISOString();
-  for (const player of squad) {
+  for (const player of userSquad) {
     player.appearances += 1;
     player.hp = clamp(player.hp - 5, 0, player.maxHp);
     player.morale = clamp(player.morale + (result === 'WIN' ? 3 : result === 'LOSS' ? -3 : 1), 0, 100);
@@ -274,24 +323,26 @@ export function playClubMatch(profileInput: PlayerProfile, now = new Date(), rng
     fixture,
     homeGoals,
     awayGoals,
+    halftime: { homeGoals: halftimeHomeGoals, awayGoals: halftimeAwayGoals },
     outcome: result,
     mvp,
     commentary: [
       `${fixture.homeClub} menghadapi ${fixture.awayClub} pada matchday ${fixture.matchday}.`,
-      `Formasi ${club.formation} dan taktik ${TACTICS[club.tactic].name} menghasilkan rating klub ${getClubRating(profile)}.`,
-      `${mvp.name} terpilih sebagai MVP pertandingan dengan overall ${mvp.overall}.`
+      `Babak pertama berakhir ${halftimeHomeGoals}-${halftimeAwayGoals}; formasi ${homeFormation} vs ${awayFormation}.`,
+      `Taktik: ${TACTICS[homeTactic].name} vs ${TACTICS[awayTactic].name}.`,
+      `Skor akhir ${homeGoals}-${awayGoals}; ${mvp.name} menjadi MVP dengan overall ${mvp.overall}.`
     ]
   };
 }
 
-export function getNextClubFixture(profileInput: PlayerProfile, now = new Date()): ClubFixture | undefined {
-  const profile = ensureClubState(profileInput, now);
-  return profile.clubState?.fixtures.find((fixture) => !fixture.played);
+export function getNextClubFixture(profileInput: PlayerProfile, now = new Date(), stateField: ClubStateField = 'clubState'): ClubFixture | undefined {
+  const profile = ensureClubState(profileInput, now, new MathRandomSource(), stateField);
+  return profile[stateField]?.fixtures.find((fixture) => !fixture.played);
 }
 
-export function finishSeason(profileInput: PlayerProfile, now = new Date()): PlayerProfile {
-  const profile = ensureClubState(profileInput, now);
-  const club = profile.clubState!;
+export function finishSeason(profileInput: PlayerProfile, now = new Date(), stateField: ClubStateField = 'clubState'): PlayerProfile {
+  const profile = ensureClubState(profileInput, now, new MathRandomSource(), stateField);
+  const club = profile[stateField]!;
   const standing = club.standings.find((item) => item.clubId === club.id)!;
   profile.league.season += 1;
   profile.league.matchday = 1;
@@ -304,11 +355,15 @@ export function finishSeason(profileInput: PlayerProfile, now = new Date()): Pla
   club.fixtures = buildFixtures(club.id, profile.league.season, now);
   club.standings = CLUB_NAMES.map((clubName) => ({ clubId: clubName, clubName, played: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, points: 0 }));
   const currentTier = club.leagueTier ?? 1;
-  const promoted = standing.points >= 18;
-  const relegated = standing.points <= 4 && currentTier > 1;
+  const maximumPoints = Math.max(3, (club.fixtures.length || 1) * 3);
+  // Coach videos show promotion, QCL qualification, and relegation targets;
+  // exact thresholds are not recovered, so percentage thresholds are explicit
+  // RECOVERY_INFERRED defaults rather than hard-coded short-season values.
+  const promoted = standing.points >= Math.ceil(maximumPoints * GAME_BALANCE.coach.promotionRate);
+  const relegated = standing.points <= Math.ceil(maximumPoints * GAME_BALANCE.coach.relegationRate) && currentTier > 1;
   club.leagueTier = clamp(currentTier + (promoted ? 1 : relegated ? -1 : 0), 1, 5);
   club.level = clamp(club.level + (promoted ? 1 : 0), 1, 10);
-  club.championsLeagueQualified = standing.points >= 15;
+  club.championsLeagueQualified = standing.points >= Math.ceil(maximumPoints * GAME_BALANCE.coach.championshipRate);
   club.championsLeagueRound = club.championsLeagueQualified ? 1 : 0;
   club.nextFixtureAt = club.fixtures[0].playedAt!;
   club.prestige = clamp(club.prestige + (promoted ? 10 : relegated ? -6 : 2), 0, 1_000);
@@ -316,9 +371,9 @@ export function finishSeason(profileInput: PlayerProfile, now = new Date()): Pla
   return profile;
 }
 
-export function formatClubStanding(profileInput: PlayerProfile, now = new Date()): string {
-  const profile = ensureClubState(profileInput, now);
-  return [...(profile.clubState?.standings ?? [])]
+export function formatClubStanding(profileInput: PlayerProfile, now = new Date(), stateField: ClubStateField = 'clubState'): string {
+  const profile = ensureClubState(profileInput, now, new MathRandomSource(), stateField);
+  return [...(profile[stateField]?.standings ?? [])]
     .sort((a, b) => (b.points - a.points) || ((b.goalsFor - b.goalsAgainst) - (a.goalsFor - a.goalsAgainst)))
     .map((standing, index) => `${index + 1}. ${standing.clubName} — ${standing.points} pts (${standing.wins}-${standing.draws}-${standing.losses})`)
     .join('\n');

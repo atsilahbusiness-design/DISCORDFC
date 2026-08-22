@@ -1,0 +1,48 @@
+{
+  "version": "gameplay-expansion-recovery-inferred-2026-08",
+  "source": "RECOVERY_INFERRED",
+  "note": "Coefficients are Discord adaptation defaults derived from recovered signatures and public gameplay observations; they are not official Babuyo server values.",
+  "player": {
+    "training": { "energyCost": 15, "expMin": 18, "expMaxExclusive": 31 },
+    "detailedTraining": { "energyCost": 12, "expMin": 18, "expMaxExclusive": 31, "durationWeeks": 1, "hpCost": 0 },
+    "match": { "energyCost": 20, "hpCost": 8, "maxGoals": 5, "rewardMoney": { "win": 220, "draw": 140, "loss": 90 }, "rewardExp": { "win": 42, "draw": 30, "loss": 22 }, "injuryChance": 0.08 },
+    "weekly": { "energyRecovery": 35, "hpRecovery": 18, "baseMatchExp": 30, "maxCareerYear": 20, "retirementAge": 34, "weeksPerSeason": 10 },
+    "injury": { "minWeeks": 1, "maxWeeks": 6, "basicTreatmentWeeks": 1, "expertTreatmentWeeks": 3, "expertTreatmentCost": 450 },
+    "trainer": { "maxWeeklyGain": 6 },
+    "culture": { "durationWeeks": 2, "charmGain": 2, "skillExpGain": 18 },
+    "competition": { "attemptsPerTeam": 5, "baseGoalChance": 0.13, "maxGoalChance": 0.32 }
+  },
+  "coach": {
+    "initialAge": 34,
+    "initialApproval": 50,
+    "roundExp": { "win": 90, "draw": 60, "loss": 35 },
+    "levelExpBonus": 5,
+    "varianceMaxExclusive": 16,
+    "eventChance": 0.28,
+    "promotionRate": 0.6,
+    "championshipRate": 0.5,
+    "relegationRate": 0.2,
+    "abilities": ["formation", "tactics", "stateAdjustment", "trainingLevel", "lockerRoom", "charisma"]
+  },
+  "versus": {
+    "defaultGroupCapacity": 8,
+    "minimumLeagueClubs": 4,
+    "maxGoals": 6,
+    "roundDurationDays": 1,
+    "winPoints": 3,
+    "drawPoints": 1,
+    "matchAttempts": 8,
+    "baseGoalChance": 0.08,
+    "maxGoalChance": 0.25,
+    "homeAdvantage": 2,
+    "lineupHpCost": 5,
+    "injuryChance": 0.025,
+    "cardChance": 0.15,
+    "redCardChance": 0.025,
+    "rewards": {
+      "win": { "money": 500, "coin": 3, "conditionRecovery": 1 },
+      "draw": { "money": 300, "coin": 2, "conditionRecovery": 1 },
+      "loss": { "money": 180, "coin": 1, "conditionRecovery": 0 }
+    }
+  }
+}

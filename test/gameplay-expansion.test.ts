@@ -27,6 +27,10 @@ test('detailed training and manual match EXP allocation mutate only requested sk
   const trained = trainDetailedSkill(profile, 'pass', new Date('2026-01-01T00:00:00.000Z'), new SeededRandom(2));
   assert.equal(trained.profile.energy, 88);
   assert.equal(trained.profile.detailedSkills!.pass.level, beforePass);
+  assert.deepEqual(trained.profile.activeTraining?.skill, 'pass');
+  const settled = advanceWeek(trained.profile, new Date('2026-01-08T00:00:00.000Z'), new SeededRandom(3));
+  assert.equal(settled.profile.activeTraining, undefined);
+  assert.equal(settled.profile.detailedSkills!.pass.exp > 0, true);
   trained.profile.unassignedMatchExp = 70;
   const allocated = assignMatchExp(trained.profile, { dribbling: 70 });
   assert.equal(allocated.remaining, 0);

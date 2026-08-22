@@ -2,11 +2,14 @@ export type Position = 'GK' | 'DF' | 'MF' | 'FW';
 export type AbilityId = 'atk' | 'def' | 'speed' | 'power' | 'strength' | 'technique';
 export type DetailedSkillId = 'shots' | 'penalty' | 'header' | 'pass' | 'dribbling' | 'freeKick' | 'offBallRunning' | 'holdOffDefenders' | 'teamwork' | 'endurance' | 'speed' | 'willpower';
 export type MatchOutcome = 'WIN' | 'DRAW' | 'LOSS';
-export type TacticId = 'balanced' | 'attacking' | 'defensive' | 'counter';
-export type FormationId = '4-4-2' | '4-3-3' | '3-5-2' | '5-3-2';
+export type TacticId = 'balanced' | 'attacking' | 'defensive' | 'counter' | 'down-wings' | 'middle-thrust' | 'tiki-taka' | 'long-ball' | 'offense-full' | 'defense-full';
+export type FormationId = '4-4-2' | '4-3-3' | '3-5-2' | '5-3-2' | '4-1-3-2' | '3-4-3' | '4-2-3-1';
 export type ListingStatus = 'OPEN' | 'SOLD' | 'CANCELLED';
 export type CareerMode = 'PLAYER' | 'COACH';
 export type CareerStatus = 'ACTIVE' | 'RETIRED';
+export type CoachStatus = 'EMPLOYED' | 'UNEMPLOYED' | 'RETIRED';
+export type CoachAbilityId = 'formation' | 'tactics' | 'stateAdjustment' | 'trainingLevel' | 'lockerRoom' | 'charisma';
+export type CoachTargetType = 'PROMOTION' | 'CHAMPIONSHIP' | 'AVOID_RELEGATION' | 'QCL';
 export type InjurySeverity = 'MINOR' | 'MODERATE' | 'MAJOR';
 export type InjurySource = 'MATCH' | 'TRAINING' | 'EVENT';
 export type HonorCategory = 'PERSONAL' | 'TEAM' | 'NATIONAL';
@@ -102,6 +105,68 @@ export interface RetirementState {
   finalHonors: number;
 }
 
+export interface CoachBoardTarget {
+  type: CoachTargetType;
+  season: number;
+  targetRank: number;
+  progressRank?: number;
+  approvalDeltaOnSuccess: number;
+  approvalDeltaOnFailure: number;
+  rewardMoney: number;
+  resolved: boolean;
+}
+
+export interface CoachJobOffer {
+  id: string;
+  clubId: string;
+  clubName: string;
+  league: number;
+  salary: number;
+  targetRank: number;
+  durationYears: number;
+  status: 'OPEN' | 'ACCEPTED' | 'DECLINED' | 'EXPIRED';
+}
+
+export interface CoachEventChoice {
+  id: string;
+  label: string;
+  description: string;
+  approvalDelta: number;
+  moneyDelta: number;
+  expDelta: number;
+  ability?: CoachAbilityId;
+}
+
+export interface CoachEvent {
+  id: string;
+  templateId: 'press-criticism' | 'locker-room-speech' | 'team-building' | 'player-discipline' | 'financial-crisis';
+  title: string;
+  description: string;
+  choices: CoachEventChoice[];
+  resolved: boolean;
+  createdAt: string;
+}
+
+export interface CoachCareerState {
+  coachName: string;
+  age: number;
+  level: number;
+  totalExp: number;
+  salary: number;
+  unassignedExp: number;
+  abilities: Record<CoachAbilityId, AbilityState>;
+  approval: number;
+  status: CoachStatus;
+  careerYear: number;
+  season: number;
+  boardTarget: CoachBoardTarget;
+  jobOffers: CoachJobOffer[];
+  event?: CoachEvent;
+  staff?: TrainerState;
+  honors: HonorRecord[];
+  retiredAt?: string;
+}
+
 export interface CareerStats {
   appearances: number;
   wins: number;
@@ -150,6 +215,7 @@ export interface ClubPlayer {
   name: string;
   position: Position;
   age: number;
+  originClubId?: number;
   overall: number;
   stats: PlayerStats;
   morale: number;
@@ -285,6 +351,186 @@ export interface EventState {
   resolved: boolean;
 }
 
+export type VersusUserStatus = 'IDLE' | 'ENROLLED' | 'IN_GAME' | 'GAMEOVER';
+export type VersusBattleState = 'OPEN' | 'LOCKED' | 'PROCESSING' | 'SETTLED' | 'PUBLISHED' | 'DISPUTED';
+export type VersusSeasonState = 'DRAFT' | 'ACTIVE' | 'FINISHED';
+export type VersusPlayerStatus = 'AVAILABLE' | 'INJURED' | 'SUSPENDED';
+
+export interface VersusPlayer {
+  id: string;
+  name: string;
+  age: number;
+  initialAge: number;
+  position: Position;
+  value: number;
+  abilities: Record<AbilityId, number>;
+  hp: number;
+  maxHp: number;
+  status: VersusPlayerStatus;
+  injuryType?: InjurySeverity;
+  injuryEndsAt?: string;
+  yellowCards: number;
+  redCardBan: number;
+  captain: boolean;
+  clubId: string;
+  growthType: number;
+  goals: number;
+  assists: number;
+  appearances: number;
+}
+
+export interface VersusClub {
+  id: string;
+  ownerId?: string;
+  name: string;
+  isNpc: boolean;
+  grade: number;
+  country: number;
+  rosterVersion: number;
+  formation: FormationId;
+  tactic: TacticId;
+  budget: number;
+  versusMoney: number;
+  versusCoin: number;
+  score: number;
+  wins: number;
+  draws: number;
+  losses: number;
+  goalsFor: number;
+  goalsAgainst: number;
+  rank: number;
+  roster: VersusPlayer[];
+}
+
+export interface VersusPlayerSnapshot {
+  id: string;
+  name: string;
+  position: Position;
+  abilityScore: number;
+  hp: number;
+  status: VersusPlayerStatus;
+  injuryType?: InjurySeverity;
+  yellowCards: number;
+  redCardBan: number;
+  clubId: string;
+}
+
+export interface VersusSubmission {
+  battleId: string;
+  clubId: string;
+  ownerId?: string;
+  lineup: string[];
+  substitutes: string[];
+  captainId: string;
+  formation: FormationId;
+  tactic: TacticId;
+  rosterVersion: number;
+  submittedAt: string;
+  lockedAt?: string;
+  snapshot?: VersusPlayerSnapshot[];
+}
+
+export interface VersusBattleStats {
+  ballControl: number;
+  shots: number;
+  shotsOnTarget: number;
+  corners: number;
+  yellowCards: number;
+  redCards: number;
+}
+
+export interface VersusSideReward {
+  money: number;
+  coin: number;
+  conditionRecovery: number;
+}
+
+export interface VersusSettlement {
+  battleId: string;
+  roundId: number;
+  homeGoals: number;
+  awayGoals: number;
+  halftime: { homeGoals: number; awayGoals: number };
+  homeStats: VersusBattleStats;
+  awayStats: VersusBattleStats;
+  mvpPlayerId: string;
+  mvpName: string;
+  homeReward: VersusSideReward;
+  awayReward: VersusSideReward;
+  rulesetVersion: string;
+  simulationSeed: number;
+  settledAt: string;
+}
+
+export interface VersusBattle {
+  id: string;
+  seasonId: string;
+  roundId: number;
+  scheduledAt: string;
+  homeClubId: string;
+  awayClubId: string;
+  state: VersusBattleState;
+  homeSubmission?: VersusSubmission;
+  awaySubmission?: VersusSubmission;
+  settlement?: VersusSettlement;
+}
+
+export interface VersusStanding {
+  clubId: string;
+  clubName: string;
+  isNpc: boolean;
+  rank: number;
+  points: number;
+  played: number;
+  wins: number;
+  draws: number;
+  losses: number;
+  goalsFor: number;
+  goalsAgainst: number;
+  goalDifference: number;
+}
+
+export interface VersusSeasonReward {
+  clubId: string;
+  rank: number;
+  money: number;
+  coin: number;
+  promoted: boolean;
+  relegated: boolean;
+}
+
+export interface VersusSeason {
+  id: string;
+  groupCode: string;
+  leagueId: string;
+  grade: number;
+  capacity: number;
+  rulesetVersion: string;
+  state: VersusSeasonState;
+  startAt: string;
+  endAt?: string;
+  currentRound: number;
+  roundDeadline: string;
+  clubs: VersusClub[];
+  battles: VersusBattle[];
+  standings: VersusStanding[];
+  rewards: VersusSeasonReward[];
+}
+
+export interface VersusUserSave {
+  status: VersusUserStatus;
+  groupCode?: string;
+  seasonId?: string;
+  clubId: string;
+  enrolledAt: string;
+  lastProcessedAt: string;
+  versusMoney: number;
+  versusCoin: number;
+  club: VersusClub;
+  season?: VersusSeason;
+  history: Array<{ seasonId: string; rank: number; points: number; rewards: VersusSeasonReward }>;
+}
+
 export interface EconomyLedgerEntry {
   id: string;
   createdAt: string;
@@ -318,6 +564,7 @@ export interface PlayerProfile {
   lastActionAt: string;
   lastMatch?: MatchRecord;
   clubState?: ClubState;
+  coachClubState?: ClubState;
   daily?: DailyState;
   event?: EventState;
   championsLeague?: ChampionsLeagueState;
@@ -343,6 +590,8 @@ export interface PlayerProfile {
   honors?: HonorRecord[];
   worldFootballer?: WorldFootballerState;
   retirement?: RetirementState;
+  coach?: CoachCareerState;
+  versus?: VersusUserSave;
 }
 
 export interface MatchResult {
@@ -406,12 +655,39 @@ export interface ClubMatchResult {
   fixture: ClubFixture;
   homeGoals: number;
   awayGoals: number;
+  halftime: { homeGoals: number; awayGoals: number };
   outcome: MatchOutcome;
   mvp: ClubPlayer;
   commentary: string[];
 }
 
+export interface CoachRoundResult {
+  profile: PlayerProfile;
+  match: ClubMatchResult;
+  coachExp: number;
+  approvalDelta: number;
+  boardTarget: CoachBoardTarget;
+  seasonComplete: boolean;
+  event?: CoachEvent;
+}
+
+export interface CoachExpAllocationResult {
+  profile: PlayerProfile;
+  allocated: number;
+  remaining: number;
+  levelsGained: number;
+}
+
 export const ABILITIES: AbilityId[] = ['atk', 'def', 'speed', 'power', 'strength', 'technique'];
+export const COACH_ABILITIES: CoachAbilityId[] = ['formation', 'tactics', 'stateAdjustment', 'trainingLevel', 'lockerRoom', 'charisma'];
+export const COACH_ABILITY_LABELS: Record<CoachAbilityId, string> = {
+  formation: 'Formation Understanding',
+  tactics: 'Tactical Thinking',
+  stateAdjustment: 'State Adjustment',
+  trainingLevel: 'Training Level',
+  lockerRoom: 'Locker Room Prestige',
+  charisma: 'Personal Charisma'
+};
 
 export const DETAILED_SKILLS: DetailedSkillId[] = ['shots', 'penalty', 'header', 'pass', 'dribbling', 'freeKick', 'offBallRunning', 'holdOffDefenders', 'teamwork', 'endurance', 'speed', 'willpower'];
 
@@ -450,14 +726,23 @@ export const FORMATIONS: Record<FormationId, FormationConfig> = {
   '4-4-2': { id: '4-4-2', name: 'Balanced 4-4-2', slots: { GK: 1, DF: 4, MF: 4, FW: 2 }, attackMultiplier: 1, defenceMultiplier: 1, controlMultiplier: 1 },
   '4-3-3': { id: '4-3-3', name: 'Attacking 4-3-3', slots: { GK: 1, DF: 4, MF: 3, FW: 3 }, attackMultiplier: 1.08, defenceMultiplier: 0.96, controlMultiplier: 1.02 },
   '3-5-2': { id: '3-5-2', name: 'Control 3-5-2', slots: { GK: 1, DF: 3, MF: 5, FW: 2 }, attackMultiplier: 1.02, defenceMultiplier: 0.98, controlMultiplier: 1.08 },
-  '5-3-2': { id: '5-3-2', name: 'Defensive 5-3-2', slots: { GK: 1, DF: 5, MF: 3, FW: 2 }, attackMultiplier: 0.94, defenceMultiplier: 1.1, controlMultiplier: 0.96 }
+  '5-3-2': { id: '5-3-2', name: 'Defensive 5-3-2', slots: { GK: 1, DF: 5, MF: 3, FW: 2 }, attackMultiplier: 0.94, defenceMultiplier: 1.1, controlMultiplier: 0.96 },
+  '4-1-3-2': { id: '4-1-3-2', name: 'Flexible 4-1-3-2', slots: { GK: 1, DF: 4, MF: 4, FW: 2 }, attackMultiplier: 1.03, defenceMultiplier: 1.01, controlMultiplier: 1.04 },
+  '3-4-3': { id: '3-4-3', name: 'Aggressive 3-4-3', slots: { GK: 1, DF: 3, MF: 4, FW: 3 }, attackMultiplier: 1.1, defenceMultiplier: 0.92, controlMultiplier: 1.01 },
+  '4-2-3-1': { id: '4-2-3-1', name: 'Possession 4-2-3-1', slots: { GK: 1, DF: 4, MF: 5, FW: 1 }, attackMultiplier: 1.02, defenceMultiplier: 1.0, controlMultiplier: 1.09 }
 };
 
 export const TACTICS: Record<TacticId, { name: string; attackMultiplier: number; defenceMultiplier: number; controlMultiplier: number; description: string }> = {
   balanced: { name: 'Balanced', attackMultiplier: 1, defenceMultiplier: 1, controlMultiplier: 1, description: 'Tidak memiliki kelemahan besar.' },
   attacking: { name: 'Attacking', attackMultiplier: 1.1, defenceMultiplier: 0.92, controlMultiplier: 0.98, description: 'Menambah tekanan serangan dengan risiko pertahanan.' },
   defensive: { name: 'Defensive', attackMultiplier: 0.9, defenceMultiplier: 1.1, controlMultiplier: 1.02, description: 'Mengurangi serangan dan memperkuat pertahanan.' },
-  counter: { name: 'Counter Attack', attackMultiplier: 1.05, defenceMultiplier: 1.02, controlMultiplier: 0.95, description: 'Mengandalkan transisi cepat setelah bertahan.' }
+  counter: { name: 'Counter Attack', attackMultiplier: 1.05, defenceMultiplier: 1.02, controlMultiplier: 0.95, description: 'Mengandalkan transisi cepat setelah bertahan.' },
+  'down-wings': { name: 'Down the Wings', attackMultiplier: 1.04, defenceMultiplier: 0.98, controlMultiplier: 1.03, description: 'Membuka serangan melalui sisi lapangan.' },
+  'middle-thrust': { name: 'Middle Thrust', attackMultiplier: 1.06, defenceMultiplier: 0.96, controlMultiplier: 1.01, description: 'Menyerang melalui pusat pertahanan lawan.' },
+  'tiki-taka': { name: 'Tiki-Taka', attackMultiplier: 1.01, defenceMultiplier: 1, controlMultiplier: 1.1, description: 'Mengutamakan sirkulasi bola dan kontrol.' },
+  'long-ball': { name: 'Long Ball', attackMultiplier: 1.07, defenceMultiplier: 1, controlMultiplier: 0.94, description: 'Mengirim bola cepat ke lini depan.' },
+  'offense-full': { name: 'Offense Full', attackMultiplier: 1.15, defenceMultiplier: 0.88, controlMultiplier: 0.96, description: 'Tekanan serangan maksimum dengan risiko tinggi.' },
+  'defense-full': { name: 'Defense Full', attackMultiplier: 0.86, defenceMultiplier: 1.14, controlMultiplier: 1.04, description: 'Blok pertahanan maksimum.' }
 };
 
 export const TRAINER_CATALOG: Record<string, Omit<TrainerState, 'hiredAtWeek'>> = {

@@ -81,8 +81,12 @@ export const commandDefinitions = [
       { name: '4-4-2 Balanced', value: '4-4-2' },
       { name: '4-3-3 Attacking', value: '4-3-3' },
       { name: '3-5-2 Control', value: '3-5-2' },
-      { name: '5-3-2 Defensive', value: '5-3-2' }
-    )),
+      { name: '5-3-2 Defensive', value: '5-3-2' },
+      { name: '4-1-3-2 Flexible', value: '4-1-3-2' },
+      { name: '3-4-3 Aggressive', value: '3-4-3' },
+      { name: '4-2-3-1 Possession', value: '4-2-3-1' }
+    ))
+    .addStringOption((option) => option.setName('mode').setDescription('Mode club yang diubah').setRequired(false).addChoices({ name: 'Player Club', value: 'PLAYER' }, { name: 'Coach Club', value: 'COACH' })),
   new SlashCommandBuilder()
     .setName('tactic')
     .setDescription('Ubah taktik klub')
@@ -90,9 +94,29 @@ export const commandDefinitions = [
       { name: 'Balanced', value: 'balanced' },
       { name: 'Attacking', value: 'attacking' },
       { name: 'Defensive', value: 'defensive' },
-      { name: 'Counter Attack', value: 'counter' }
-    )),
+      { name: 'Counter Attack', value: 'counter' },
+      { name: 'Down the Wings', value: 'down-wings' },
+      { name: 'Middle Thrust', value: 'middle-thrust' },
+      { name: 'Tiki-Taka', value: 'tiki-taka' },
+      { name: 'Long Ball', value: 'long-ball' },
+      { name: 'Offense Full', value: 'offense-full' },
+      { name: 'Defense Full', value: 'defense-full' }
+    ))
+    .addStringOption((option) => option.setName('mode').setDescription('Mode club yang diubah').setRequired(false).addChoices({ name: 'Player Club', value: 'PLAYER' }, { name: 'Coach Club', value: 'COACH' })),
   new SlashCommandBuilder().setName('club-match').setDescription('Mainkan fixture klub berikutnya'),
+  new SlashCommandBuilder().setName('coach-career').setDescription('Mulai atau lihat karier Coach').addStringOption((option) => option.setName('action').setDescription('Aksi karier Coach').setRequired(false).addChoices({ name: 'Start', value: 'start' }, { name: 'Status', value: 'status' })),
+  new SlashCommandBuilder().setName('coach-profile').setDescription('Lihat profil Coach, abilities, approval, dan board target'),
+  new SlashCommandBuilder().setName('coach-event').setDescription('Lihat atau selesaikan Coach event').addStringOption((option) => option.setName('choice').setDescription('ID pilihan event, kosongkan untuk melihat').setRequired(false)),
+  new SlashCommandBuilder().setName('coach-round').setDescription('Mainkan round Coach berikutnya dengan simulasi dua babak'),
+  new SlashCommandBuilder().setName('coach-exp').setDescription('Alokasikan Coach EXP secara manual').addStringOption((option) => option.setName('ability').setDescription('Coach ability tujuan').setRequired(true).addChoices({ name: 'Formation Understanding', value: 'formation' }, { name: 'Tactical Thinking', value: 'tactics' }, { name: 'State Adjustment', value: 'stateAdjustment' }, { name: 'Training Level', value: 'trainingLevel' }, { name: 'Locker Room Prestige', value: 'lockerRoom' }, { name: 'Personal Charisma', value: 'charisma' })).addIntegerOption((option) => option.setName('amount').setDescription('Jumlah EXP').setRequired(true).setMinValue(1)),
+  new SlashCommandBuilder().setName('coach-job').setDescription('Lihat atau kelola job offer Coach').addStringOption((option) => option.setName('action').setDescription('Aksi job').setRequired(false).addChoices({ name: 'Generate offer', value: 'generate' }, { name: 'List offers', value: 'list' }, { name: 'Accept offer', value: 'accept' }, { name: 'Decline offer', value: 'decline' })).addStringOption((option) => option.setName('offer_id').setDescription('ID offer dari list').setRequired(false)),
+  new SlashCommandBuilder().setName('coach-retire').setDescription('Pensiun dari karier Coach'),
+  new SlashCommandBuilder().setName('coach-rebirth').setDescription('Mulai ulang karier Coach setelah retirement'),
+  new SlashCommandBuilder().setName('versus-join').setDescription('Join atau buat group Versus online').addStringOption((option) => option.setName('group_code').setDescription('Kode group Versus').setRequired(true)),
+  new SlashCommandBuilder().setName('versus-profile').setDescription('Lihat club, wallet, roster condition, dan season Versus'),
+  new SlashCommandBuilder().setName('versus-standings').setDescription('Lihat klasemen group/league Versus'),
+  new SlashCommandBuilder().setName('versus-round').setDescription('Proses round Versus berikutnya secara asynchronous'),
+  new SlashCommandBuilder().setName('versus-season').setDescription('Lihat atau tutup season Versus').addStringOption((option) => option.setName('action').setDescription('Aksi season').setRequired(false).addChoices({ name: 'Status', value: 'status' }, { name: 'Settle', value: 'settle' })),
   new SlashCommandBuilder().setName('standings').setDescription('Lihat klasemen liga klub'),
   new SlashCommandBuilder().setName('season-end').setDescription('Tutup musim jika seluruh fixture sudah dimainkan'),
   new SlashCommandBuilder().setName('daily').setDescription('Ambil daily reward dan streak'),

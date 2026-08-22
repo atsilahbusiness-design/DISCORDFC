@@ -118,16 +118,22 @@ export function trainDetailedSkill(profileInput: PlayerProfile, skill: DetailedS
   const profile = ensureGameplayState(profileInput, now);
   requireActive(profile);
   if ((profile.injury?.weeksRemaining ?? 0) > 0) throw new Error('Pemain cedera dan harus memulihkan diri sebelum latihan skill.');
+  if (profile.activeTraining) throw new Error(`Training ${DETAILED_SKILL_LABELS[profile.activeTraining.skill]} masih berjalan sampai week ${profile.activeTraining.completeAtWeek}.`);
   if (profile.energy < GAME_BALANCE.detailedTraining.energyCost) throw new Error('Energi tidak cukup untuk detailed skill training.');
+  if (profile.hp < GAME_BALANCE.detailedTraining.hpCost) throw new Error('HP tidak cukup untuk detailed skill training.');
   const state = profile.detailedSkills![skill];
   const levelBefore = state.level;
   const expGained = GAME_BALANCE.detailedTraining.expMin + Math.floor(rng.next() * (GAME_BALANCE.detailedTraining.expMaxExclusive - GAME_BALANCE.detailedTraining.expMin));
   profile.energy -= GAME_BALANCE.detailedTraining.energyCost;
-  profile.totalExp += expGained;
-  const levelsGained = grantSkillExp(profile, skill, expGained);
-  syncMacroStats(profile);
+  profile.hp = Math.max(0, profile.hp - GAME_BALANCE.detailedTraining.hpCost);
+  profile.activeTraining = {
+    skill,
+    completeAtWeek: currentWeek(profile) + GAME_BALANCE.detailedTraining.durationWeeks,
+    expReward: expGained,
+    hpCost: GAME_BALANCE.detailedTraining.hpCost
+  };
   touch(profile, now);
-  return { profile, skill, expGained, levelBefore, levelAfter: state.level, levelsGained };
+  return { profile, skill, expGained, levelBefore, levelAfter: state.level, levelsGained: 0 };
 }
 
 export function assignMatchExp(profileInput: PlayerProfile, allocations: Partial<Record<DetailedSkillId, number>>, now = new Date()): ExpAllocationResult {
@@ -220,14 +226,28 @@ function settleTrainer(profile: PlayerProfile): string | undefined {
   profile.money -= trainer.weeklyCost;
   const gain = Math.min(GAME_BALANCE.trainer.maxWeeklyGain, Math.max(1, Math.round(50 * trainer.ratio)));
   const targets: DetailedSkillId[] = trainer.type === 'PHYSICAL' ? ['endurance', 'speed', 'holdOffDefenders'] : ['pass', 'dribbling', 'teamwork'];
-  for (const skill of targets) grantSkillExp(profile, skill, gain);
+  for (const skill of targets) {
+    grantSkillExp(profile, skill, gain);
+    profile.totalExp += gain;
+  }
   return `Trainer memberi ${gain} EXP mingguan ke ${targets.map((skill) => DETAILED_SKILL_LABELS[skill]).join(', ')}.`;
+}
+
+function settleTraining(profile: PlayerProfile): string | undefined {
+  const training = profile.activeTraining;
+  if (!training || training.completeAtWeek > currentWeek(profile)) return undefined;
+  const levelBefore = profile.detailedSkills![training.skill].level;
+  profile.totalExp += training.expReward;
+  const levelsGained = grantSkillExp(profile, training.skill, training.expReward);
+  profile.activeTraining = undefined;
+  return `Training ${DETAILED_SKILL_LABELS[training.skill]} selesai: +${training.expReward} EXP${levelsGained ? ` dan +${levelsGained} level` : ''} (Lv ${levelBefore} → ${profile.detailedSkills![training.skill].level}).`;
 }
 
 function settleCulture(profile: PlayerProfile): string | undefined {
   const study = profile.cultureStudy;
   if (!study || study.completeAtWeek > currentWeek(profile)) return undefined;
   profile.charm = (profile.charm ?? 0) + study.charmReward;
+  profile.totalExp += study.skillExpReward;
   grantSkillExp(profile, study.skillReward, study.skillExpReward);
   profile.cultureStudy = undefined;
   return `Culture study ${study.subject} selesai: charm +${study.charmReward}, ${DETAILED_SKILL_LABELS[study.skillReward]} +${study.skillExpReward} EXP.`;
@@ -342,8 +362,6 @@ export function advanceWeek(profileInput: PlayerProfile, now = new Date(), rng: 
   recoverWeekly(profile);
   const trainerMessage = settleTrainer(profile);
   if (trainerMessage) narrative.push(trainerMessage);
-  const cultureMessage = settleCulture(profile);
-  if (cultureMessage) narrative.push(cultureMessage);
   const injuryMessage = settleInjury(profile);
   if (injuryMessage) narrative.push(injuryMessage);
   syncMacroStats(profile);
@@ -369,6 +387,10 @@ export function advanceWeek(profileInput: PlayerProfile, now = new Date(), rng: 
 
   profile.careerWeek = week + 1;
   profile.seasonWeek = (profile.seasonWeek ?? 1) + 1;
+  const trainingMessage = settleTraining(profile);
+  if (trainingMessage) narrative.push(trainingMessage);
+  const cultureMessage = settleCulture(profile);
+  if (cultureMessage) narrative.push(cultureMessage);
   let award;
   if ((profile.seasonWeek ?? 1) > GAME_BALANCE.weekly.weeksPerSeason) {
     profile.seasonWeek = 1;
@@ -442,7 +464,8 @@ export function formatGameplayStatus(profileInput: PlayerProfile): string {
   const injury = profile.injury ? `${profile.injury.severity} · ${profile.injury.weeksRemaining} weeks` : 'Healthy';
   const trainer = profile.trainer?.active ? `${profile.trainer.tier} (${profile.trainer.weeklyCost}/week)` : 'None';
   const culture = profile.cultureStudy ? `${profile.cultureStudy.subject} until week ${profile.cultureStudy.completeAtWeek}` : 'None';
-  return `Mode ${profile.mode}\nCareer ${profile.careerStatus} · Age ${profile.age} · Year ${currentCareerYear(profile)} · Week ${currentWeek(profile)}\nPending match EXP ${profile.unassignedMatchExp ?? 0}\nInjury ${injury}\nTrainer ${trainer}\nCulture ${culture}\nCharm ${profile.charm ?? 0}\nTricks ${profile.unlockedTricks?.length ?? 0}\nHonors ${profile.honors?.length ?? 0}`;
+  const training = profile.activeTraining ? `${DETAILED_SKILL_LABELS[profile.activeTraining.skill]} until week ${profile.activeTraining.completeAtWeek}` : 'None';
+  return `Mode ${profile.mode}\nCareer ${profile.careerStatus} · Age ${profile.age} · Year ${currentCareerYear(profile)} · Week ${currentWeek(profile)}\nPending match EXP ${profile.unassignedMatchExp ?? 0}\nInjury ${injury}\nTraining ${training}\nTrainer ${trainer}\nCulture ${culture}\nCharm ${profile.charm ?? 0}\nTricks ${profile.unlockedTricks?.length ?? 0}\nHonors ${profile.honors?.length ?? 0}`;
 }
 
 export function listTrainerCatalog(): Array<TrainerState & { hiredAtWeek: number }> {

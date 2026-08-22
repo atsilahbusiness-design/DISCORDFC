@@ -96,6 +96,22 @@ function recover(profile: PlayerProfile, now: Date): void {
 }
 
 function calculateRating(profile: PlayerProfile): number {
+  // The client exposes detailed skills as the user-facing progression layer. The
+  // exact server weighting is unavailable, so these position weights are
+  // intentionally centralized as RECOVERY_INFERRED rather than presented as
+  // recovered official coefficients.
+  if (profile.detailedSkills) {
+    const detailedWeights: Record<Position, Array<[DetailedSkillId, number]>> = {
+      GK: [['willpower', 0.25], ['teamwork', 0.2], ['pass', 0.2], ['endurance', 0.2], ['header', 0.15]],
+      DF: [['holdOffDefenders', 0.3], ['teamwork', 0.2], ['endurance', 0.2], ['header', 0.15], ['pass', 0.15]],
+      MF: [['pass', 0.28], ['dribbling', 0.22], ['teamwork', 0.2], ['offBallRunning', 0.15], ['endurance', 0.15]],
+      FW: [['shots', 0.25], ['offBallRunning', 0.2], ['dribbling', 0.18], ['header', 0.14], ['holdOffDefenders', 0.13], ['speed', 0.1]]
+    };
+    const weighted = detailedWeights[profile.position].reduce((sum, [skill, weight]) => sum + (profile.detailedSkills?.[skill]?.level ?? 1) * weight, 0);
+    const average = Object.values(profile.detailedSkills).reduce((sum, state) => sum + state.level, 0) / Math.max(1, Object.keys(profile.detailedSkills).length);
+    return Math.round(clamp(weighted * 0.72 + average * 0.18 + profile.level * 1.5, 1, 99));
+  }
+
   const weights: Record<Position, Array<keyof PlayerStats>> = {
     GK: ['def', 'strength', 'technique', 'power'],
     DF: ['def', 'strength', 'speed', 'technique'],
@@ -253,14 +269,18 @@ export function playMatch(profileInput: PlayerProfile, now = new Date(), rng: Ra
   if (profile.hp < MATCH_HP_COST) throw new Error('HP pemain terlalu rendah untuk pertandingan.');
 
   const playerRating = calculateRating(profile);
-  const opponentRating = clamp(50 + profile.league.matchday * 2 + Math.floor(rng.next() * 35), 45, 92);
+  const opponentPool = RECOVERY_CLUBS.filter((club) => club.nameEn !== profile.club && club.league === 1011);
+  const opponentClub = opponentPool[(profile.league.matchday - 1) % Math.max(1, opponentPool.length)];
+  // Official club identity is recovered; opponent strength remains
+  // RECOVERY_INFERRED because the authoritative server formula is unavailable.
+  const opponent = opponentClub?.nameEn ?? `League opponent ${profile.league.matchday}`;
+  const opponentRating = clamp(50 + (opponentClub?.grade ?? 1) * 2 + Math.round((opponentClub?.prestige ?? 0) * 10) + Math.floor(rng.next() * 20), 45, 92);
   const playerGoals = simulateGoals(playerRating + 8, opponentRating, rng);
   const opponentGoals = simulateGoals(opponentRating, playerRating + 2, rng);
   const outcome = outcomeFromScore(playerGoals, opponentGoals);
   const playerScore = clamp(5.5 + (playerGoals - opponentGoals) * 0.45 + rng.next() * 1.1, 4, 9.8);
   const exp = outcome === 'WIN' ? GAME_BALANCE.match.rewardExp.win : outcome === 'DRAW' ? GAME_BALANCE.match.rewardExp.draw : GAME_BALANCE.match.rewardExp.loss;
   const money = outcome === 'WIN' ? GAME_BALANCE.match.rewardMoney.win : outcome === 'DRAW' ? GAME_BALANCE.match.rewardMoney.draw : GAME_BALANCE.match.rewardMoney.loss;
-  const opponent = `Club ${String.fromCharCode(65 + ((profile.league.matchday - 1) % 26))}`;
   const record: MatchRecord = {
     id: `${profile.userId}-${now.getTime()}`,
     createdAt: isoNow(now),
@@ -278,6 +298,8 @@ export function playMatch(profileInput: PlayerProfile, now = new Date(), rng: Ra
   profile.energy -= MATCH_ENERGY_COST;
   profile.hp = clamp(profile.hp - MATCH_HP_COST, 0, profile.maxHp);
   profile.money += money;
+  // Career EXP is earned at the match result; the detailed skill destination
+  // remains pending until the user assigns the observed "Exp left" pool.
   profile.totalExp += exp;
   profile.unassignedMatchExp = (profile.unassignedMatchExp ?? 0) + exp;
   profile.career.appearances += 1;

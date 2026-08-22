@@ -1,7 +1,9 @@
 import { ensureClubState } from './club-engine.js';
 import { createInitialProfile, MathRandomSource, type RandomSource } from './engine.js';
-import type { ClubPlayer, EconomyLedgerEntry, EventState, ListingStatus, MarketListing, PlayerProfile } from './types.js';
+import { ensureGameplayState } from './gameplay-engine.js';
+import { DETAILED_SKILLS, deriveMacroStats, type ClubPlayer, type DetailedSkillId, type EconomyLedgerEntry, type EventState, type ListingStatus, type MarketListing, type PlayerProfile } from './types.js';
 import { SEED_MARKET_PLAYERS } from '../config/seed-data.js';
+import { RECOVERY_PLAYERS, RECOVERY_CLUB_BY_ID } from '../config/recovery-data.js';
 
 function clone<T>(value: T): T {
   return structuredClone(value);
@@ -51,8 +53,8 @@ const EVENT_TEMPLATES: Array<Omit<EventState, 'dayKey' | 'resolved'>> = [
     title: 'Pelatih Akademi Berkunjung',
     description: 'Seorang pelatih muda menawarkan sesi khusus untuk meningkatkan kemampuan pemain.',
     choices: [
-      { id: 'accept', label: 'Ikuti sesi latihan', cost: 100, rewardMoney: 0, rewardExp: 65, moraleDelta: 4 },
-      { id: 'decline', label: 'Tolak dengan sopan', cost: 0, rewardMoney: 40, rewardExp: 15, moraleDelta: 0 }
+      { id: 'accept', label: 'Ikuti sesi latihan', cost: 100, rewardMoney: 0, rewardExp: 65, moraleDelta: 4, skillEffects: { endurance: 12 }, energyDelta: -8 },
+      { id: 'decline', label: 'Tolak dengan sopan', cost: 0, rewardMoney: 40, rewardExp: 15, moraleDelta: 0, charmDelta: 1 }
     ]
   },
   {
@@ -60,8 +62,8 @@ const EVENT_TEMPLATES: Array<Omit<EventState, 'dayKey' | 'resolved'>> = [
     title: 'Telepon Sponsor',
     description: 'Sponsor klub menawarkan bonus cepat dengan imbalan komitmen promosi.',
     choices: [
-      { id: 'sign', label: 'Terima tawaran sponsor', cost: 0, rewardMoney: 180, rewardExp: 25, moraleDelta: -1 },
-      { id: 'wait', label: 'Tunggu tawaran lebih baik', cost: 0, rewardMoney: 30, rewardExp: 10, moraleDelta: 2 }
+      { id: 'sign', label: 'Terima tawaran sponsor', cost: 0, rewardMoney: 180, rewardExp: 25, moraleDelta: -1, charmDelta: 2 },
+      { id: 'wait', label: 'Tunggu tawaran lebih baik', cost: 0, rewardMoney: 30, rewardExp: 10, moraleDelta: 2, skillEffects: { willpower: 8 } }
     ]
   },
   {
@@ -69,14 +71,32 @@ const EVENT_TEMPLATES: Array<Omit<EventState, 'dayKey' | 'resolved'>> = [
     title: 'Kejadian Ruang Ganti',
     description: 'Tim membutuhkan pemimpin untuk menyelesaikan ketegangan sebelum pertandingan.',
     choices: [
-      { id: 'lead', label: 'Ambil tanggung jawab', cost: 50, rewardMoney: 20, rewardExp: 60, moraleDelta: 8 },
-      { id: 'avoid', label: 'Biarkan kapten menangani', cost: 0, rewardMoney: 0, rewardExp: 15, moraleDelta: -2 }
+      { id: 'lead', label: 'Ambil tanggung jawab', cost: 50, rewardMoney: 20, rewardExp: 60, moraleDelta: 8, skillEffects: { teamwork: 14 } },
+      { id: 'avoid', label: 'Biarkan kapten menangani', cost: 0, rewardMoney: 0, rewardExp: 15, moraleDelta: -2, skillEffects: { willpower: 4 } }
+    ]
+  },
+  {
+    eventId: 'media-interview',
+    title: 'Wawancara Media',
+    description: 'Media lokal meminta komentar menjelang pertandingan penting.',
+    choices: [
+      { id: 'focused', label: 'Jawab dengan fokus pada tim', cost: 0, rewardMoney: 70, rewardExp: 30, moraleDelta: 3, skillEffects: { teamwork: 6 }, charmDelta: 2 },
+      { id: 'bold', label: 'Buat pernyataan berani', cost: 0, rewardMoney: 110, rewardExp: 22, moraleDelta: -2, skillEffects: { willpower: 8 }, charmDelta: 4 }
+    ]
+  },
+  {
+    eventId: 'teammate-meal',
+    title: 'Makan Bersama Rekan Tim',
+    description: 'Rekan setim mengajak makan bersama untuk membangun chemistry.',
+    choices: [
+      { id: 'join', label: 'Ikut makan bersama', cost: 45, rewardMoney: 0, rewardExp: 35, moraleDelta: 8, skillEffects: { teamwork: 10 }, energyDelta: 6 },
+      { id: 'rest', label: 'Istirahat sendiri', cost: 0, rewardMoney: 0, rewardExp: 20, moraleDelta: 2, energyDelta: 12 }
     ]
   }
 ];
 
 export function generateDailyEvent(profileInput: PlayerProfile, now = new Date(), rng: RandomSource = new MathRandomSource()): PlayerProfile {
-  const profile = clone(profileInput);
+  const profile = ensureGameplayState(profileInput, now);
   const today = dayKey(now);
   if (profile.event?.dayKey === today) return profile;
   const template = EVENT_TEMPLATES[Math.floor(rng.next() * EVENT_TEMPLATES.length)];
@@ -85,8 +105,22 @@ export function generateDailyEvent(profileInput: PlayerProfile, now = new Date()
   return profile;
 }
 
+function applyEventSkillEffects(profile: PlayerProfile, effects: Partial<Record<DetailedSkillId, number>> | undefined): void {
+  if (!effects) return;
+  for (const [skill, amount] of Object.entries(effects)) {
+    if (!DETAILED_SKILLS.includes(skill as DetailedSkillId) || !amount || amount <= 0) continue;
+    const state = profile.detailedSkills![skill as DetailedSkillId];
+    state.exp += Math.floor(amount);
+    profile.totalExp += Math.floor(amount);
+    while (state.exp >= Math.max(50, state.level * 100)) {
+      state.exp -= Math.max(50, state.level * 100);
+      state.level += 1;
+    }
+  }
+}
+
 export function resolveDailyEvent(profileInput: PlayerProfile, choiceId: string, now = new Date()): { profile: PlayerProfile; choice: EventState['choices'][number] } {
-  const profile = clone(profileInput);
+  const profile = ensureGameplayState(profileInput, now);
   if (!profile.event || profile.event.dayKey !== dayKey(now)) throw new Error('Belum ada event aktif hari ini.');
   if (profile.event.resolved) throw new Error('Event hari ini sudah diselesaikan.');
   const choice = profile.event.choices.find((item) => item.id === choiceId);
@@ -95,6 +129,10 @@ export function resolveDailyEvent(profileInput: PlayerProfile, choiceId: string,
   if (choice.cost > 0) ledger(profile, 'EVENT_COST', -choice.cost, `Cost event ${profile.event.eventId}`, now);
   if (choice.rewardMoney > 0) ledger(profile, 'EVENT_REWARD', choice.rewardMoney, `Reward event ${profile.event.eventId}`, now);
   profile.totalExp += choice.rewardExp;
+  applyEventSkillEffects(profile, choice.skillEffects);
+  profile.stats = deriveMacroStats(profile.detailedSkills!);
+  profile.energy = clamp(profile.energy + (choice.energyDelta ?? 0), 0, profile.maxEnergy);
+  profile.charm = Math.max(0, (profile.charm ?? 0) + (choice.charmDelta ?? 0));
   const userPlayer = profile.clubState?.roster.find((player) => player.isUserPlayer);
   if (userPlayer) userPlayer.morale = clamp(userPlayer.morale + choice.moraleDelta, 0, 100);
   profile.event.resolved = true;
@@ -103,8 +141,15 @@ export function resolveDailyEvent(profileInput: PlayerProfile, choiceId: string,
   return { profile, choice };
 }
 
-function marketPlayer(id: string, name: string, position: ClubPlayer['position'], overall: number, price: number, now: Date): MarketListing {
-  const stats = { atk: overall, def: overall, speed: overall, power: overall, strength: overall, technique: overall };
+function marketPlayer(id: string, name: string, position: ClubPlayer['position'], overall: number, price: number, now: Date, originClubId?: number): MarketListing {
+  const stats = {
+    atk: clamp(overall + (position === 'FW' ? 7 : 0), 20, 99),
+    def: clamp(overall + (position === 'DF' || position === 'GK' ? 7 : 0), 20, 99),
+    speed: clamp(overall + (position === 'FW' || position === 'MF' ? 5 : 0), 20, 99),
+    power: clamp(overall + 1, 20, 99),
+    strength: clamp(overall + (position === 'DF' ? 5 : 0), 20, 99),
+    technique: clamp(overall + (position === 'MF' ? 7 : 0), 20, 99)
+  };
   const player: ClubPlayer = {
     id,
     name,
@@ -122,7 +167,27 @@ function marketPlayer(id: string, name: string, position: ClubPlayer['position']
     assists: 0,
     appearances: 0
   };
+  if (originClubId !== undefined) player.originClubId = originClubId;
   return { id: `listing-${id}`, sellerUserId: 'system-market', player, price, status: 'OPEN', createdAt: now.toISOString() };
+}
+
+function recoveryPosition(code: number): ClubPlayer['position'] {
+  if (code === 13) return 'GK';
+  if (code >= 10 && code <= 12) return 'DF';
+  if (code >= 5 && code <= 9) return 'MF';
+  return 'FW';
+}
+
+function recoveryMarket(now: Date): MarketListing[] {
+  return RECOVERY_PLAYERS.slice(0, 24).map((record) => {
+    const position = recoveryPosition(record.positionCode);
+    const overall = clamp(52 + Math.abs(record.normalValue % 38), 45, 92);
+    const name = record.nameEn || record.nameCn || `Player ${record.num}`;
+    const listing = marketPlayer(`recovery-${record.clubId}-${record.num}`, name, position, overall, Math.max(100, record.price), now, record.clubId);
+    listing.player.age = record.initAge;
+    listing.player.contractUntil = new Date(now.getTime() + 365 * 86_400_000).toISOString();
+    return listing;
+  });
 }
 
 export function refreshMarket(profileInput: PlayerProfile, now = new Date(), force = false): PlayerProfile {
@@ -132,7 +197,8 @@ export function refreshMarket(profileInput: PlayerProfile, now = new Date(), for
     const elapsed = now.getTime() - new Date(profile.marketUpdatedAt).getTime();
     if (elapsed < cooldownMs) throw new Error(`Market baru dapat di-refresh lagi dalam ${Math.ceil((cooldownMs - elapsed) / 3_600_000)} jam.`);
   }
-  profile.market = SEED_MARKET_PLAYERS.map((player) => marketPlayer(player.id, player.name, player.position, player.overall, player.price, now));
+  const recovered = recoveryMarket(now);
+  profile.market = recovered.length > 0 ? recovered : SEED_MARKET_PLAYERS.map((player) => marketPlayer(player.id, player.name, player.position, player.overall, player.price, now));
   profile.marketUpdatedAt = now.toISOString();
   profile.updatedAt = now.toISOString();
   return profile;

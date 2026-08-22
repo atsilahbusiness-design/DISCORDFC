@@ -7,6 +7,13 @@ import {
 } from 'discord.js';
 import { DETAILED_SKILLS, DETAILED_SKILL_LABELS } from '../domain/types.js';
 
+function modeControls(userId: string): ActionRowBuilder<ButtonBuilder> {
+  return new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder().setCustomId(`frs:${userId}:coach-profile`).setLabel('Coach Mode').setStyle(ButtonStyle.Primary),
+    new ButtonBuilder().setCustomId(`frs:${userId}:versus-profile`).setLabel('Versus Mode').setStyle(ButtonStyle.Success)
+  );
+}
+
 export function careerControls(userId: string): ActionRowBuilder<ButtonBuilder>[] {
   return [
     new ActionRowBuilder<ButtonBuilder>().addComponents(
@@ -14,7 +21,8 @@ export function careerControls(userId: string): ActionRowBuilder<ButtonBuilder>[
       new ButtonBuilder().setCustomId(`frs:${userId}:train`).setLabel('Train').setStyle(ButtonStyle.Secondary),
       new ButtonBuilder().setCustomId(`frs:${userId}:match`).setLabel('Play match').setStyle(ButtonStyle.Success),
       new ButtonBuilder().setCustomId(`frs:${userId}:club`).setLabel('Club office').setStyle(ButtonStyle.Secondary)
-    )
+    ),
+    modeControls(userId)
   ];
 }
 
@@ -26,7 +34,8 @@ export function gameplayControls(userId: string): ActionRowBuilder<ButtonBuilder
       new ButtonBuilder().setCustomId(`frs:${userId}:next-week`).setLabel('Next week').setStyle(ButtonStyle.Success),
       new ButtonBuilder().setCustomId(`frs:${userId}:match`).setLabel('Play match').setStyle(ButtonStyle.Success),
       new ButtonBuilder().setCustomId(`frs:${userId}:club`).setLabel('Club office').setStyle(ButtonStyle.Secondary)
-    )
+    ),
+    modeControls(userId)
   ];
 }
 
