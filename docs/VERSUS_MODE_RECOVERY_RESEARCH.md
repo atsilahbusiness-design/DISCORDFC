@@ -88,3 +88,25 @@ The recovery dump does not provide the original API URLs, request/response contr
 [3]: https://play.google.com/store/apps/details?id=com.babuyo.footy.tc.android&hl=en_US "Football Rising Star — Google Play"
 
 [4]: https://apps.apple.com/us/app/football-rising-star/id1585604439 "Football Rising Star — Apple App Store"
+
+
+## Source verification notes
+
+The Australian, French, Cameroon, and Singapore App Store listings preserve the same official Player/Coach description and version 2.8.0 metadata. The Singapore App Store screenshot is the direct visual exception: it shows three distinct main-menu entries, Player Mode, Coach Mode, and Versus Mode. The official Google Play listing also confirms version 2.8.0 updated June 12, 2026 and classifies the app listing as single-player; that category should not be interpreted as proof that the separate Versus feature is absent.
+
+The Korean App Store release-note index is the strongest public product evidence for the online layer. It exposes wording equivalent to: group code function added in battle mode, advanced scout function added in battle mode, and player-status improvement function added in battle mode. The full App Store page may expose only the latest short note depending on locale/platform, so this wording is recorded as indexed official store metadata rather than as a complete changelog.
+
+The current NamuWiki page explicitly states that the game has Player Mode, Director/Coach Mode, and a Battle Mode that opens after a season in Director Mode. It also documents five major European leagues, Q League, Player retirement around age 34, rebirth, and achievement criteria. NamuWiki warns that it is a community wiki, so its mode/unlock statements are corroboration rather than official server documentation.
+
+The Naver community overview describes the product as a simulation in which the user presses the next-round control and receives a result, with position-dependent abilities, transfers, Coach formations/tactics, club targets, dismissal, and early retirement. It does not document online Versus. The additional Naver player posts corroborate long-term skill specialization, rebirth, trophies, and the importance of weekly progression, but they also do not provide a Versus lobby or protocol.
+
+The GNGAsia listing and MWM page are third-party metadata. GNGAsia mirrors the official Player/Coach copy rather than proving online rules. MWM's visual/UX descriptions are useful for official screenshot interpretation but explicitly state that MWM is not the app developer. Soft112 and Aptoide are version mirrors; use them for version chronology only, not for authoritative battle semantics.
+
+
+## Additional player and fixture schema evidence
+
+`BattleStruct` contains `battleID`, `home`, and `away`; `RoundBattleRuleConfig` contains `roundBattleRule`, `round`, serialized `battles`, parsed `battleList`, `GetBattles(roundId)`, and `GetCLGroupBattles(seasonId, groupId, roundId)`. This provides direct schema evidence for stable fixture pairing and separate league/continental group schedules.
+
+`VersusUserStatus` defines `IDLE = 0`, `ENEROLL = 1`, `GAME = 2`, and `GAMEOVER = 3`. The spelling of `ENEROLL` is retained from the recovered client. `VersusPlayer` persists ID, current age, property value, position, captain flag, yellow-card count, status, HP, injury type, club ID, red-card ban count, injury end time, display names, ability dictionary, initial age, and growth type. Its methods include `CanPlay`, `BeBan`, position ability scoring, total ability scoring, battle summary, HP consumption, injury setting, status change, ban clearing, yellow-card update, attack/defence calculation, and battle ratio components for age, HP, injury, and status.
+
+This means the Versus fixture must validate not only lineup membership but also player eligibility, HP, injury end time, yellow-card accumulation, red-card ban, age/growth, position, captaincy, and current status. It also means player condition can affect match strength through multiple ratio components. The exact numeric relationship remains `RECOVERY_INFERRED` because the method bodies are absent.
