@@ -169,8 +169,8 @@ function makeCoachEvent(profile: PlayerProfile, rng: RandomSource, now: Date): C
   };
 }
 
-export function createCoachCareer(profileInput: PlayerProfile, coachName = profileInput.displayName, now = new Date()): PlayerProfile {
-  const profile = ensureCoachClubState(profileInput, now);
+export function createCoachCareer(profileInput: PlayerProfile, coachName = profileInput.displayName, now = new Date(), rng: RandomSource = new MathRandomSource()): PlayerProfile {
+  const profile = ensureCoachClubState(profileInput, now, rng);
   if (profile.coach) return profile;
   const club = currentClubRecord(profile);
   const coach: CoachCareerState = {
@@ -341,7 +341,7 @@ export function resolveCoachEvent(profileInput: PlayerProfile, choiceId: string,
 }
 
 export function settleCoachSeason(profileInput: PlayerProfile, now = new Date(), rng: RandomSource = new MathRandomSource()): PlayerProfile {
-  const snapshot = ensureCoachClubState(profileInput, now);
+  const snapshot = ensureCoachClubState(profileInput, now, rng);
   const coach = coachOrThrow(snapshot);
   if (coach.status !== 'EMPLOYED') throw new Error('Coach tidak sedang employed sehingga season tidak dapat diselesaikan.');
   if (snapshot.coachClubState?.fixtures.some((fixture) => !fixture.played)) throw new Error('Belum semua fixture Coach selesai.');

@@ -1,6 +1,6 @@
 # Versus Mode — Truth Matrix
 
-**Date:** 2026-08-22  
+**Date:** 2026-08-23
 **Reference corpus:** 30 inputs listed in `VERSUS_30_REFERENCE_MANIFEST.md`.
 
 ## Reading the matrix
@@ -10,9 +10,9 @@
 | ID | Claim | Evidence | Confidence | DISCORDFC decision |
 |---:|---|---|---|---|
 | T-01 | Versus is a separate mode entry point. | Official App Store screenshot shows Player Mode, Coach Mode, and Versus Mode buttons. [4] | High | Use a separate `/versus` command namespace and mode context. |
-| T-02 | Battle mode has group-code functionality. | Korean App Store release-note metadata indexes group-code addition in battle mode. [5] | High | Implement group create/join by expiring code. |
-| T-03 | Battle mode has advanced scouting. | Korean App Store release-note metadata indexes advanced scout addition. [5] | High | Keep scout state and refresh counters in Versus aggregate. |
-| T-04 | Battle mode has player-status improvement. | Korean App Store release-note metadata indexes player-status improvement. [5] | High | Model condition/HP/status as a competitive preparation system. |
+| T-02 | Battle mode has group-code functionality. | Korean App Store release-note metadata indexes group-code addition in battle mode; the current regional listing confirms version 2.8.0 but exposes only generic bug-fix notes. [5] [31] | High for existence; low for constraints | Implement group create/join by expiring code, with configurable capacity/TTL. |
+| T-03 | Battle mode has advanced scouting. | Korean App Store release-note metadata indexes advanced scout addition; current regional release notes do not expose its costs or effects. [5] [31] | High for existence; low for rules | Keep Scout as an auditable preview/state surface; do not invent cost, cooldown, or effect coefficients. |
+| T-04 | Battle mode has player-status improvement. | Korean App Store release-note metadata indexes player-status improvement; current regional release notes do not expose its costs or effects. [5] [31] | High for existence; low for rules | Model condition/HP/status only through existing evidence-safe state, without fixed boost formulas. |
 | T-05 | Battle mode unlocks after completing a Coach season. | NamuWiki Korean/English community pages. [7] [8] | Medium | Make unlock configurable; default to completing one Coach season or admin-enabled beta. |
 | T-06 | Versus user state has lifecycle statuses. | `VersusUserStatus`: IDLE, ENEROLL, GAME, GAMEOVER. [23] | High | Normalize `ENEROLL` to `ENROLLED` in new code but preserve migration mapping. |
 | T-07 | Versus state is time-driven and can process matches asynchronously. | `OnTimeChanged`, `LastSysTime`, `ProcessSeasonMatch`, `ProcessPlayerCondition`. [24] | High | Build scheduled/asynchronous settlement first. |
@@ -86,3 +86,5 @@ create/join group
 [29]: `dump.cs` TypeDefIndex 907/913, `VersusPlayer` and `VersusClub`
 
 [30]: `dump.cs` TypeDefIndex 447–449, `BattleStruct` and `RoundBattleRuleConfig`
+
+[31]: https://apps.apple.com/cm/app/football-rising-star/id1585604439?l=en "Football Rising Star — regional App Store listing, version 2.8.0"

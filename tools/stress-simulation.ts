@@ -205,7 +205,7 @@ function runCoachTrial(trial: number): ModeResult {
   const start = iso(trial * 1_000);
   const playerSeasonBefore = 1;
   let profile = ensureClubState(createInitialProfile(`stress-coach-${trial}`, `Stress Coach ${trial}`, POSITIONS[(trial + 1) % POSITIONS.length]), start, new SeededRandom(200_000 + trial));
-  profile = createCoachCareer(profile, `Stress Coach ${trial}`, start);
+  profile = createCoachCareer(profile, `Stress Coach ${trial}`, start, new SeededRandom(250_000 + trial));
   const playerSnapshot = JSON.stringify({ club: profile.club, league: profile.league, clubState: profile.clubState });
   const rng = new SeededRandom(300_000 + trial);
   let actions = 0;

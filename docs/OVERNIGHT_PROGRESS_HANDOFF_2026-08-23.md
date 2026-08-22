@@ -31,3 +31,25 @@ The public evidence used in this pass is limited to the [official App Store list
 The previous guarded commit was `b18b614`; this pass adds a deterministic Coach job-acceptance regression test and refreshes stress artifacts. The current pending change covers 59 tests, seeded Coach replay, and the evidence boundary for battle mode. No gameplay coefficients were changed, and Scout/Sponsor remain unimplemented beyond evidence-safe preview behavior.
 
 — Manus AI
+
+## Evidence update for this pass
+
+A regional App Store listing for version 2.8.0 was checked directly. It confirms the current public listing and generic bug-fix release note, while indexed release metadata continues to indicate group-code, advanced-scout, and player-status additions in battle mode. The matrix now labels those claims as high-confidence existence evidence but low-confidence rule evidence. No Scout, Sponsor, status-boost, or matchmaking coefficients were added.
+
+— Manus AI
+
+## Latest pass note
+
+The remaining Coach stress mismatch was traced to `settleCoachSeason` calling `ensureCoachClubState` without the seeded RNG. The fix now forwards the optional RNG through that preparation step. A regional App Store listing for version 2.8.0 was checked directly; it confirms the public release but exposes only generic bug-fix notes, so group-code/Scout/status claims remain existence evidence rather than cost/effect rules. The Versus truth matrix was updated accordingly.
+
+Latest verification: build PASS; 59 tests PASS; targeted audit PASS; 300 trials per mode PASS; 115,770 actions; zero invariant and determinism failures; dependency audit clean; secret/artifact guard clean.
+
+— Manus AI
+
+## Latest determinism hardening
+
+The final Coach replay mismatch was traced to `createCoachCareer` initializing the Coach club through the default `MathRandomSource`. `createCoachCareer` now accepts an optional `RandomSource`, and the stress harness supplies a seeded generator. This is a correctness/replay improvement only; no original gameplay coefficient was invented or changed.
+
+Final verification after the fix: build PASS; 59 tests PASS; targeted audit PASS; stress simulation PASS for 300 trials per mode with 115,770 actions and zero invariant or determinism failures; dependency audit clean; secret/artifact guard clean.
+
+— Manus AI

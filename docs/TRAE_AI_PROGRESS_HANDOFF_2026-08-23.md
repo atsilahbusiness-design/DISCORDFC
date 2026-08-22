@@ -51,3 +51,19 @@ Continue DISCORDFC from `main` at `b18b614`. First inspect this file and `docs/O
 [2]: https://play.google.com/store/apps/details?id=com.babuyo.footy.tc.android&hl=en_US "Football Rising Star — Google Play"
 [3]: https://en.namu.wiki/w/%EC%B6%95%EA%B5%AC:%20%EB%9D%BC%EC%9D%B4%EC%A7%95%EC%8A%A4%ED%83%80 "Football: Rising Star — NamuWiki"
 [4]: https://www.youtube.com/watch?v=hBakdDdTCQw "Football: Rising Star — public walkthrough"
+
+## Latest pass note
+
+The remaining Coach stress mismatch was traced to `settleCoachSeason` calling `ensureCoachClubState` without the seeded RNG. The fix now forwards the optional RNG through that preparation step as well. A regional App Store listing for version 2.8.0 was checked directly; it confirms the public release but exposes only generic bug-fix notes, so group-code/Scout/status claims remain existence evidence rather than cost/effect rules. The Versus truth matrix was updated accordingly.
+
+Latest verification before commit: build PASS; 59 tests PASS; targeted audit PASS; 300 trials per mode PASS; 115,770 actions; zero invariant and determinism failures; dependency audit clean; secret/artifact guard clean.
+
+— Manus AI
+
+## Latest determinism hardening
+
+The final Coach replay mismatch was traced to `createCoachCareer` initializing the Coach club through the default `MathRandomSource`. `createCoachCareer` now accepts an optional `RandomSource`, and the stress harness supplies a seeded generator. This is a correctness/replay improvement only; no original gameplay coefficient was invented or changed.
+
+Final verification after the fix: build PASS; 59 tests PASS; targeted audit PASS; stress simulation PASS for 300 trials per mode with 115,770 actions and zero invariant or determinism failures; dependency audit clean; secret/artifact guard clean.
+
+— Manus AI
