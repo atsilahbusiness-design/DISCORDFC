@@ -83,7 +83,7 @@ This video materially changes the UX evidence baseline. It proves that the origi
 | Timestamp | Verified UX |
 |---:|---|
 | 00:16–00:23 | Three-mode selector with Player, Coach, and Versus Mode; user enters Versus |
-| 00:24–00:55 | First-time club creation: country selection (including Indonesia), crest/logo gallery, club name input (`DraWings`) |
+| 00:24–00:55 | Pre-dashboard identity/setup sequence: country selection (including Indonesia), crest/logo gallery, club name input (`DraWings`); ownership semantics are not established |
 | 01:03–01:22 | Versus dashboard with club name, cash, coins, energy, tutorial/welcome message, sign-up status |
 | 01:12 | Competition registration: `Sign-up` becomes `Registered`; group-division timestamp shown as `01/05 19.00` |
 | 01:23 onward | Market/Deal tab with auction listings: player, score, age, position, bid, and countdown/dual time |
@@ -95,13 +95,13 @@ This video materially changes the UX evidence baseline. It proves that the origi
 
 The verified bottom navigation contains five primary destinations: Market/cart, pitch/lineup, Home/dashboard, trophy/rankings, and handshake/sponsor. The top status bar shows crest/club name, cash, coins, and energy. Screen-specific controls include Refresh and normal scout cost, blue Bid buttons, and tactical Instructions.
 
-This evidence changes the implementation priority: the original Versus UX is a **club-building and scheduled league-management surface**, not merely a lineup submission form. Auction countdowns, scout/recruit UX, club creation, country/logo/name setup, energy, sponsor selection, and multi-category rankings are now proven visual targets. Exact auction economics, timer semantics, scout refresh rules, sponsor payout tables, and player-status effects remain unverified mechanics and must be implemented only after their rules can be audited.
+This evidence changes the implementation priority: the original Versus UX is a **system-managed battle/competition surface with roster management and scheduled league state**, not merely a lineup submission form. Auction countdowns, scout/recruit UX, pre-dashboard country/logo/name setup, energy, sponsor selection, and multi-category rankings are proven visual targets; the ownership meaning of the setup screen remains unresolved. Exact matchmaking/queue rules, auction economics, timer semantics, scout refresh rules, sponsor payout tables, and player-status effects remain unverified mechanics and must be implemented only after their rules can be audited.
 
 ## Search coverage and honest classification
 
 The exhaustive YouTube query pass indexed 54 result rows and 47 unique video IDs across English/Indonesian/Chinese variants. Fifteen IDs contained a Versus/battle/对战 token, but manual title classification showed that most were unrelated football games, music, commentary, or generic battle content. The Football Rising Star-specific direct sources verified in this pass are:
 
-1. `V8MsDUXNl8A` — explicit `Footy Star Versus Mode | No Commentary | Day1`, a dedicated Versus walkthrough with club setup, market/scout, lineup, tactics, sponsor, rewards, and rankings.
+1. `V8MsDUXNl8A` — explicit `Footy Star Versus Mode | No Commentary | Day1`, a dedicated Versus walkthrough with pre-dashboard identity/setup, market/scout, lineup, tactics, sponsor, rewards, and rankings.
 2. `KQiUcv9d25c` — `Football Rising Star review (Android game, 2021)`, a three-mode review with a substantial Versus segment covering dashboard, next match, lineup, preview, Deal/Scout, sponsor, rewards, rankings, club detail, schedule, and global ranking.
 
 Several other Football Rising Star IDs were frame-checked and excluded because they were Player Career or general career gameplay, including `2JAfAo0BIl8`, `f1lWVFTy-ac`, and `iZwPKHBiPes`. The explicit Versus-only source count is therefore not inflated by treating search-result quantity, unrelated “battle” titles, or career videos as Versus evidence. The evidence map distinguishes indexed candidates from videos actually verified as the requested mode.

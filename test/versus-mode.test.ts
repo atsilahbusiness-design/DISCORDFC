@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createInitialProfile, SeededRandom } from '../src/domain/engine.js';
-import { configureVersusClub, createVersusSeason, createVersusClub, enrollVersus, getVersusStandings, processVersusRound, settleVersusSeason, submitVersusLineup, syncVersusProfileWithSeason } from '../src/domain/versus-engine.js';
+import { assignVersusMatchmaking, createVersusSeason, enrollVersus, getVersusStandings, processVersusRound, queueVersusMatchmaking, settleVersusSeason, submitVersusLineup, syncVersusProfileWithSeason } from '../src/domain/versus-engine.js';
 import type { PlayerProfile } from '../src/domain/types.js';
 
 function makeMembers(): PlayerProfile[] {
@@ -11,17 +11,20 @@ function makeMembers(): PlayerProfile[] {
   ];
 }
 
-test('Versus club creation persists identity before enrollment and preserves mode isolation', () => {
+test('Versus matchmaking queues and assigns a system-managed team without mode leakage', () => {
   const initial = createInitialProfile('versus-identity', 'Identity Player', 'MF');
-  const configured = configureVersusClub(initial, { name: 'Jakarta Rising', country: 62, crestId: 'red-star' }, new Date('2026-01-01T00:00:00.000Z'));
-  assert.equal(configured.versus?.club.name, 'Jakarta Rising');
-  assert.equal(configured.versus?.club.country, 62);
-  assert.equal(configured.versus?.club.crestId, 'red-star');
-  assert.equal(configured.clubState, undefined);
-  assert.equal(configured.coach, undefined);
+  const queued = queueVersusMatchmaking(initial, 'public', new Date('2026-01-01T00:00:00.000Z'));
+  assert.equal(queued.versus?.status, 'IDLE');
+  assert.equal(queued.versus?.matchmaking?.status, 'QUEUED');
+  assert.equal(queued.versus?.matchmaking?.queueKey, 'public');
+  const matched = assignVersusMatchmaking(queued, 'MM-PUBLIC-20260101', new Date('2026-01-01T00:00:05.000Z'));
+  assert.equal(matched.versus?.status, 'ENROLLED');
+  assert.equal(matched.versus?.matchmaking?.status, 'MATCHED');
+  assert.equal(matched.versus?.matchmaking?.groupCode, 'MM-PUBLIC-20260101');
+  assert.equal(matched.clubState, undefined);
+  assert.equal(matched.coach, undefined);
   assert.equal(initial.versus, undefined);
-  assert.throws(() => configureVersusClub(enrollVersus(configured, 'GROUP-42', new Date('2026-01-01T00:00:00.000Z')), { name: 'Changed', country: 62, crestId: 'blue-star' }), /sebelum club masuk/);
-  assert.throws(() => configureVersusClub(createVersusClub(initial), { name: 'x', country: 62, crestId: 'red-star' }), /Nama club Versus/);
+  assert.throws(() => queueVersusMatchmaking(createInitialProfile('bad-queue', 'Bad Queue', 'MF'), 'public queue'), /queue tidak valid/);
 });
 
 test('Versus creates an isolated multi-club home-away season', () => {

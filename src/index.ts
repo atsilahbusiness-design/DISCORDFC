@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import { Client, Events, GatewayIntentBits } from 'discord.js';
 import { Pool } from 'pg';
-import { handleCommand, handleComponent, handleModal } from './discord/handlers.js';
+import { handleCommand, handleComponent } from './discord/handlers.js';
 import { UserCommandQueue } from './discord/command-queue.js';
 import { UserRateLimiter } from './discord/rate-limit.js';
 import { runMaintenance } from './jobs/maintenance.js';
@@ -41,15 +41,13 @@ client.once(Events.ClientReady, (readyClient) => {
 
 client.on(Events.InteractionCreate, async (interaction) => {
   if (interaction.user?.bot) return;
-  if (!interaction.isChatInputCommand() && !interaction.isButton() && !interaction.isStringSelectMenu() && !interaction.isModalSubmit()) return;
+  if (!interaction.isChatInputCommand() && !interaction.isButton() && !interaction.isStringSelectMenu()) return;
   if (!rateLimiter.consume(interaction.user.id)) {
     if (!interaction.replied && !interaction.deferred) await interaction.reply({ content: 'Terlalu banyak command dalam satu menit. Coba lagi sebentar.', ephemeral: true });
     return;
   }
   if (interaction.isChatInputCommand()) {
     await commandQueue.run(interaction.user.id, () => handleCommand(interaction, store));
-  } else if (interaction.isModalSubmit()) {
-    await commandQueue.run(interaction.user.id, () => handleModal(interaction, store));
   } else {
     await commandQueue.run(interaction.user.id, () => handleComponent(interaction, store));
   }

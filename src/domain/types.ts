@@ -354,6 +354,7 @@ export interface EventState {
 }
 
 export type VersusUserStatus = 'IDLE' | 'ENROLLED' | 'IN_GAME' | 'GAMEOVER';
+export type VersusMatchmakingStatus = 'QUEUED' | 'MATCHED';
 export type VersusBattleState = 'OPEN' | 'LOCKED' | 'PROCESSING' | 'SETTLED' | 'PUBLISHED' | 'DISPUTED';
 export type VersusSeasonState = 'DRAFT' | 'ACTIVE' | 'FINISHED';
 export type VersusPlayerStatus = 'AVAILABLE' | 'INJURED' | 'SUSPENDED';
@@ -388,8 +389,6 @@ export interface VersusClub {
   isNpc: boolean;
   grade: number;
   country: number;
-  /** Symbolic crest key; Discord renders text only and ships no proprietary artwork. */
-  crestId?: string;
   rosterVersion: number;
   formation: FormationId;
   tactic: TacticId;
@@ -534,8 +533,18 @@ export interface VersusSeason {
   rewards: VersusSeasonReward[];
 }
 
+export interface VersusMatchmakingTicket {
+  ticketId: string;
+  status: VersusMatchmakingStatus;
+  queueKey: string;
+  queuedAt: string;
+  matchedAt?: string;
+  groupCode?: string;
+}
+
 export interface VersusUserSave {
   status: VersusUserStatus;
+  matchmaking?: VersusMatchmakingTicket;
   groupCode?: string;
   seasonId?: string;
   clubId: string;

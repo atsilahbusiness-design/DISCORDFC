@@ -163,31 +163,36 @@ export function createVersusClub(profileInput: PlayerProfile, now = new Date()):
   return profile;
 }
 
-function normalizeVersusClubName(value: string): string {
-  const name = value.trim().replace(/\s+/g, ' ');
-  if (!/^[\p{L}\p{N}][\p{L}\p{N} .&'_-]{1,31}$/u.test(name)) throw new Error('Nama club Versus harus 2–32 karakter dan hanya boleh berisi huruf, angka, spasi, titik, &, apostrof, underscore, atau tanda hubung.');
-  return name;
+function normalizeQueueKey(value: string): string {
+  const queueKey = value.trim().toLowerCase();
+  if (!/^[a-z0-9][a-z0-9_-]{1,23}$/.test(queueKey)) throw new Error('Versus matchmaking queue tidak valid.');
+  return queueKey;
 }
 
-function normalizeVersusCrestId(value: string): string {
-  const crestId = value.trim().toLowerCase();
-  if (!/^[a-z0-9][a-z0-9_-]{1,31}$/.test(crestId)) throw new Error('Crest ID Versus harus 2–32 karakter slug alfanumerik.');
-  return crestId;
-}
-
-export function configureVersusClub(profileInput: PlayerProfile, identity: { name: string; country: number; crestId: string }, now = new Date()): PlayerProfile {
+export function queueVersusMatchmaking(profileInput: PlayerProfile, queueKey = 'public', now = new Date()): PlayerProfile {
   const profile = createVersusClub(profileInput, now);
   const versus = profile.versus!;
-  if (versus.status !== 'IDLE' || versus.groupCode || versus.season?.state === 'ACTIVE') throw new Error('Identitas club Versus hanya dapat diatur sebelum club masuk ke group/season aktif.');
-  if (!Number.isInteger(identity.country) || identity.country < 0 || identity.country > 9999) throw new Error('Country code Versus harus bilangan bulat 0–9999.');
-  const club = versus.club;
-  club.name = normalizeVersusClubName(identity.name);
-  club.country = identity.country;
-  club.crestId = normalizeVersusCrestId(identity.crestId);
-  versus.club = club;
-  versus.clubId = club.id;
-  versus.versusMoney = club.versusMoney;
-  versus.versusCoin = club.versusCoin;
+  if ((versus.status === 'IN_GAME' && versus.groupCode && versus.season?.state === 'ACTIVE') || (versus.status === 'ENROLLED' && versus.groupCode)) return profile;
+  const queue = normalizeQueueKey(queueKey);
+  versus.status = 'IDLE';
+  versus.matchmaking = {
+    ticketId: `vqueue:${profile.userId}:${now.getTime()}`,
+    status: 'QUEUED',
+    queueKey: queue,
+    queuedAt: now.toISOString()
+  };
+  profile.updatedAt = now.toISOString();
+  return profile;
+}
+
+export function assignVersusMatchmaking(profileInput: PlayerProfile, groupCode: string, now = new Date()): PlayerProfile {
+  const profile = enrollVersus(profileInput, groupCode, now);
+  const versus = profile.versus!;
+  if (versus.matchmaking) {
+    versus.matchmaking.status = 'MATCHED';
+    versus.matchmaking.matchedAt = now.toISOString();
+    versus.matchmaking.groupCode = versus.groupCode;
+  }
   profile.updatedAt = now.toISOString();
   return profile;
 }

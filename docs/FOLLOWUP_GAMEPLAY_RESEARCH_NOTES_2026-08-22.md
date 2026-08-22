@@ -59,3 +59,19 @@ The rendered page is a community forum feed. It shows match-result posts and sco
 Source: https://3g.7723.cn/strategy/153211.html
 
 The page is protected by an access-verification slider and could not be passively read. Search metadata referenced opening battle mode and registering for a competition, but the article body was inaccessible. It must not be used to assert exact registration, competition, or reward rules.
+
+## Matchmaking hypothesis check
+
+A fresh review of the regional App Store listing did not expose a public body describing opponent matchmaking, user-created clubs, or a complete competition flow. The search-indexed changelog confirms battle-mode group code, advanced Scout, and player-status improvement, but `分組碼` is evidence of grouping/room identity rather than proof that users create clubs.
+
+The direct Versus walkthrough `V8MsDUXNl8A` remains useful for visible screens, but the first-time country/logo/name sequence must be interpreted cautiously: the footage shows identity/setup screens, yet it does not establish whether that identity is a user-created competitive club, a system-generated team profile, or a setup for a private group. The prior implementation over-interpreted this evidence by exposing a persistent “Versus Club Creation” product concept. That interpretation is now marked as disputed pending stronger evidence.
+
+The stronger common denominator supported by the public record is: a user enters battle mode, is associated with a group/competition, the system supplies or assembles opponents, and the user manages a battle roster. Group code is compatible with private grouping; it is not by itself a matchmaking algorithm. The next code change should therefore prefer a system-managed matchmaking abstraction and avoid user-facing claims that the user owns a canonical Versus club.
+
+## Direct TapTap battle-market evidence
+
+Source: https://www.taptap.cn/moment/362746078098883195?group_id=306994
+
+The opened community post explicitly describes entering `对战模式` (battle mode), using a `金币市场` (coin market) to bid on players, and a 59-second system retention window for a market offer after leaving the game. It also refers to a `Versus` save folder and a market document. This is strong evidence that battle-mode rosters are assembled through a system market and that the public post is about a system-managed market state, not about users designing a football club. It also confirms that the user/community vocabulary centers on battle mode, market, and competition state.
+
+The post does not explicitly describe the opponent-matching algorithm. It therefore supports changing DISCORDFC away from user-authored canonical club identity, but it does not justify claiming a specific MMR, queue, or matchmaking formula. Any matchmaking implementation should use a transparent inferred queue/assignment abstraction until server evidence becomes available.

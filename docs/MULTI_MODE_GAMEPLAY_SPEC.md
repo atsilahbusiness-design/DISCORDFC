@@ -17,7 +17,7 @@ The modes share a Discord user identity and infrastructure but do not share muta
 |---|---|---|---|---|
 | Player | Become a football star. | `PlayerCareer` | Weekly `Next Week`. | Simulated fixture; prepare and assign EXP afterward. |
 | Coach | Build and manage a successful club. | `CoachCareer` + `ManagedClub` | Weekly/round season. | Set lineup, formation, tactic, halftime adjustment, then simulate. |
-| Versus | Compete online against other coaches/clubs. | `VersusUser` + `VersusSeason` + `VersusClub` | Scheduled rounds/deadlines. | Submit lineup/formation/tactic; settle server-style battle atomically. |
+| Versus | Compete online through system-assigned opponents and competition groups. | `VersusUser` + `VersusSeason` + internal `VersusClub` battle aggregate | Matchmaking assignment followed by scheduled rounds/deadlines. | Submit lineup/formation/tactic; settle server-style battle atomically. |
 
 ## Player Mode specification
 
@@ -115,8 +115,8 @@ A scheduled process is useful for `/versus settle` but is not the source of trut
 | ID | Deliverable | Acceptance condition | Evidence basis |
 |---|---|---|---|
 | V-001 | Separate Versus aggregates and mode router | A Discord user can own Player, Coach, and Versus state independently. | `RECOVERY_SCHEMA`, product clarification. |
-| V-002 | Group-code enrollment | Users can create/join a group; duplicate membership and cross-group ownership are rejected. | Public release metadata; `VersusSeasonConfig`. |
-| V-003 | Versus roster and condition | Roster, player condition, scout result, lineup, and budget persist independently. | `VersusUserSave`, `VersusClub`. |
+| V-002 | System matchmaking and private-group fallback | `/versus-matchmake` assigns a user to a competition/team abstraction; `/versus-join` supports explicit private group code; duplicate membership and cross-group ownership are rejected. | Public release metadata, group-code changelog, timed competition evidence; exact queue rules remain `RECOVERY_INFERRED`. |
+| V-003 | Assigned Versus roster and condition | System-assigned roster, player condition, scout result, lineup, and budget persist independently. | `VersusUserSave`, internal `VersusClub` recovery aggregate. |
 | V-004 | Fixture model | Round fixture has stable battle ID, home/away, deadline, state, and input snapshot. | `VersusBattleMiniData`. |
 | V-005 | Deterministic battle engine | Two submitted snapshots produce reproducible result with score and team/player stats. | `VersusBattle`, `VersusBattleClub`. |
 | V-006 | Atomic settlement | Repeating settlement never duplicates result, rewards, standings, or condition changes. | `ProcessSeasonMatch`, battle state fields. |
