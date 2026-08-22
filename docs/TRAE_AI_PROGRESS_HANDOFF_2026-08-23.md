@@ -1,12 +1,12 @@
 # Trae AI Progress Handoff — DISCORDFC
 
-> Continue from `main` at commit `800fe8e`. Preserve strict isolation between Player, Coach, and system-managed Versus matchmaking. Do not invent original formulas or add credentials, raw client archives, proprietary textures, or binary artifacts.
+> Continue from `main` at commit `b18b614`. Preserve strict isolation between Player, Coach, and system-managed Versus matchmaking. Do not invent original formulas or add credentials, raw client archives, proprietary textures, or binary artifacts.
 
 ## Completed in this pass
 
 The repository was refreshed from `origin/main`. Public evidence was limited to the official App Store listing, official Google Play listing, NamuWiki, and a publicly indexed walkthrough. These sources support the documented Player/Coach career loop, injury/recovery pressure, club/league progression, and observed match/market surfaces, but they do not disclose hidden formulas, MMR, queue policy, Scout effects, Sponsor economics, or exact live-service Versus rules.
 
-The stress harness exposed two Coach determinism failures because its EXP allocation step used wall-clock time. `tools/stress-simulation.ts` now passes the same simulated timestamp into `assignCoachExp`, preserving deterministic replay without changing gameplay coefficients. The latest stress artifacts and overnight handoff were refreshed.
+The stress harness exposed Coach determinism failures in EXP allocation, job acceptance, and season settlement because those paths could use wall-clock time or fresh `MathRandomSource` instances. Optional reference-time and seeded-RNG injection now preserves deterministic replay through `assignCoachExp`, `acceptJobOffer`, `finishSeason`, and `settleCoachSeason`, without changing gameplay coefficients. The stale user-facing `createVersusClub` import was also removed.
 
 ## Verification
 
@@ -28,7 +28,7 @@ Before every push, run build, all tests, targeted audit, stress simulation for d
 
 ## Current state
 
-Branch `main` is clean and pushed to `origin/main` at `800fe8e`. The repository is an evidence-based high-fidelity reconstruction, not a claim of pixel-perfect or server-formula identity.
+Branch `main` is clean and pushed to `origin/main` at `b18b614`. The repository is an evidence-based high-fidelity reconstruction, not a claim of pixel-perfect or server-formula identity.
 
 ## Evidence references
 
@@ -41,7 +41,7 @@ These sources identify observed surfaces and uncertainty boundaries only; they a
 
 ## Prompt for Trae AI
 
-Continue DISCORDFC from `main` at `800fe8e`. First inspect this file and `docs/OVERNIGHT_PROGRESS_HANDOFF_2026-08-23.md`, then run the existing verification suite. Implement only evidence-supported or explicitly inferred, versioned improvements. Keep system-managed Versus matchmaking, mode isolation, escrow/idempotent auction settlement, and deterministic replay intact. Never add secrets or proprietary assets. If domain logic changes, add deterministic regression coverage, regenerate stress artifacts, update both handoffs, and push only after every guard passes.
+Continue DISCORDFC from `main` at `b18b614`. First inspect this file and `docs/OVERNIGHT_PROGRESS_HANDOFF_2026-08-23.md`, then run the existing verification suite. Implement only evidence-supported or explicitly inferred, versioned improvements. Keep system-managed Versus matchmaking, mode isolation, escrow/idempotent auction settlement, and deterministic replay intact. Never add secrets or proprietary assets. If domain logic changes, add deterministic regression coverage, regenerate stress artifacts, update both handoffs, and push only after every guard passes.
 
 — Manus AI
 

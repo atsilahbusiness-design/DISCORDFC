@@ -25,3 +25,9 @@ Do not import credentials, raw client archives, proprietary textures, or binary 
 ## Evidence references
 
 The public evidence used in this pass is limited to the [official App Store listing](https://apps.apple.com/us/app/football-rising-star/id1585604439), the [official Google Play listing](https://play.google.com/store/apps/details?id=com.babuyo.footy.tc.android&hl=en_US), the [NamuWiki gameplay reference](https://en.namu.wiki/w/%EC%B6%95%EA%B5%AC:%20%EB%9D%BC%EC%9D%B4%EC%A7%95%EC%8A%A4%ED%83%80), and the [publicly indexed walkthrough](https://www.youtube.com/watch?v=hBakdDdTCQw). These sources are used only to label observed surfaces and uncertainty boundaries; they are not treated as authoritative sources for hidden server formulas.
+
+## Final state for this pass
+
+The final guarded commit is `b18b614`; branch `main` is clean and synchronized with `origin/main`. The Coach RNG hardening covers EXP allocation, job acceptance, and season settlement. No gameplay coefficients were changed, and Scout/Sponsor remain unimplemented beyond evidence-safe preview behavior.
+
+— Manus AI
