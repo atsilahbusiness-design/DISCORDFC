@@ -226,7 +226,7 @@ export function advanceCoachRound(profileInput: PlayerProfile, now = new Date(),
   };
 }
 
-export function assignCoachExp(profileInput: PlayerProfile, allocations: Partial<Record<CoachAbilityId, number>>): CoachExpAllocationResult {
+export function assignCoachExp(profileInput: PlayerProfile, allocations: Partial<Record<CoachAbilityId, number>>, now = new Date()): CoachExpAllocationResult {
   const profile = clone(profileInput);
   const coach = coachOrThrow(profile);
   if (coach.status === 'RETIRED') throw new Error('Coach yang sudah pensiun tidak dapat menerima EXP. Gunakan `/coach-rebirth`.');
@@ -248,7 +248,7 @@ export function assignCoachExp(profileInput: PlayerProfile, allocations: Partial
   }
   coach.unassignedExp -= total;
   coach.level = Math.max(...COACH_ABILITIES.map((id) => coach.abilities[id].level));
-  profile.updatedAt = new Date().toISOString();
+  profile.updatedAt = now.toISOString();
   return { profile, allocated: total, remaining: coach.unassignedExp, levelsGained };
 }
 

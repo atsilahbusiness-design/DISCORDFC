@@ -17,8 +17,10 @@ test('Coach career has six abilities, round settlement, and manual EXP', () => {
   assert.equal(round.profile.coach!.totalExp, round.coachExp);
   assert.equal(round.profile.league.season, playerSeasonBefore);
   assert.equal(round.profile.coachClubState!.fixtures.filter((fixture) => fixture.played).length, 1);
-  const allocated = assignCoachExp(round.profile, { formation: Math.min(50, round.profile.coach!.unassignedExp) });
+  const allocationTime = new Date('2026-01-03T00:00:00.000Z');
+  const allocated = assignCoachExp(round.profile, { formation: Math.min(50, round.profile.coach!.unassignedExp) }, allocationTime);
   assert.equal(allocated.profile.coach!.unassignedExp, round.profile.coach!.unassignedExp - allocated.allocated);
+  assert.equal(allocated.profile.updatedAt, allocationTime.toISOString());
 });
 
 test('Coach next-round fallback is deterministic from the supplied reference time', () => {
