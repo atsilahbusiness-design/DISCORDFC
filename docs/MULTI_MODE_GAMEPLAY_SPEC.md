@@ -115,7 +115,7 @@ A scheduled process is useful for `/versus settle` but is not the source of trut
 | ID | Deliverable | Acceptance condition | Evidence basis |
 |---|---|---|---|
 | V-001 | Separate Versus aggregates and mode router | A Discord user can own Player, Coach, and Versus state independently. | `RECOVERY_SCHEMA`, product clarification. |
-| V-002 | System matchmaking and private-group fallback | `/versus-matchmake` assigns a user to a competition/team abstraction; `/versus-join` supports explicit private group code; duplicate membership and cross-group ownership are rejected. | Public release metadata, group-code changelog, timed competition evidence; exact queue rules remain `RECOVERY_INFERRED`. |
+| V-002 | Automatic system matchmaking and private-group fallback | Opening `/versus-profile` or Versus Home automatically assigns a user to a competition/team abstraction; `/versus-join` supports explicit private group code; duplicate membership and cross-group ownership are rejected. | Public release metadata, group-code changelog, timed competition evidence; exact queue rules remain `RECOVERY_INFERRED`. |
 | V-003 | Assigned Versus roster and condition | System-assigned roster, player condition, scout result, lineup, and budget persist independently. | `VersusUserSave`, internal `VersusClub` recovery aggregate. |
 | V-004 | Fixture model | Round fixture has stable battle ID, home/away, deadline, state, and input snapshot. | `VersusBattleMiniData`. |
 | V-005 | Deterministic battle engine | Two submitted snapshots produce reproducible result with score and team/player stats. | `VersusBattle`, `VersusBattleClub`. |

@@ -112,7 +112,6 @@ export const commandDefinitions = [
   new SlashCommandBuilder().setName('coach-job').setDescription('Lihat atau kelola job offer Coach').addStringOption((option) => option.setName('action').setDescription('Aksi job').setRequired(false).addChoices({ name: 'Generate offer', value: 'generate' }, { name: 'List offers', value: 'list' }, { name: 'Accept offer', value: 'accept' }, { name: 'Decline offer', value: 'decline' })).addStringOption((option) => option.setName('offer_id').setDescription('ID offer dari list').setRequired(false)),
   new SlashCommandBuilder().setName('coach-retire').setDescription('Pensiun dari karier Coach'),
   new SlashCommandBuilder().setName('coach-rebirth').setDescription('Mulai ulang karier Coach setelah retirement'),
-  new SlashCommandBuilder().setName('versus-matchmake').setDescription('Cari dan tetapkan pertandingan Versus melalui system matchmaking'),
   new SlashCommandBuilder().setName('versus-join').setDescription('Bergabung ke private Versus group dengan group code (fallback)').addStringOption((option) => option.setName('group_code').setDescription('Kode private group Versus').setRequired(true)),
   new SlashCommandBuilder().setName('versus-profile').setDescription('Lihat assigned team, matchmaking, wallet, roster condition, dan season Versus'),
   new SlashCommandBuilder().setName('versus-roster').setDescription('Lihat roster assigned team, eligibility, battle aktif, dan deadline Versus'),

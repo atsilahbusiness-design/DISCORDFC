@@ -108,6 +108,30 @@ async function withVersusGroupLock<T>(store: PlayerStore, groupCode: string, ope
   }
 }
 
+async function ensurePublicVersusAssignment(store: PlayerStore, profileInput: PlayerProfile, now = new Date()): Promise<{ profile: PlayerProfile; season: VersusSeason }> {
+  if (profileInput.versus?.groupCode) {
+    const current = await versusSeasonFor(store, profileInput.versus.groupCode, now);
+    return { profile: profileInput, season: current.season };
+  }
+  const groupCode = matchmakingGroupCode('public', now);
+  return withVersusGroupLock(store, groupCode, async () => {
+    const currentMembers = await versusMembers(store, groupCode);
+    const existingMember = currentMembers.find((member) => member.userId === profileInput.userId);
+    const existing = currentMembers.find((member) => member.versus?.season)?.versus?.season;
+    if (existingMember?.versus?.season && existing) return { profile: existingMember, season: existing };
+    if (existing && (existing.state !== 'ACTIVE' || existing.currentRound > 1 || existing.battles.some((battle) => battle.state !== 'OPEN'))) throw new Error('Versus sedang berjalan. Sistem akan menyiapkan assignment berikutnya pada queue berikutnya.');
+    if (!existingMember && currentMembers.length >= 8) throw new Error('Assignment Versus sedang penuh. Coba buka Versus lagi untuk memperoleh queue berikutnya.');
+    const queued = queueVersusMatchmaking(profileInput, 'public', now);
+    const assigned = assignVersusMatchmaking(queued, groupCode, now);
+    await store.save(assigned);
+    const members = await versusMembers(store, groupCode);
+    const season = createVersusSeason(groupCode, members, existing ? new Date(existing.startAt) : now);
+    await persistVersusSeason(store, season, now);
+    const saved = await store.get(profileInput.userId);
+    return { profile: saved ?? assigned, season };
+  });
+}
+
 function activeVersusBattle(season: VersusSeason | undefined, clubId: string): import('../domain/types.js').VersusBattle | undefined {
   if (!season || season.state !== 'ACTIVE') return undefined;
   return season.battles.find((battle) => battle.roundId === season.currentRound && (battle.homeClubId === clubId || battle.awayClubId === clubId));
@@ -683,32 +707,6 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
       return;
     }
 
-    if (command === 'versus-matchmake') {
-      const profile = await requireProfile(interaction, store);
-      if (!profile) return;
-      const now = new Date();
-      const groupCode = matchmakingGroupCode('public', now);
-      const matched = await withVersusGroupLock(store, groupCode, async () => {
-        const currentMembers = await versusMembers(store, groupCode);
-        const existingMember = currentMembers.find((member) => member.userId === profile.userId);
-        const existing = currentMembers.find((member) => member.versus?.season)?.versus?.season;
-        if (existingMember?.versus?.season && existing) return { assigned: existingMember, season: existing };
-        if (existing && (existing.state !== 'ACTIVE' || existing.currentRound > 1 || existing.battles.some((battle) => battle.state !== 'OPEN'))) throw new Error('Matchmaking group saat ini sudah dimulai; coba lagi pada queue berikutnya.');
-        if (!existingMember && currentMembers.length >= 8) throw new Error('Matchmaking group saat ini penuh; coba lagi untuk mendapatkan group berikutnya.');
-        const queued = queueVersusMatchmaking(profile, 'public', now);
-        const assigned = assignVersusMatchmaking(queued, groupCode, now);
-        await store.save(assigned);
-        const members = await versusMembers(store, groupCode);
-        const season = createVersusSeason(groupCode, members, existing ? new Date(existing.startAt) : now);
-        await persistVersusSeason(store, season, now);
-        return { assigned, season };
-      });
-      const club = matched.assigned.versus!.club;
-      const battle = activeVersusBattle(matched.season, club.id);
-      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle('Versus Matchmaking Complete').setDescription(`Sistem menemukan competition untuk Anda dan menugaskan team **${club.name}**.`).addFields({ name: 'Match group', value: matched.season.groupCode, inline: true }, { name: 'Competition', value: matched.season.leagueId, inline: true }, { name: 'Assigned opponent', value: battle ? versusOpponentName(matched.season, battle, club.id) : '-', inline: true }, { name: 'Matchmaking state', value: matched.assigned.versus?.matchmaking?.status ?? 'MATCHED', inline: true }, { name: 'Next action', value: 'Buka `/versus-profile`, lalu susun lineup sebelum deadline.' }).setFooter({ text: 'Team, opponent, dan competition group dikelola oleh system matchmaking; exact original algorithm remains RECOVERY_INFERRED.' })], components: versusHomeControls(interaction.user.id) });
-      return;
-    }
-
     if (command === 'versus-join') {
       const profile = await requireProfile(interaction, store);
       if (!profile) return;
@@ -726,15 +724,15 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
         return { enrolled, season };
       });
       const joinedHome = versusHomeEmbed(joined.enrolled, joined.season);
-      await interaction.editReply({ embeds: [joinedHome.setTitle('Versus group joined').setDescription(`Club **${joined.enrolled.versus!.club.name}** bergabung ke group **${groupCode}**.\n\n${joinedHome.data.description ?? ''}`)], components: versusHomeControls(interaction.user.id) });
+      await interaction.editReply({ embeds: [joinedHome.setTitle('Versus assignment joined').setDescription(`Assigned team **${joined.enrolled.versus!.club.name}** masuk ke private group **${groupCode}**.\n\n${joinedHome.data.description ?? ''}`)], components: versusHomeControls(interaction.user.id) });
       return;
     }
 
     if (command === 'versus-profile') {
       const profile = await requireProfile(interaction, store);
-      if (!profile?.versus) throw new Error('Belum ada Versus assignment. Jalankan `/versus-matchmake` atau gunakan `/versus-join group_code:<code>`.');
-      const { season } = await versusSeasonFor(store, profile.versus.groupCode ?? '', new Date());
-      await interaction.editReply({ embeds: [versusHomeEmbed(profile, season)], components: versusHomeControls(interaction.user.id) });
+      if (!profile) return;
+      const assigned = await ensurePublicVersusAssignment(store, profile, new Date());
+      await interaction.editReply({ embeds: [versusHomeEmbed(assigned.profile, assigned.season)], components: versusHomeControls(interaction.user.id) });
       return;
     }
 
@@ -976,7 +974,7 @@ export async function handleComponent(interaction: ButtonInteraction | StringSel
   try {
     const action = componentOwner(interaction.customId, interaction.user.id);
     await interaction.deferReply({ ephemeral: true });
-    const profile = await store.get(interaction.user.id);
+    let profile = await store.get(interaction.user.id);
     if (!profile) throw new Error('Profil belum dibuat. Jalankan `/start position:<GK|DF|MF|FW>` terlebih dahulu.');
 
     if (action === 'coach-profile') {
@@ -986,8 +984,14 @@ export async function handleComponent(interaction: ButtonInteraction | StringSel
     }
 
     if (action === 'versus-profile' || action === 'versus-home' || action === 'versus-next' || action === 'versus-results' || action === 'versus-standings' || action === 'versus-registration' || action === 'versus-market' || action === 'versus-market-deal' || action === 'versus-market-scout' || action === 'versus-rewards' || action === 'versus-schedule' || action === 'versus-rankings' || action === 'versus-ranking-club' || action === 'versus-ranking-mvp' || action === 'versus-ranking-scorers' || action === 'versus-ranking-assists' || action === 'versus-ranking-goalkeepers' || action === 'versus-global-ranking' || action === 'versus-sponsor' || action === 'versus-sponsor-junior' || action === 'versus-sponsor-senior' || action === 'versus-sponsor-top') {
-      if (!profile.versus?.groupCode) throw new Error('Belum ada Versus match. Jalankan `/versus-matchmake` atau gunakan `/versus-join group_code:<code>` untuk private group.');
-      const { season } = await versusSeasonFor(store, profile.versus.groupCode, new Date());
+      let season: VersusSeason;
+      if (!profile.versus?.groupCode) {
+        const assigned = await ensurePublicVersusAssignment(store, profile, new Date());
+        profile = assigned.profile;
+        season = assigned.season;
+      } else {
+        season = (await versusSeasonFor(store, profile.versus.groupCode, new Date())).season;
+      }
       const rankingCategory = action === 'versus-ranking-mvp' ? 'MVP' : action === 'versus-ranking-scorers' ? 'SCORERS' : action === 'versus-ranking-assists' ? 'ASSISTS' : action === 'versus-ranking-goalkeepers' ? 'GOALKEEPERS' : 'CLUB';
       const marketTab = action === 'versus-market-scout' ? 'SCOUT' : 'DEAL';
       const sponsorSelection = action === 'versus-sponsor-junior' ? 'Junior' : action === 'versus-sponsor-senior' ? 'Senior' : action === 'versus-sponsor-top' ? 'Top' : undefined;
@@ -998,7 +1002,7 @@ export async function handleComponent(interaction: ButtonInteraction | StringSel
     }
 
     if (action === 'versus-next' || action === 'versus-lineup-start' || action.startsWith('versus-lineup-start:')) {
-      if (!profile.versus?.groupCode) throw new Error('Belum ada Versus match. Jalankan `/versus-matchmake` atau gunakan `/versus-join group_code:<code>` untuk private group.');
+      if (!profile.versus?.groupCode) throw new Error('Belum ada Versus assignment. Buka kembali Versus Mode agar sistem menyiapkan pertandingan.');
       const context = action === 'versus-lineup-start' ? undefined : parseVersusComponentContext(action);
       const { season } = await versusSeasonFor(store, profile.versus.groupCode, new Date());
       const club = season.clubs.find((item) => item.ownerId === profile.userId) ?? season.clubs.find((item) => item.id === profile.versus!.clubId);
@@ -1060,7 +1064,7 @@ export async function handleComponent(interaction: ButtonInteraction | StringSel
     }
 
     if (action.startsWith('versus-lineup-squad:')) {
-      if (!profile.versus || !profile.versus.groupCode) throw new Error('Belum ada Versus assignment. Jalankan `/versus-matchmake`.');
+      if (!profile.versus || !profile.versus.groupCode) throw new Error('Belum ada Versus assignment. Buka kembali Versus Mode agar sistem menyiapkan pertandingan.');
       const context = parseVersusComponentContext(action);
       if (!context) throw new Error('Lineup draft kedaluwarsa. Buka ulang Versus Home.');
       const draft = versusDrafts.get(interaction.user.id);
@@ -1086,7 +1090,7 @@ export async function handleComponent(interaction: ButtonInteraction | StringSel
     }
 
     if (action.startsWith('versus-lineup-final:')) {
-      if (!profile.versus) throw new Error('Belum ada Versus assignment. Jalankan `/versus-matchmake`.');
+      if (!profile.versus) throw new Error('Belum ada Versus assignment. Buka kembali Versus Mode agar sistem menyiapkan pertandingan.');
       const context = parseVersusComponentContext(action);
       if (!context) throw new Error('Lineup review kedaluwarsa. Buka ulang Versus Home.');
       const draft = versusDrafts.get(interaction.user.id);
@@ -1113,7 +1117,7 @@ export async function handleComponent(interaction: ButtonInteraction | StringSel
     }
 
     if (action.startsWith('versus-lineup-confirm:')) {
-      if (!profile.versus?.groupCode) throw new Error('Belum ada Versus assignment. Jalankan `/versus-matchmake`.');
+      if (!profile.versus?.groupCode) throw new Error('Belum ada Versus assignment. Buka kembali Versus Mode agar sistem menyiapkan pertandingan.');
       const context = parseVersusComponentContext(action);
       if (!context) throw new Error('Submission kedaluwarsa. Buka ulang Versus Home.');
       const draft = versusDrafts.get(interaction.user.id);
