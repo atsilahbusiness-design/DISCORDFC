@@ -36,16 +36,17 @@ Proyek ini mengembangkan Football Rising Star menjadi pengalaman game berbasis D
 | `/coach-round`, `/coach-exp`, `/coach-event` | Memainkan round Coach, alokasikan EXP, dan selesaikan event |
 | `/coach-job`, `/coach-retire`, `/coach-rebirth` | Mengelola job offer, retirement, dan rebirth Coach |
 | `/league` atau `/standings` | Melihat klasemen dan progres Player Club season |
-| `/versus-matchmake` | Meminta system matchmaking mencari dan menugaskan competition/team Versus |
 | `/versus-join group_code:CODE` | Fallback untuk bergabung ke private Versus group dengan group code |
-| `/versus-profile`, `/versus-standings` | Membuka Versus Home atau klasemen dengan navigation controls interaktif |
+| `/versus-profile`, `/versus-standings` | Membuka Versus Home atau klasemen; assignment system-managed berjalan otomatis |
+| `/versus-bid listing_id:<id> amount:<coin>` | Mengajukan bid Deal Versus dengan reservation dan settlement escrow-style |
 | Versus Home → `Registration` | Melihat status registrasi, group code, competition, capacity, dan season state |
-| Versus Home → `Market` / `Deal` / `Scout` | Membuka market roster dan tab Deal/Scout; belum menjalankan transaksi atau advanced-scout effect yang belum terverifikasi |
-| Versus Home → `Sponsor` / `Rewards` | Menampilkan sponsor tiers, balance, reward state, dan ledger hasil season; sponsor claim tetap preview-only |
+| Versus Home → `Market` / `Deal` / `Scout` | Membuka market listing Deal berbasis snapshot, bid countdown, reservation, dan tab Scout yang tetap transparan jika ruleset belum terverifikasi |
+| Versus Home → `Sponsor` / `Rewards` | Menampilkan sponsor tiers, balance, reward state, dan ledger hasil season; Sponsor claim tetap preview-only sampai cost/effect terkalibrasi |
 | Versus Home → `Schedule` / `Rankings` / `Global Ranking` | Membuka jadwal fixture, kategori ranking, dan season-wide ranking |
 | Versus Home → `Lineup` / `Next Battle` | Membuka pre-match setup: pilih formation, tactic, XI per posisi, captain, substitutes, review, lalu confirm submission |
 | `/versus-lineup battle_id:<id> lineup:<ids> captain:<id> formation:4-4-2 tactic:balanced roster_version:<n>` | Fallback command untuk mengunci submission XI, substitutes opsional, captain, formation, tactic, dan roster version sebelum deadline |
 | `/versus-round`, `/versus-season` | Memproses round atau melihat/menutup season Versus |
+| `tools/calibrate-player-formulas.ts` | Menghasilkan deterministic Player probe; probe bukan data asli dan tidak menaikkan status formula menjadi official |
 | `/season-end` | Memulai season berikutnya setelah seluruh fixture selesai |
 | `/contract action:sign` | Menandatangani atau memperpanjang kontrak |
 | `/daily` | Mengambil daily reward dan menaikkan streak |

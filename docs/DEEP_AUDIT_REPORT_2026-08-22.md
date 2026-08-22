@@ -3,7 +3,7 @@
 **Tanggal audit:** 22 Agustus 2026
 **Repository:** `atsilahbusiness-design/DISCORDFC`
 **Baseline commit terakhir yang sudah dipush:** `30c10bd`
-**Status perubahan audit:** terdapat perubahan lokal setelah commit tersebut; perubahan lokal belum dipush.
+**Status perubahan audit:** follow-up implementation lokal setelah baseline; commit final dilakukan setelah verification selesai.
 **Ruang lingkup:** Player Mode, Coach Mode, Versus Mode, Discord adapter, persistence, concurrency, security, balance, dan kesesuaian dengan bukti recovery.
 
 ## Ringkasan eksekutif
@@ -20,11 +20,11 @@ Audit dilakukan melalui pembacaan statis domain engine dan adapter Discord, penc
 
 | Dimensi | Pemeriksaan | Hasil |
 |---|---|---|
-| Build dan unit/regression | `pnpm build` dan `pnpm test` | **44 passing, 0 failing** |
+| Build dan unit/regression | `pnpm build` dan `pnpm test` | **55 passing, 0 failing** |
 | Stress Player | 300 trial × 60 week | 300/300 sukses; 0 invariant/determinism failure |
 | Stress Coach | 300 trial × 2 season | 300/300 sukses; 0 invariant/determinism failure |
 | Stress Versus | 300 trial × capacity 8 | 300/300 sukses; 0 invariant/determinism failure |
-| Targeted audit | EXP, honor, retirement, reward sync, non-1011 league | Semua check **PASS** |
+| Targeted audit | EXP, honor, retirement, reward sync, non-1011 league, formula provenance, Versus queue/economy invariants | Semua check **PASS** |
 | Dependency security | `pnpm audit --prod --audit-level=high` | Tidak ada known vulnerability |
 | Secret/format | secret pattern scan dan `git diff --check` | Tidak ada credential aktual; whitespace bersih |
 | Deployment runtime | Docker/Compose lokal | Belum dijalankan karena Docker CLI tidak tersedia di sandbox |
@@ -66,7 +66,7 @@ Risiko canonical masih ada: season, battle, standings, dan submissions belum men
 
 Recovery menunjukkan submission untuk XI, substitutes, captain, formation, tactic, dan roster version.[3] Video Versus-only `V8MsDUXNl8A` juga memperlihatkan pre-dashboard country/logo/name setup yang ownership semantics-nya belum terbukti, cash/coin/energy header, Sign-up/Registered state, auction Deal listings, normal Scout, pitch lineup, formation choices, tactical Instructions, sponsor tiers, rewards, dan multi-category rankings. Review `KQiUcv9d25c` mengonfirmasi dashboard next match/latest result, lineup, match preview, Deal/Scout, sponsor, rewards, club detail, My Schedule, dan Global Ranking. Community evidence memperlihatkan system-managed market dan timed competition state. Versus Home kini menjadi hub owner-bound dengan tombol Home, Next Battle, Lineup, Results, Standings, Registration, Market, Rewards, Schedule, Rankings, Global Ranking, dan Sponsor. Entry utama memakai `/versus-profile` atau tombol Versus Home; assignment berjalan otomatis saat entry pertama. `/versus-join` dipertahankan sebagai private-group fallback. Pre-match flow memakai select menu formation/tactic, selector XI per posisi, captain, substitutes, review, rating/attack/defence preview, dan confirm. `/versus-roster` tetap menjadi fallback diagnostik dan discovery surface. Domain memvalidasi owner/battle/formation/eligibility/roster version/deadline, dan `processVersusRound` mempertahankan submission sampai snapshot settlement.
 
-Regression test membuktikan component custom IDs owner-bound serta submission legal/stale/owner mismatch/deadline rejection dan seluruh navigation surface tetap owner-bound. Batasan UX Discord yang tersisa adalah tidak adanya drag-and-drop pitch, persistent mobile bottom navigation literal, serta background reminder otomatis. Exact matchmaking queue/MMR/opponent selection, auction bid settlement, Scout offer generation, sponsor claim, diamond shop spending, dan player-status boost masih read-only atau inferred karena cost, cooldown, payout, persistence, and effect rules belum terverifikasi. Public Chinese App Store changelogs mention advanced scout, player-status improvement, dan group code; fitur tersebut tidak boleh difabrikasi hanya demi tampilan. Command registration tetap perlu dijalankan setelah deployment.
+Regression test membuktikan component custom IDs owner-bound serta submission legal/stale/owner mismatch/deadline rejection dan seluruh navigation surface tetap owner-bound. Batasan UX Discord yang tersisa adalah tidak adanya drag-and-drop pitch, persistent mobile bottom navigation literal, serta background reminder otomatis. Exact matchmaking queue/MMR/opponent selection tetap inferred karena cost, cooldown, payout, persistence, and effect rules belum terverifikasi. Deal auction kini memiliki inferred but authoritative-in-our-domain bid reservation, countdown expiry, outbid release, settlement, roster transfer, and ledger idempotency. Scout offer generation, sponsor claim, diamond shop spending, dan player-status boost tetap read-only. Public Chinese App Store changelogs mention advanced scout, player-status improvement, dan group code; fitur tersebut tidak boleh difabrikasi hanya demi tampilan. Command registration tetap perlu dijalankan setelah deployment.
 
 ### P1 — Coach standings: projection implemented, authoritative opponent simulation belum tersedia
 
@@ -92,9 +92,9 @@ Custom ID dashboard sudah owner-bound, tetapi tidak membawa profile version, bat
 
 `JsonPlayerStore` aman untuk satu process karena memiliki serialized write queue dan atomic temp-file rename, tetapi tidak memiliki compare-and-swap terhadap penulis eksternal.[7] User rate limiter dan user command queue juga hanya hidup di memory process.[1] README telah menyatakan keterbatasan ini; deployment multi-instance tetap membutuhkan Redis/database-backed lock, rate limiter, dan repository concurrency.
 
-### P2 — Audit ledger: Versus reward entries implemented; broader asset audit remains
+### P2 — Audit ledger: Versus reward and Deal entries implemented; broader asset audit remains
 
-Player match dan achievement memiliki ledger, dan Versus sync kini menambah event money/coin berbasis battle ID serta season ID dengan idempotency key. Club assets, Coach board rewards, dan beberapa non-wallet mutations masih belum memiliki event ledger seragam yang dapat direkonsiliasi lintas mode. Dedicated immutable event tables tetap direkomendasikan untuk refund, fraud investigation, dan admin settlement.
+Player match dan achievement memiliki ledger, dan Versus sync kini menambah event money/coin berbasis battle ID serta season ID dengan idempotency key. Deal bid menambah reservation/settlement event dan Postgres mirror menyimpan Versus ledger, market, reservation, match, serta queue projections. Club assets, Coach board rewards, dan beberapa non-wallet mutations masih belum memiliki event ledger seragam yang dapat direkonsiliasi lintas mode. Dedicated immutable event tables tetap direkomendasikan untuk refund, fraud investigation, dan admin settlement.
 
 ### P2 — Maintenance dapat berkonflik dengan command aktif
 

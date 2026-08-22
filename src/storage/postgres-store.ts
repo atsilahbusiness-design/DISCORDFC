@@ -1,4 +1,5 @@
 import { Pool } from 'pg';
+import type { PoolClient } from 'pg';
 import type { PlayerProfile } from '../domain/types.js';
 import type { BatchPlayerStore, PlayerStore, VersusGroupLockStore } from './json-store.js';
 
@@ -16,6 +17,57 @@ export class PostgresPlayerStore implements BatchPlayerStore, VersusGroupLockSto
 
   async save(profile: PlayerProfile): Promise<void> {
     await this.saveBatch([profile]);
+  }
+
+  private async syncVersusProjection(client: PoolClient, profile: PlayerProfile): Promise<void> {
+    const versus = profile.versus;
+    if (!versus) return;
+
+    if (versus.matchmaking) {
+      await client.query(
+        `UPDATE versus_queue_tickets
+         SET status = 'EXPIRED', updated_at = NOW()
+         WHERE user_id = $1 AND queue_key = $2 AND status IN ('QUEUED', 'MATCHED') AND ticket_id <> $3`,
+        [profile.userId, versus.matchmaking.queueKey, versus.matchmaking.ticketId]
+      );
+      await client.query(
+        `INSERT INTO versus_queue_tickets (ticket_id, user_id, queue_key, status, queued_at, matched_at, group_code, updated_at)
+         VALUES ($1, $2, $3, $4, $5::timestamptz, $6::timestamptz, $7, NOW())
+         ON CONFLICT (ticket_id) DO UPDATE SET status = EXCLUDED.status, matched_at = EXCLUDED.matched_at, group_code = EXCLUDED.group_code, updated_at = NOW()`,
+        [versus.matchmaking.ticketId, profile.userId, versus.matchmaking.queueKey, versus.matchmaking.status, versus.matchmaking.queuedAt, versus.matchmaking.matchedAt ?? null, versus.matchmaking.groupCode ?? null]
+      );
+    }
+
+    const season = versus.season;
+    if (season) {
+      for (const battle of season.battles) {
+        await client.query(
+          `INSERT INTO versus_matches (match_id, season_id, group_code, round_id, scheduled_at, home_club_id, away_club_id, state, ruleset_version, updated_at)
+           VALUES ($1, $2, $3, $4, $5::timestamptz, $6, $7, $8, $9, NOW())
+           ON CONFLICT (match_id) DO UPDATE SET state = EXCLUDED.state, ruleset_version = EXCLUDED.ruleset_version, updated_at = NOW()`,
+          [battle.id, season.id, season.groupCode, battle.roundId, battle.scheduledAt, battle.homeClubId, battle.awayClubId, battle.state, season.rulesetVersion]
+        );
+      }
+      for (const listing of season.market?.listings ?? []) {
+        await client.query(
+          `INSERT INTO versus_market_listings (listing_id, season_id, source_club_id, player_snapshot, opening_bid, minimum_increment, current_bid, current_bidder_id, starts_at, ends_at, status, ruleset_version, settled_at, winner_club_id, updated_at)
+           VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7, $8, $9::timestamptz, $10::timestamptz, $11, $12, $13::timestamptz, $14, NOW())
+           ON CONFLICT (listing_id) DO UPDATE SET current_bid = EXCLUDED.current_bid, current_bidder_id = EXCLUDED.current_bidder_id, status = EXCLUDED.status, settled_at = EXCLUDED.settled_at, winner_club_id = EXCLUDED.winner_club_id, updated_at = NOW()`,
+          [listing.id, season.id, listing.sourceClubId, JSON.stringify(listing.player), listing.openingBid, listing.minimumIncrement, listing.currentBid ?? null, listing.currentBidderId ?? null, listing.startsAt, listing.endsAt, listing.status, listing.rulesetVersion, listing.settledAt ?? null, listing.winnerClubId ?? null]
+        );
+      }
+    }
+
+    await client.query('DELETE FROM versus_wallet_reservations WHERE user_id = $1', [profile.userId]);
+    if (versus.reservations?.length) {
+      await client.query(
+        `INSERT INTO versus_wallet_reservations (reservation_id, listing_id, user_id, currency, amount, created_at)
+         SELECT x.id, x.listing_id, $1, x.currency, x.amount, x.created_at::timestamptz
+         FROM jsonb_to_recordset($2::jsonb) AS x(id text, listing_id text, currency text, amount bigint, created_at text)
+         ON CONFLICT (reservation_id) DO UPDATE SET amount = EXCLUDED.amount, created_at = EXCLUDED.created_at`,
+        [profile.userId, JSON.stringify(versus.reservations)]
+      );
+    }
   }
 
   async saveBatch(profiles: PlayerProfile[]): Promise<void> {
@@ -44,13 +96,23 @@ export class PostgresPlayerStore implements BatchPlayerStore, VersusGroupLockSto
         await client.query('DELETE FROM economy_ledger WHERE user_id = $1', [profile.userId]);
         if (profile.ledger?.length) {
           await client.query(
-            `INSERT INTO economy_ledger (id, user_id, created_at, entry_type, amount, balance_after, note)
-             SELECT x.id, $1, x.created_at::timestamptz, x.entry_type, x.amount, x.balance_after, x.note
-             FROM jsonb_to_recordset($2::jsonb) AS x(id text, created_at text, entry_type text, amount bigint, balance_after bigint, note text)
+            `INSERT INTO economy_ledger (id, user_id, created_at, entry_type, amount, balance_after, note, mode, currency, transaction_id)
+             SELECT x.id, $1, x.created_at::timestamptz, x.entry_type, x.amount, x.balance_after, x.note, 'PLAYER', 'MONEY', x.transaction_id
+             FROM jsonb_to_recordset($2::jsonb) AS x(id text, created_at text, entry_type text, amount bigint, balance_after bigint, note text, transaction_id text)
              ON CONFLICT (id) DO NOTHING`,
             [profile.userId, JSON.stringify(profile.ledger)]
           );
         }
+        if (profile.versus?.ledger?.length) {
+          await client.query(
+            `INSERT INTO economy_ledger (id, user_id, created_at, entry_type, amount, balance_after, note, mode, currency, season_id, battle_id, transaction_id)
+             SELECT x.id, $1, x.created_at::timestamptz, COALESCE(x.type, 'VERSUS_LEDGER'), x.amount, x.balance_after, x.note, 'VERSUS', x.currency, x.season_id, x.battle_id, x.transaction_id
+             FROM jsonb_to_recordset($2::jsonb) AS x(id text, created_at text, type text, amount bigint, balance_after bigint, note text, currency text, season_id text, battle_id text, transaction_id text)
+             ON CONFLICT (id) DO NOTHING`,
+            [profile.userId, JSON.stringify(profile.versus.ledger)]
+          );
+        }
+        await this.syncVersusProjection(client, profile);
       }
       await client.query('COMMIT');
     } catch (error) {

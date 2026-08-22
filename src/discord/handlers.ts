@@ -8,6 +8,7 @@ import { formatContract, getContractStatus, renewContract, signContract } from '
 import { joinOfficialClub, listOfficialClubs } from '../domain/official-club-engine.js';
 import { acceptJobOffer, advanceCoachRound, assignCoachExp, createCoachCareer, declineJobOffer, formatCoachProfile, generateJobOffer, rebirthCoach, resolveCoachEvent, retireCoach, settleCoachSeason } from '../domain/coach-career-engine.js';
 import { assignVersusMatchmaking, createVersusClub, createVersusSeason, formatVersusBattle, getVersusStandings, processVersusRound, queueVersusMatchmaking, settleVersusSeason, submitVersusLineup, syncVersusProfileWithSeason } from '../domain/versus-engine.js';
+import { createVersusMarket, placeVersusBid, settleExpiredVersusMarket } from '../domain/versus-economy.js';
 import { ABILITY_LABELS, COACH_ABILITIES, COACH_ABILITY_LABELS, DETAILED_SKILL_LABELS, DETAILED_SKILLS, FORMATIONS, HONOR_CATEGORY_LABELS, POSITION_LABELS, TACTICS, TRAINER_CATALOG, TRICK_CATALOG, type AbilityId, type CoachAbilityId, type CultureSubject, type DetailedSkillId, type FormationId, type PlayerProfile, type Position, type TacticId, type VersusSeason } from '../domain/types.js';
 import type { BatchPlayerStore, PlayerStore, VersusGroupLockStore } from '../storage/json-store.js';
 import { careerControls, detailedTrainingControls, trainingControls, versusFinalizeControls, versusHomeControls, versusMarketControls, versusPositionControls, versusRankingControls, versusSetupControls, versusSponsorControls } from './components.js';
@@ -83,6 +84,42 @@ async function persistVersusSeason(store: PlayerStore, season: import('../domain
   const batchStore = store as Partial<BatchPlayerStore>;
   if (typeof batchStore.saveBatch !== 'function') throw new Error('Versus persistence backend tidak menyediakan atomic batch save. Operasi dihentikan untuk mencegah partial season write.');
   await batchStore.saveBatch(nextProfiles);
+}
+
+async function persistVersusEconomy(store: PlayerStore, profiles: PlayerProfile[], season: VersusSeason, now: Date): Promise<PlayerProfile[]> {
+  const nextProfiles = profiles.map((profile) => syncVersusProfileWithSeason(profile, season, now));
+  const batchStore = store as Partial<BatchPlayerStore>;
+  if (typeof batchStore.saveBatch !== 'function') throw new Error('Versus persistence backend tidak menyediakan atomic batch save. Operasi dihentikan untuk mencegah partial economy write.');
+  await batchStore.saveBatch(nextProfiles);
+  return nextProfiles;
+}
+
+async function prepareVersusMarket(store: PlayerStore, seasonInput: VersusSeason, now = new Date()): Promise<{ season: VersusSeason; profiles: PlayerProfile[] }> {
+  const members = await versusMembers(store, seasonInput.groupCode);
+  let season = structuredClone(seasonInput);
+  let profiles = members.map((member) => structuredClone(member));
+  let changed = false;
+  if (!season.market) {
+    season = createVersusMarket(season, now);
+    changed = true;
+  } else {
+    const settled = settleExpiredVersusMarket(profiles, season, now);
+    if (settled.length > 0) {
+      const latest = settled[settled.length - 1];
+      season = latest.season;
+      profiles = latest.profiles;
+      changed = true;
+    }
+    const currentMarket = season.market;
+    if (!currentMarket) throw new Error('Versus market state hilang setelah expiry processing.');
+    const hasLiveListing = currentMarket.listings.some((listing) => listing.status === 'OPEN' && new Date(listing.endsAt).getTime() > now.getTime());
+    if (!hasLiveListing) {
+      season = createVersusMarket(season, now);
+      changed = true;
+    }
+  }
+  if (changed) profiles = await persistVersusEconomy(store, profiles, season, now);
+  return { season, profiles };
 }
 
 const versusGroupQueues = new Map<string, Promise<void>>();
@@ -214,7 +251,15 @@ function versusStandingsEmbed(season: VersusSeason): EmbedBuilder {
   return new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`Versus Standings · ${season.groupCode}`).setDescription(lines).setFooter({ text: `Round ${season.currentRound}/${2 * (season.clubs.length - 1)} · points, GD, goals scored, stable club ID.` });
 }
 
-function versusMarketEmbed(profile: PlayerProfile, tab: 'DEAL' | 'SCOUT' = 'DEAL'): EmbedBuilder {
+function versusMarketEmbed(profile: PlayerProfile, season: VersusSeason, tab: 'DEAL' | 'SCOUT' = 'DEAL'): EmbedBuilder {
+  const listings = season.market?.listings ?? [];
+  const now = Date.now();
+  const dealLines = listings.map((listing) => {
+    const seconds = Math.max(0, Math.ceil((new Date(listing.endsAt).getTime() - now) / 1_000));
+    const bid = listing.currentBid ?? listing.openingBid;
+    const score = Math.round(Object.values(listing.player.abilities).reduce((sum, value) => sum + value, 0) / Math.max(1, Object.values(listing.player.abilities).length));
+    return `**${listing.player.name}** · ${listing.player.position} · score ${score} · bid **${bid} coin** · ${listing.status === 'OPEN' ? `${seconds}s left` : listing.status}`;
+  }).join('\n');
   const roster = profile.versus!.club.roster
     .slice()
     .sort((a, b) => b.value - a.value || a.name.localeCompare(b.name))
@@ -224,9 +269,14 @@ function versusMarketEmbed(profile: PlayerProfile, tab: 'DEAL' | 'SCOUT' = 'DEAL
   return new EmbedBuilder()
     .setColor(BRAND_COLOR)
     .setTitle(`${profile.versus!.club.name} · Versus Market`)
-    .setDescription(`**${tab === 'DEAL' ? 'Deal' : 'Scout'} tab**\n${tab === 'DEAL' ? 'Roster valuation and deal surface.' : 'Scouting surface for candidate players.'}\n\n${roster || 'Belum ada player.'}`)
-    .addFields({ name: 'Current state', value: 'Read-only market preview menggunakan data roster Versus yang tersedia.' }, { name: 'Evidence boundary', value: 'Advanced Scout, offer generation, price, and purchase effects belum dipulihkan; tidak ada transaksi palsu yang dijalankan.' })
-    .setFooter({ text: 'Deal/Scout tabs observed in public Versus review · unrecovered mechanics remain RECOVERY_INFERRED.' });
+    .setDescription(`**${tab === 'DEAL' ? 'Deal' : 'Scout'} tab**\n${tab === 'DEAL' ? dealLines || 'Belum ada listing.' : 'Candidate scout akan ditampilkan setelah ruleset Scout terverifikasi.'}\n\n${tab === 'DEAL' ? 'Gunakan `/versus-bid listing_id:<id> amount:<coin>` sebelum countdown berakhir.' : roster || 'Belum ada player.'}`)
+    .addFields(
+      { name: 'Available coin', value: `${profile.versus!.versusCoin} total · reservations ${profile.versus!.reservations?.reduce((sum, item) => sum + item.amount, 0) ?? 0}`, inline: true },
+      { name: 'Market state', value: `${listings.filter((listing) => listing.status === 'OPEN').length} open listing(s)`, inline: true },
+      { name: 'Economy rule', value: 'Bid memakai reservation; coin baru didebit saat listing settled. Outbid melepaskan reservation secara atomic.' },
+      { name: 'Evidence boundary', value: 'Listing, bid, countdown, dan market dapat diamati publik; exact increment, server timer, Scout effect, dan premium economics tetap versioned/inferred.' }
+    )
+    .setFooter({ text: 'Deal/Scout tabs observed in public Versus review · economy ruleset is versioned and auditable.' });
 }
 
 function versusSponsorEmbed(profile: PlayerProfile, selection?: 'Junior' | 'Senior' | 'Top'): EmbedBuilder {
@@ -707,6 +757,24 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
       return;
     }
 
+    if (command === 'versus-bid') {
+      const profile = await requireProfile(interaction, store);
+      if (!profile) return;
+      if (!profile.versus?.groupCode) throw new Error('Versus belum aktif. Buka `/versus-profile` terlebih dahulu.');
+      const listingId = interaction.options.getString('listing_id', true).trim();
+      const amount = interaction.options.getInteger('amount', true);
+      const result = await withVersusGroupLock(store, profile.versus.groupCode, async () => {
+        const current = await versusSeasonFor(store, profile.versus!.groupCode!, new Date());
+        const prepared = await prepareVersusMarket(store, current.season, new Date());
+        const members = prepared.profiles.length > 0 ? prepared.profiles : current.members;
+        const bid = placeVersusBid(members, prepared.season, profile.userId, listingId, amount, new Date());
+        const saved = await persistVersusEconomy(store, bid.profiles, bid.season, new Date());
+        return { listing: bid.listing, profile: saved.find((item) => item.userId === profile.userId) ?? profile };
+      });
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle('Versus Deal bid reserved').setDescription(`Bid untuk **${result.listing.player.name}** tercatat sebesar **${result.listing.currentBid} coin**.`).addFields({ name: 'Listing', value: result.listing.id }, { name: 'Status', value: result.listing.status, inline: true }, { name: 'Expires', value: result.listing.endsAt, inline: true }, { name: 'Wallet', value: `${result.profile.versus!.versusCoin} coin total · reservation aktif`, inline: true }).setFooter({ text: 'Coin baru didebit saat listing settled; reservation dilepas jika Anda di-outbid.' })] });
+      return;
+    }
+
     if (command === 'versus-join') {
       const profile = await requireProfile(interaction, store);
       if (!profile) return;
@@ -738,7 +806,7 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
 
     if (command === 'versus-roster') {
       const profile = await requireProfile(interaction, store);
-      if (!profile?.versus?.groupCode) throw new Error('Versus assignment belum masuk competition. Jalankan `/versus-matchmake` atau gunakan `/versus-join group_code:<code>`.');
+      if (!profile?.versus?.groupCode) throw new Error('Versus assignment belum masuk competition. Jalankan `/versus-profile` atau gunakan `/versus-join group_code:<code>`.');
       const versus = profile.versus;
       const season = versus.season;
       const club = versus.club;
@@ -755,7 +823,7 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
 
     if (command === 'versus-standings') {
       const profile = await requireProfile(interaction, store);
-      if (!profile?.versus?.groupCode) throw new Error('Versus assignment belum masuk competition. Jalankan `/versus-matchmake` atau gunakan `/versus-join group_code:<code>`.');
+      if (!profile?.versus?.groupCode) throw new Error('Versus assignment belum masuk competition. Jalankan `/versus-profile` atau gunakan `/versus-join group_code:<code>`.');
       const { season } = await versusSeasonFor(store, profile.versus.groupCode, new Date());
       await interaction.editReply({ embeds: [versusStandingsEmbed(season)], components: versusHomeControls(interaction.user.id) });
       return;
@@ -763,7 +831,7 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
 
     if (command === 'versus-lineup') {
       const profile = await requireProfile(interaction, store);
-      if (!profile?.versus?.groupCode) throw new Error('Versus assignment belum masuk competition. Jalankan `/versus-matchmake` atau gunakan `/versus-join group_code:<code>`.');
+      if (!profile?.versus?.groupCode) throw new Error('Versus assignment belum masuk competition. Jalankan `/versus-profile` atau gunakan `/versus-join group_code:<code>`.');
       const groupCode = profile.versus.groupCode;
       const battleId = interaction.options.getString('battle_id', true).trim();
       const lineup = parseIdList(interaction.options.getString('lineup', true));
@@ -785,11 +853,11 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
 
     if (command === 'versus-round') {
       const profile = await requireProfile(interaction, store);
-      if (!profile?.versus?.groupCode) throw new Error('Versus assignment belum masuk competition. Jalankan `/versus-matchmake` atau gunakan `/versus-join group_code:<code>`.');
+      if (!profile?.versus?.groupCode) throw new Error('Versus assignment belum masuk competition. Jalankan `/versus-profile` atau gunakan `/versus-join group_code:<code>`.');
       const groupCode = profile.versus.groupCode;
       const season = await withVersusGroupLock(store, groupCode, async () => {
         const current = await versusSeasonFor(store, groupCode, new Date());
-        if (current.season.state !== 'ACTIVE') throw new Error('Season Versus sudah selesai. Gunakan `/versus-matchmake` untuk mendapatkan assignment berikutnya.');
+        if (current.season.state !== 'ACTIVE') throw new Error('Season Versus sudah selesai. Gunakan `/versus-profile` untuk mendapatkan assignment berikutnya.');
         const next = processVersusRound(current.season, current.season.currentRound, new Date());
         await persistVersusSeason(store, next, new Date());
         return next;
@@ -804,7 +872,7 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
 
     if (command === 'versus-season') {
       const profile = await requireProfile(interaction, store);
-      if (!profile?.versus?.groupCode) throw new Error('Versus assignment belum masuk competition. Jalankan `/versus-matchmake` atau gunakan `/versus-join group_code:<code>`.');
+      if (!profile?.versus?.groupCode) throw new Error('Versus assignment belum masuk competition. Jalankan `/versus-profile` atau gunakan `/versus-join group_code:<code>`.');
       const action = interaction.options.getString('action') ?? 'status';
       const groupCode = profile.versus.groupCode;
       const season = await withVersusGroupLock(store, groupCode, async () => {
@@ -910,7 +978,7 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
         await store.save(enriched);
         const state = mode === 'COACH' ? enriched.coach?.championsLeague : enriched.championsLeague;
         if (!state) throw new Error('Champions League state tidak tersedia.');
-        await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`Champions League · ${modeLabel} · Status`).setDescription(`Status **${state.status}**\\nSeason **${state.season}**\\nRound **${state.round}**\\nOpponent **${state.opponent}**\\nAggregate **${state.aggregate}**`).setFooter({ text: `Gunakan /champions action:play mode:${mode} untuk memainkan ronde.` })] });
+        await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`Champions League · ${modeLabel} · Status`).setDescription(`Status **${state.status}**\nSeason **${state.season}**\nRound **${state.round}**\nOpponent **${state.opponent}**\nAggregate **${state.aggregate}**`).setFooter({ text: `Gunakan /champions action:play mode:${mode} untuk memainkan ronde.` })] });
       }
       return;
     }
@@ -949,7 +1017,7 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
     }
 
     if (command === 'help') {
-      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle('Football Rising Star — Panduan').setDescription('Bangun karier pemain dan kelola klub melalui loop mingguan yang terinspirasi dari gameplay publik dan client recovery. Formula yang belum memiliki method body resmi tetap diberi label RECOVERY_INFERRED.').addFields({ name: 'Player Mode', value: '`/start`, `/profile`, `/skills`, `/train-skill`, `/assign-exp`, `/match`, `/next-week`, `/league`' }, { name: 'Player progression', value: '`/injury`, `/trick`, `/trainer`, `/culture`, `/honors`, `/world-footballer`, `/retire`, `/rebirth`' }, { name: 'Coach Mode', value: '`/coach-career`, `/coach-profile`, `/coach-round`, `/coach-exp`, `/coach-event`, `/coach-job`, `/coach-retire`, `/coach-rebirth`' }, { name: 'Versus Mode', value: '`/versus-matchmake` → `/versus-profile`/Versus Home, `/versus-roster`, `/versus-lineup`, `/versus-round`, `/versus-standings`, `/versus-season`; `/versus-join` hanya private-group fallback — asynchronous system-assigned competition dengan pre-match setup dan deadline guards' }, { name: 'Club & economy', value: '`/club`, `/squad`, `/formation`, `/tactic`, `/club-match`, `/standings`, `/season-end`, `/daily`, `/event`, `/market`, `/buy-player`, `/sell-player`, `/contract`' })] });
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle('Football Rising Star — Panduan').setDescription('Bangun karier pemain dan kelola klub melalui loop mingguan yang terinspirasi dari gameplay publik dan client recovery. Formula yang belum memiliki method body resmi tetap diberi label RECOVERY_INFERRED.').addFields({ name: 'Player Mode', value: '`/start`, `/profile`, `/skills`, `/train-skill`, `/assign-exp`, `/match`, `/next-week`, `/league`' }, { name: 'Player progression', value: '`/injury`, `/trick`, `/trainer`, `/culture`, `/honors`, `/world-footballer`, `/retire`, `/rebirth`' }, { name: 'Coach Mode', value: '`/coach-career`, `/coach-profile`, `/coach-round`, `/coach-exp`, `/coach-event`, `/coach-job`, `/coach-retire`, `/coach-rebirth`' }, { name: 'Versus Mode', value: '`Versus Mode` → `/versus-profile`/Versus Home, `/versus-roster`, `/versus-lineup`, `/versus-bid`, `/versus-round`, `/versus-standings`, `/versus-season`; `/versus-join` hanya private-group fallback — asynchronous system-assigned competition dengan pre-match setup, market escrow, dan deadline guards' }, { name: 'Club & economy', value: '`/club`, `/squad`, `/formation`, `/tactic`, `/club-match`, `/standings`, `/season-end`, `/daily`, `/event`, `/market`, `/buy-player`, `/sell-player`, `/contract`' })] });
       return;
     }
 
@@ -992,10 +1060,15 @@ export async function handleComponent(interaction: ButtonInteraction | StringSel
       } else {
         season = (await versusSeasonFor(store, profile.versus.groupCode, new Date())).season;
       }
+      if (action === 'versus-market' || action === 'versus-market-deal' || action === 'versus-market-scout') {
+        const prepared = await withVersusGroupLock(store, season.groupCode, async () => prepareVersusMarket(store, season, new Date()));
+        season = prepared.season;
+        profile = prepared.profiles.find((item) => item.userId === interaction.user.id) ?? profile;
+      }
       const rankingCategory = action === 'versus-ranking-mvp' ? 'MVP' : action === 'versus-ranking-scorers' ? 'SCORERS' : action === 'versus-ranking-assists' ? 'ASSISTS' : action === 'versus-ranking-goalkeepers' ? 'GOALKEEPERS' : 'CLUB';
       const marketTab = action === 'versus-market-scout' ? 'SCOUT' : 'DEAL';
       const sponsorSelection = action === 'versus-sponsor-junior' ? 'Junior' : action === 'versus-sponsor-senior' ? 'Senior' : action === 'versus-sponsor-top' ? 'Top' : undefined;
-      const embed = action === 'versus-results' ? versusResultEmbed(profile, season) : action === 'versus-standings' ? versusStandingsEmbed(season) : action === 'versus-registration' ? versusRegistrationEmbed(profile, season) : action === 'versus-market' || action === 'versus-market-deal' || action === 'versus-market-scout' ? versusMarketEmbed(profile, marketTab) : action === 'versus-rewards' ? versusRewardsEmbed(profile, season) : action === 'versus-schedule' ? versusScheduleEmbed(profile, season) : action === 'versus-rankings' || action.startsWith('versus-ranking-') ? versusRankingsEmbed(season, profile, rankingCategory) : action === 'versus-sponsor' || action.startsWith('versus-sponsor-') ? versusSponsorEmbed(profile, sponsorSelection) : action === 'versus-global-ranking' ? versusGlobalRankingEmbed(season, profile) : versusHomeEmbed(profile, season);
+      const embed = action === 'versus-results' ? versusResultEmbed(profile, season) : action === 'versus-standings' ? versusStandingsEmbed(season) : action === 'versus-registration' ? versusRegistrationEmbed(profile, season) : action === 'versus-market' || action === 'versus-market-deal' || action === 'versus-market-scout' ? versusMarketEmbed(profile, season, marketTab) : action === 'versus-rewards' ? versusRewardsEmbed(profile, season) : action === 'versus-schedule' ? versusScheduleEmbed(profile, season) : action === 'versus-rankings' || action.startsWith('versus-ranking-') ? versusRankingsEmbed(season, profile, rankingCategory) : action === 'versus-sponsor' || action.startsWith('versus-sponsor-') ? versusSponsorEmbed(profile, sponsorSelection) : action === 'versus-global-ranking' ? versusGlobalRankingEmbed(season, profile) : versusHomeEmbed(profile, season);
       const controls = action === 'versus-market' || action === 'versus-market-deal' || action === 'versus-market-scout' ? versusMarketControls(interaction.user.id, marketTab) : action === 'versus-rankings' || action.startsWith('versus-ranking-') ? versusRankingControls(interaction.user.id) : action === 'versus-sponsor' || action.startsWith('versus-sponsor-') ? versusSponsorControls(interaction.user.id) : versusHomeControls(interaction.user.id);
       await interaction.editReply({ embeds: [embed], components: controls });
       return;
@@ -1152,7 +1225,7 @@ export async function handleComponent(interaction: ButtonInteraction | StringSel
     if (action === 'next-week') {
       const result = advanceWeek(profile);
       await store.save(result.profile);
-      await interaction.editReply({ content: `Week ${result.week} selesai.\\n${result.narrative.join('\n')}\\nPending EXP: ${result.expAwaitingAssignment}.`, components: careerControls(interaction.user.id) });
+      await interaction.editReply({ content: `Week ${result.week} selesai.\n${result.narrative.join('\n')}\nPending EXP: ${result.expAwaitingAssignment}.`, components: careerControls(interaction.user.id) });
       return;
     }
 

@@ -2,6 +2,7 @@ import { RECOVERY_CLUBS } from '../config/recovery-data.js';
 import { GAME_BALANCE } from '../config/game-balance.js';
 import { FORMATIONS, TACTICS, type AbilityId, type FormationId, type MatchOutcome, type PlayerProfile, type TacticId, type VersusBattle, type VersusBattleStats, type VersusClub, type VersusPlayer, type VersusPlayerSnapshot, type VersusSeason, type VersusSeasonReward, type VersusSideReward, type VersusStanding, type VersusSubmission } from './types.js';
 import { MathRandomSource, SeededRandom, type RandomSource } from './engine.js';
+import { createVersusMarket } from './versus-economy.js';
 
 const RULESET_VERSION = 'versus-recovery-inferred-v1';
 const DEFAULT_GROUP_CAPACITY = GAME_BALANCE.versus.defaultGroupCapacity;
@@ -175,11 +176,15 @@ export function queueVersusMatchmaking(profileInput: PlayerProfile, queueKey = '
   if ((versus.status === 'IN_GAME' && versus.groupCode && versus.season?.state === 'ACTIVE') || (versus.status === 'ENROLLED' && versus.groupCode)) return profile;
   const queue = normalizeQueueKey(queueKey);
   versus.status = 'IDLE';
+  const ratingSnapshot = Math.round(versus.club.roster.reduce((sum, player) => sum + abilityScore(player), 0) / Math.max(1, versus.club.roster.length));
   versus.matchmaking = {
     ticketId: `vqueue:${profile.userId}:${now.getTime()}`,
     status: 'QUEUED',
     queueKey: queue,
-    queuedAt: now.toISOString()
+    queuedAt: now.toISOString(),
+    expiresAt: new Date(now.getTime() + GAME_BALANCE.versus.matchmakingTicketTtlSeconds * 1_000).toISOString(),
+    ratingSnapshot,
+    rosterVersion: versus.club.rosterVersion
   };
   profile.updatedAt = now.toISOString();
   return profile;
@@ -192,6 +197,7 @@ export function assignVersusMatchmaking(profileInput: PlayerProfile, groupCode: 
     versus.matchmaking.status = 'MATCHED';
     versus.matchmaking.matchedAt = now.toISOString();
     versus.matchmaking.groupCode = versus.groupCode;
+    versus.matchmaking.assignmentId = `vassignment:${versus.groupCode}`;
   }
   profile.updatedAt = now.toISOString();
   return profile;
@@ -289,6 +295,7 @@ function initialSeason(groupCode: string, profiles: PlayerProfile[], now: Date, 
   };
   season.battles = buildRoundBattles(season.id, season.clubs, now);
   season.standings = standingsFor(season);
+  season.market = createVersusMarket(season, now).market;
   return season;
 }
 

@@ -75,3 +75,18 @@ Source: https://www.taptap.cn/moment/362746078098883195?group_id=306994
 The opened community post explicitly describes entering `对战模式` (battle mode), using a `金币市场` (coin market) to bid on players, and a 59-second system retention window for a market offer after leaving the game. It also refers to a `Versus` save folder and a market document. This is strong evidence that battle-mode rosters are assembled through a system market and that the public post is about a system-managed market state, not about users designing a football club. It also confirms that the user/community vocabulary centers on battle mode, market, and competition state.
 
 The post does not explicitly describe the opponent-matching algorithm. It therefore supports changing DISCORDFC away from user-authored canonical club identity, but it does not justify claiming a specific MMR, queue, or matchmaking formula. Any matchmaking implementation should use a transparent inferred queue/assignment abstraction until server evidence becomes available.
+
+## Research snapshot for formula and Versus planning
+
+### Official store pages rechecked
+
+- Google Play Football Rising Star: the listing states Player mode starts as a talented teenager at age 15, joins a professional club, and progresses through 20 years of competitions, training, transfers, and skills; it describes fast simulation, diverse tactics, trophies, and achievements. The page was retrieved on 2026-08-22: https://play.google.com/store/apps/details?id=com.babuyo.footy.tc.android&hl=en_US
+- Apple App Store US: repeats the Player/Coach dual-mode description, 15-year-old start, 20-year career, competitions, training, transfers, skills, trophies, and achievements; it also lists in-app diamond and ad-removal purchases. Retrieved 2026-08-22: https://apps.apple.com/us/app/football-rising-star/id1585604439
+- Apple App Store regional Mandarin: repeats the same career loop and publicly lists purchase products, but does not expose server formulas for Player or Versus. Retrieved 2026-08-22: https://apps.apple.com/mo/app/%E8%B6%B3%E7%90%83-%E5%B7%A8%E6%98%9F%E5%B4%9B%E8%B5%B7/id1585604439
+- TapTap community post: explicitly discusses `对战模式` (battle mode), a gold-coin player market, bid persistence/countdown behavior, and a market save artifact. This is community evidence only and must not be treated as an authoritative exploit or official server rule. Retrieved 2026-08-22: https://www.taptap.cn/moment/362746078098883195?group_id=306994
+
+### Planning implications
+
+The official listings support the Player loop but do not provide numeric coefficients. The current code therefore needs a replay/golden-observation harness, versioned formulas, and calibration inputs rather than guessed constants. The TapTap post confirms that Versus economy includes a player market and gold-coin bids, but the described save manipulation is untrusted community content and must not be copied into the product. Safe implementation should model server-authoritative bid leases, escrow, settlement, and audit events instead.
+
+All claims above are source-labeled; no exact Player formula, matchmaking MMR, queue duration, opponent selection rule, or Versus payout table was recovered from these pages.

@@ -1,5 +1,6 @@
 import { GAME_BALANCE } from '../config/game-balance.js';
 import { getRating, MathRandomSource, playMatch, type RandomSource } from './engine.js';
+import { detailedTrainingExpFor } from './player-formulas.js';
 import {
   DETAILED_SKILLS,
   DETAILED_SKILL_LABELS,
@@ -123,7 +124,7 @@ export function trainDetailedSkill(profileInput: PlayerProfile, skill: DetailedS
   if (profile.hp < GAME_BALANCE.detailedTraining.hpCost) throw new Error('HP tidak cukup untuk detailed skill training.');
   const state = profile.detailedSkills![skill];
   const levelBefore = state.level;
-  const expGained = GAME_BALANCE.detailedTraining.expMin + Math.floor(rng.next() * (GAME_BALANCE.detailedTraining.expMaxExclusive - GAME_BALANCE.detailedTraining.expMin));
+  const expGained = detailedTrainingExpFor(rng);
   profile.energy -= GAME_BALANCE.detailedTraining.energyCost;
   profile.hp = Math.max(0, profile.hp - GAME_BALANCE.detailedTraining.hpCost);
   profile.activeTraining = {

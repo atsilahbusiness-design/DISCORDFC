@@ -199,6 +199,7 @@ export interface MatchRecord {
   };
   week?: number;
   injury?: InjuryState;
+  formulaVersion?: string;
 }
 
 export interface LeagueState {
@@ -503,6 +504,38 @@ export interface VersusSeasonReward {
 }
 
 export type VersusCurrency = 'MONEY' | 'COIN';
+export type VersusMarketStatus = 'OPEN' | 'EXPIRED' | 'SETTLED' | 'CANCELLED';
+
+export interface VersusMarketListing {
+  id: string;
+  player: VersusPlayer;
+  sourceClubId: string;
+  currency: 'COIN';
+  openingBid: number;
+  minimumIncrement: number;
+  currentBid?: number;
+  currentBidderId?: string;
+  startsAt: string;
+  endsAt: string;
+  status: VersusMarketStatus;
+  rulesetVersion: string;
+  settledAt?: string;
+  winnerClubId?: string;
+}
+
+export interface VersusMarketState {
+  generatedAt: string;
+  listings: VersusMarketListing[];
+}
+
+export interface VersusWalletReservation {
+  id: string;
+  listingId: string;
+  userId: string;
+  currency: 'COIN';
+  amount: number;
+  createdAt: string;
+}
 
 export interface VersusLedgerEntry {
   id: string;
@@ -513,6 +546,8 @@ export interface VersusLedgerEntry {
   amount: number;
   balanceAfter: number;
   note: string;
+  type?: string;
+  transactionId?: string;
 }
 
 export interface VersusSeason {
@@ -531,6 +566,7 @@ export interface VersusSeason {
   battles: VersusBattle[];
   standings: VersusStanding[];
   rewards: VersusSeasonReward[];
+  market?: VersusMarketState;
 }
 
 export interface VersusMatchmakingTicket {
@@ -540,6 +576,10 @@ export interface VersusMatchmakingTicket {
   queuedAt: string;
   matchedAt?: string;
   groupCode?: string;
+  assignmentId?: string;
+  expiresAt?: string;
+  ratingSnapshot?: number;
+  rosterVersion?: number;
 }
 
 export interface VersusUserSave {
@@ -556,6 +596,7 @@ export interface VersusUserSave {
   season?: VersusSeason;
   history: Array<{ seasonId: string; rank: number; points: number; rewards: VersusSeasonReward }>;
   ledger?: VersusLedgerEntry[];
+  reservations?: VersusWalletReservation[];
 }
 
 export interface EconomyLedgerEntry {
@@ -565,6 +606,7 @@ export interface EconomyLedgerEntry {
   amount: number;
   balanceAfter: number;
   note: string;
+  transactionId?: string;
 }
 
 export interface PlayerProfile {

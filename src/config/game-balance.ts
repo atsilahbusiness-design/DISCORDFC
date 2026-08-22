@@ -77,6 +77,14 @@ export interface GameBalance {
     injuryChance: number;
     cardChance: number;
     redCardChance: number;
+    marketListingCount: number;
+    marketAuctionDurationSeconds: number;
+    marketOpeningBidDivisor: number;
+    marketMinimumIncrement: number;
+    matchmakingTicketTtlSeconds: number;
+    matchmakingInitialRatingWindow: number;
+    matchmakingWindowStep: number;
+    matchmakingWindowEverySeconds: number;
     winReward: { money: number; coin: number; conditionRecovery: number };
     drawReward: { money: number; coin: number; conditionRecovery: number };
     lossReward: { money: number; coin: number; conditionRecovery: number };
@@ -144,6 +152,14 @@ export const GAME_BALANCE: GameBalance = {
     injuryChance: 0.025,
     cardChance: 0.15,
     redCardChance: 0.025,
+    marketListingCount: 6,
+    marketAuctionDurationSeconds: 60,
+    marketOpeningBidDivisor: 1_000,
+    marketMinimumIncrement: 1,
+    matchmakingTicketTtlSeconds: 300,
+    matchmakingInitialRatingWindow: 8,
+    matchmakingWindowStep: 4,
+    matchmakingWindowEverySeconds: 30,
     winReward: { money: 500, coin: 3, conditionRecovery: 1 },
     drawReward: { money: 300, coin: 2, conditionRecovery: 1 },
     lossReward: { money: 180, coin: 1, conditionRecovery: 0 }
@@ -160,7 +176,7 @@ export function assertBalance(balance: GameBalance): void {
   if (balance.weekly.weeksPerSeason < 1 || balance.weekly.maxCareerYear < 1 || balance.detailedTraining.durationWeeks < 1) throw new Error('Weekly progression limits are invalid.');
   if (balance.culture.durationWeeks < 1 || balance.trainer.maxWeeklyGain < 1) throw new Error('Training progression limits are invalid.');
   if (balance.coach.initialAge < 18 || balance.coach.initialApproval < 0 || balance.coach.initialApproval > 100 || balance.coach.eventChance < 0 || balance.coach.eventChance > 1) throw new Error('Coach balance limits are invalid.');
-  if (balance.versus.defaultGroupCapacity < balance.versus.minimumLeagueClubs || balance.versus.minimumLeagueClubs < 2 || balance.versus.matchAttempts < 1 || balance.versus.maxGoalChance >= 1) throw new Error('Versus balance limits are invalid.');
+  if (balance.versus.defaultGroupCapacity < balance.versus.minimumLeagueClubs || balance.versus.minimumLeagueClubs < 2 || balance.versus.matchAttempts < 1 || balance.versus.maxGoalChance >= 1 || balance.versus.marketListingCount < 1 || balance.versus.marketAuctionDurationSeconds < 1 || balance.versus.marketOpeningBidDivisor < 1 || balance.versus.marketMinimumIncrement < 1 || balance.versus.matchmakingTicketTtlSeconds < 1 || balance.versus.matchmakingInitialRatingWindow < 0 || balance.versus.matchmakingWindowStep < 0 || balance.versus.matchmakingWindowEverySeconds < 1) throw new Error('Versus balance limits are invalid.');
 }
 
 assertBalance(GAME_BALANCE);

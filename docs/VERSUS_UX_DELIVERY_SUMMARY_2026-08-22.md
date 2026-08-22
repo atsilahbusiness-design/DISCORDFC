@@ -34,7 +34,7 @@ Dua sumber utama yang lolos verifikasi visual adalah video dedicated `Footy Star
 | Check | Result |
 |---|---|
 | TypeScript build | PASS |
-| Regression tests | 44 passing, 0 failing |
+| Regression tests | 55 passing, 0 failing |
 | Targeted audit | PASS |
 | Production dependency audit | No known vulnerabilities |
 | Diff whitespace | PASS |
@@ -42,7 +42,7 @@ Dua sumber utama yang lolos verifikasi visual adalah video dedicated `Footy Star
 
 ## Batas implementasi yang disengaja
 
-Auction bidding, normal Scout offer generation, Sponsor payout/cooldown, diamond shop spending, player-status improvement, exact matchmaking queue/MMR, opponent selection, Saves/Tackles telemetry, background notifications, dan literal mobile bottom navigation belum diaktifkan sebagai gameplay penuh. Versus assignment now occurs automatically from the ordinary Versus entry point through a transparent `RECOVERY_INFERRED` system-managed abstraction; it does not claim the original queue, MMR, or server-global matching algorithm. Footage membuktikan keberadaan surface tersebut, tetapi tidak memberikan seluruh cost, cooldown, server mutation, persistence, dan formula. Menampilkan tombol yang mengubah balance tanpa ruleset audit akan membuat UX tampak lebih mirip tetapi merusak correctness dan auditability.
+Deal auction kini diaktifkan sebagai gameplay inferred yang diaudit: listing snapshot, countdown, `/versus-bid`, bid reservation, outbid release, expiry, settlement, roster transfer, dan ledger idempotent. Normal Scout offer generation, Sponsor payout/cooldown, diamond shop spending, player-status improvement, exact matchmaking queue/MMR, opponent selection, Saves/Tackles telemetry, background notifications, dan literal mobile bottom navigation belum diaktifkan sebagai gameplay penuh. Versus assignment occurs automatically from the ordinary Versus entry point through a transparent `RECOVERY_INFERRED` system-managed abstraction; it does not claim the original queue, MMR, or server-global matching algorithm. Footage membuktikan keberadaan surface tersebut, tetapi tidak memberikan seluruh cost, cooldown, server mutation, persistence, dan formula. Fitur yang belum memiliki ruleset authoritative tetap read-only agar tidak merusak correctness dan auditability.
 
 Semua formula strength, reward, ranking tie-breaker, auction timing, scout effect, sponsor payout, season cadence, dan network semantics yang tidak dikonfirmasi tetap diberi status `RECOVERY_INFERRED`. Implementasi ini adalah high-fidelity UX reconstruction berbasis footage terverifikasi, bukan klaim pixel-perfect atau protocol parity 1:1.
 
@@ -55,3 +55,14 @@ Semua formula strength, reward, ranking tie-breaker, auction timing, scout effec
 [3]: https://apps.apple.com/us/app/football-rising-star/id1585604439 — Official App Store listing and public battle-mode changelog references.
 
 [4]: https://www.taptap.cn/app/220982/topic?type=video — Football Rising Star community video tab; visible posts were checked and non-Versus videos excluded.
+
+
+## Follow-up implementation: Player calibration and Versus economy
+
+The latest follow-up adds a versioned Player formula module at `src/domain/player-formulas.ts`. Player match records now carry `formulaVersion`, training EXP and match reward calculations use centralized pure functions, and `tools/calibrate-player-formulas.ts` produces deterministic DISCORDFC probes. These probes are explicitly `PROBE_ONLY`; they are not observations of the original client and do not justify an official parity claim.
+
+Versus now has a functional inferred Deal surface. New season state generates system roster snapshot listings with countdowns; `/versus-bid listing_id:<id> amount:<coin>` validates minimum bid, prevents use of reserved coin, records reservation, releases an outbid reservation, and settles atomically at expiry. Settlement debits the winner, moves the player snapshot to the assigned team, updates roster version, and writes an idempotent Versus ledger event. Scout and Sponsor remain non-mutating because their official cost/effect/cooldown rules are not recovered.
+
+PostgreSQL schema now includes queryable projections for `versus_queue_tickets`, `versus_matches`, `versus_market_listings`, and `versus_wallet_reservations`, while the profile JSONB remains migration-compatible. The adapter mirrors Versus ledger entries and projections in the same CAS transaction as profile persistence. The pure queue matcher carries rating and roster snapshots, TTL, widening rating window, deterministic assignment, and expiry; the current public entry remains `/versus-profile`/Versus Home.
+
+Latest local verification after these changes: 55 tests passing, build PASS. Final production audit and push are required before delivery.

@@ -1,58 +1,61 @@
 # DISCORDFC Stress Simulation Report
 
-Generated: 2026-08-22T07:05:33.990Z
+Generated: 2026-08-22T11:26:57.298Z
 
 Result: **PASS**
 
-The harness executed **25 trials per mode**, with 60 Player weeks per trial, 2 Coach seasons per trial, and Versus capacity 8. Total domain actions: **9562**.
+The harness executed **300 trials per mode**, with 60 Player weeks per trial, 2 Coach seasons per trial, and Versus capacity 8. Total domain actions: **115770**.
 
 | Mode | Trials | Successful | Failed | Actions | Invariant checks | Invariant failures | Determinism checks | Determinism failures |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| PLAYER | 25 | 25 | 0 | 4572 | 1525 | 0 | 25 | 0 |
-| COACH | 25 | 25 | 0 | 4390 | 1950 | 0 | 25 | 0 |
-| VERSUS | 25 | 25 | 0 | 600 | 700 | 0 | 25 | 0 |
+| PLAYER | 300 | 300 | 0 | 54637 | 18300 | 0 | 25 | 0 |
+| COACH | 300 | 300 | 0 | 52733 | 23400 | 0 | 25 | 0 |
+| VERSUS | 300 | 300 | 0 | 8400 | 10800 | 0 | 25 | 0 |
 
 ## Aggregated metrics
 
 ### PLAYER
 
-- **awards:** 150
-- **cultureStudies:** 100
-- **draw:** 571
+- **awards:** 1800
+- **cultureStudies:** 1200
+- **draw:** 6998
 - **draws:** 0
-- **injuries:** 115
-- **loss:** 360
+- **injuries:** 1373
+- **loss:** 4567
 - **losses:** 0
-- **matches:** 1452
-- **trainingOrders:** 1405
-- **weeks:** 1500
-- **win:** 521
+- **matches:** 17358
+- **trainingOrders:** 16706
+- **weeks:** 18000
+- **win:** 5793
 - **wins:** 0
 
 ### COACH
 
 - **boardFailures:** 0
-- **boardSuccesses:** 50
-- **draw:** 579
+- **boardSuccesses:** 42
+- **draw:** 7040
 - **draws:** 0
-- **events:** 1080
-- **halftimeChecks:** 1900
-- **loss:** 860
+- **events:** 13066
+- **fullStandingsChecks:** 600
+- **halftimeChecks:** 22800
+- **loss:** 10183
 - **losses:** 0
 - **offers:** 0
-- **rounds:** 1900
-- **seasons:** 50
-- **win:** 461
+- **rounds:** 22800
+- **seasons:** 600
+- **win:** 5577
 - **wins:** 0
 
 ### VERSUS
 
-- **battles:** 1400
-- **halftimeChecks:** 1400
-- **publishedBattles:** 1400
-- **rewards:** 200
-- **rounds:** 350
-- **standingsChecks:** 350
+- **battles:** 16800
+- **halftimeChecks:** 16800
+- **ledgerChecks:** 1200
+- **publishedBattles:** 16800
+- **rewards:** 2400
+- **rounds:** 4200
+- **standingsChecks:** 4200
+- **submissions:** 1200
 
 ## Failure samples
 
