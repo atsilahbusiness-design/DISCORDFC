@@ -10,7 +10,7 @@ Proyek ini mengembangkan Football Rising Star menjadi pengalaman game berbasis D
 | --- | --- |
 | Player Mode | Profil GK/DF/MF/FW, six macro abilities, twelve detailed skills, weekly progression, training orders, HP/energy, match, manual EXP, injury, trainers, culture, tricks, events, awards, retirement/rebirth |
 | Coach Mode | Enam Coach abilities, roster, seven formations, ten tactics, two-half match, halftime context, 38-round home-away season, full projected league standings, board targets, approval, events, job offers, isolated Champions League aggregate, retirement/rebirth |
-| Versus Mode | Club/roster/wallet terpisah, club dashboard, group-code registration, competition sign-up state, pre-match setup interaktif, legal XI/substitute/captain/formation/tactic submission, roster-version/deadline checks, locked snapshots, fast two-half seeded settlement, result/history, standings, Market Deal/Scout surfaces, Sponsor tiers, Rewards, Schedule, Rankings, Global Ranking, lifecycle state, reward ledger |
+| Versus Mode | Club/roster/wallet terpisah, first-time club identity setup (name/country/symbolic crest), club dashboard, group-code registration, competition sign-up state, pre-match setup interaktif, legal XI/substitute/captain/formation/tactic submission, roster-version/deadline checks, locked snapshots, fast two-half seeded settlement, result/history, standings, Market Deal/Scout surfaces, Sponsor tiers, Rewards, Schedule, Rankings, Global Ranking, lifecycle state, reward ledger |
 | Club | Roster, squad rating, dynamic recovered-league fixtures, formation, tactics, assets, prestige |
 | Competition | Fixture, matchday, standings, promotion/relegation thresholds, Player Champions League, dan Coach Champions League yang state/season/reward-nya terisolasi |
 | Economy | Money, atomic economy ledger, salary, contract, market listing, buy/sell player |
@@ -36,6 +36,7 @@ Proyek ini mengembangkan Football Rising Star menjadi pengalaman game berbasis D
 | `/coach-round`, `/coach-exp`, `/coach-event` | Memainkan round Coach, alokasikan EXP, dan selesaikan event |
 | `/coach-job`, `/coach-retire`, `/coach-rebirth` | Mengelola job offer, retirement, dan rebirth Coach |
 | `/league` atau `/standings` | Melihat klasemen dan progres Player Club season |
+| `/versus-club name:NAME country:CODE crest:KEY` | Membuat atau mengatur identitas club Versus sebelum join group; crest adalah symbolic key Discord, bukan aset client |
 | `/versus-join group_code:CODE` | Membuat atau bergabung dengan Versus group |
 | `/versus-profile`, `/versus-standings` | Membuka Versus Home atau klasemen dengan navigation controls interaktif |
 | Versus Home → `Registration` | Melihat status registrasi, group code, competition, capacity, dan season state |
@@ -61,7 +62,7 @@ Proyek ini mengembangkan Football Rising Star menjadi pengalaman game berbasis D
 | `/admin action:refresh-markets` | Refresh market semua profil, hanya admin |
 | `/help` | Melihat bantuan command |
 
-Setelah `/start` atau `/profile`, dashboard menyediakan tombol **Profile**, **Train**, **Play match**, **Club office**, **Coach Mode**, dan **Versus Mode**. Tombol serta training select terikat pada Discord user pemilik profile sehingga tidak dapat dipakai user lain. Coach Club dan Versus Club tetap terpisah dari Player Club.
+Setelah `/start` atau `/profile`, dashboard menyediakan tombol **Profile**, **Train**, **Play match**, **Club office**, **Coach Mode**, **Versus Mode**, dan **Versus Club Setup**. Versus Club Setup juga tersedia sebagai modal Discord dengan name, country code, dan symbolic crest key sebelum join group. Tombol serta training select terikat pada Discord user pemilik profile sehingga tidak dapat dipakai user lain. Coach Club dan Versus Club tetap terpisah dari Player Club.
 
 ## Data client 2.8.0
 
@@ -120,7 +121,7 @@ pnpm build
 pnpm test
 ```
 
-Test suite saat ini berisi **43 test lulus dan 0 gagal**, mencakup Player/Coach/Versus career, Coach full-league projection, mode isolation, Player/Coach Champions isolation, multi-club fixture, Versus Home/custom-ID ownership, legal Versus lineup submission, two-half settlement, standings, reward ledger idempotency, daily streak, event morale, market cooldown/transfer guard, contract, achievements, rate limiter, command/group queue, interactive components, atomic JSON batch persistence, dan konfigurasi balance.
+Test suite saat ini berisi **44 test lulus dan 0 gagal**, mencakup Player/Coach/Versus career, Coach full-league projection, mode isolation, Player/Coach Champions isolation, multi-club fixture, Versus Home/custom-ID ownership, legal Versus lineup submission, two-half settlement, standings, reward ledger idempotency, daily streak, event morale, market cooldown/transfer guard, contract, achievements, rate limiter, command/group queue, interactive components, atomic JSON batch persistence, dan konfigurasi balance.
 
 Advanced scout dan player-status improvement disebut oleh changelog publik battle mode, tetapi belum diaktifkan sebagai mechanic baru karena harga, offer generation, persistence, dan effect formula tidak tersedia dari bukti publik. Menampilkan UI palsu untuk dua mechanic tersebut akan lebih berisiko daripada menunggu ruleset yang dapat diaudit.
 

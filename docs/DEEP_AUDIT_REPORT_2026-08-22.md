@@ -20,7 +20,7 @@ Audit dilakukan melalui pembacaan statis domain engine dan adapter Discord, penc
 
 | Dimensi | Pemeriksaan | Hasil |
 |---|---|---|
-| Build dan unit/regression | `pnpm build` dan `pnpm test` | **43 passing, 0 failing** |
+| Build dan unit/regression | `pnpm build` dan `pnpm test` | **44 passing, 0 failing** |
 | Stress Player | 300 trial × 60 week | 300/300 sukses; 0 invariant/determinism failure |
 | Stress Coach | 300 trial × 2 season | 300/300 sukses; 0 invariant/determinism failure |
 | Stress Versus | 300 trial × capacity 8 | 300/300 sukses; 0 invariant/determinism failure |

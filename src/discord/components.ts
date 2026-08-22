@@ -2,15 +2,19 @@ import {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
+  ModalBuilder,
   StringSelectMenuBuilder,
-  StringSelectMenuOptionBuilder
+  StringSelectMenuOptionBuilder,
+  TextInputBuilder,
+  TextInputStyle
 } from 'discord.js';
 import { DETAILED_SKILLS, DETAILED_SKILL_LABELS, FORMATIONS, TACTICS, type FormationId, type TacticId, type VersusPlayer } from '../domain/types.js';
 
 function modeControls(userId: string): ActionRowBuilder<ButtonBuilder> {
   return new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder().setCustomId(`frs:${userId}:coach-profile`).setLabel('Coach Mode').setStyle(ButtonStyle.Primary),
-    new ButtonBuilder().setCustomId(`frs:${userId}:versus-home`).setLabel('Versus Mode').setStyle(ButtonStyle.Success)
+    new ButtonBuilder().setCustomId(`frs:${userId}:versus-home`).setLabel('Versus Mode').setStyle(ButtonStyle.Success),
+    new ButtonBuilder().setCustomId(`frs:${userId}:versus-club-setup`).setLabel('Versus Club Setup').setStyle(ButtonStyle.Secondary)
   );
 }
 
@@ -69,6 +73,23 @@ export function versusHomeControls(userId: string, nextLabel = 'Next Battle'): A
       new ButtonBuilder().setCustomId(`frs:${userId}:versus-sponsor`).setLabel('Sponsor').setStyle(ButtonStyle.Secondary)
     )
   ];
+}
+
+export function versusClubSetupModal(userId: string, defaults?: { name?: string; country?: number; crestId?: string }): ModalBuilder {
+  const name = new TextInputBuilder().setCustomId('versus-club-name').setLabel('Club name').setPlaceholder('Contoh: Jakarta Rising').setStyle(TextInputStyle.Short).setMinLength(2).setMaxLength(32).setRequired(true);
+  const country = new TextInputBuilder().setCustomId('versus-club-country').setLabel('Country code').setPlaceholder('Contoh: 62').setStyle(TextInputStyle.Short).setMinLength(1).setMaxLength(4).setRequired(true);
+  const crest = new TextInputBuilder().setCustomId('versus-club-crest').setLabel('Crest key').setPlaceholder('Contoh: crest-1 atau red-star').setStyle(TextInputStyle.Short).setMinLength(2).setMaxLength(32).setRequired(true);
+  if (defaults?.name) name.setValue(defaults.name);
+  if (defaults?.country !== undefined) country.setValue(String(defaults.country));
+  if (defaults?.crestId) crest.setValue(defaults.crestId);
+  return new ModalBuilder()
+    .setCustomId(`frs:${userId}:versus-club-submit`)
+    .setTitle('Create Versus Club')
+    .addComponents(
+      new ActionRowBuilder<TextInputBuilder>().addComponents(name),
+      new ActionRowBuilder<TextInputBuilder>().addComponents(country),
+      new ActionRowBuilder<TextInputBuilder>().addComponents(crest)
+    );
 }
 
 function versusToken(value: string | number): string {

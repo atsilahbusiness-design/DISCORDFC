@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { careerControls, detailedTrainingControls, trainingControls, versusFinalizeControls, versusHomeControls, versusPositionControls, versusSetupControls } from '../src/discord/components.js';
+import { careerControls, detailedTrainingControls, trainingControls, versusClubSetupModal, versusFinalizeControls, versusHomeControls, versusPositionControls, versusSetupControls } from '../src/discord/components.js';
 import { createInitialProfile } from '../src/domain/engine.js';
 import { createVersusClub } from '../src/domain/versus-engine.js';
 
 test('career components are owner-bound and actionable', () => {
   const rows = careerControls('user-1').map((row) => row.toJSON());
   const ids = rows.flatMap((row) => row.components.map((component) => component.custom_id));
-  assert.deepEqual(ids, ['frs:user-1:profile', 'frs:user-1:train', 'frs:user-1:match', 'frs:user-1:club', 'frs:user-1:coach-profile', 'frs:user-1:versus-home']);
+  assert.deepEqual(ids, ['frs:user-1:profile', 'frs:user-1:train', 'frs:user-1:match', 'frs:user-1:club', 'frs:user-1:coach-profile', 'frs:user-1:versus-home', 'frs:user-1:versus-club-setup']);
   assert.equal(ids.every((id) => id.startsWith('frs:user-1:')), true);
 });
 
@@ -28,6 +28,10 @@ test('Versus Home and lineup controls preserve owner, battle, and roster context
   const home = versusHomeControls('user-4').flatMap((row) => row.toJSON().components.map((component) => component.custom_id));
   assert.equal(home.every((id) => id?.startsWith('frs:user-4:')), true);
   for (const action of ['versus-registration', 'versus-market', 'versus-rewards', 'versus-schedule', 'versus-rankings', 'versus-global-ranking']) assert.ok(home.includes(`frs:user-4:${action}`));
+  const modal = versusClubSetupModal('user-4', { name: 'Jakarta Rising', country: 62, crestId: 'red-star' }).toJSON();
+  assert.equal(modal.custom_id, 'frs:user-4:versus-club-submit');
+  assert.deepEqual(modal.components?.map((row) => row.components[0].custom_id), ['versus-club-name', 'versus-club-country', 'versus-club-crest']);
+  assert.deepEqual(modal.components?.map((row) => row.components[0].value), ['Jakarta Rising', '62', 'red-star']);
 });
 
 test('training component exposes all six abilities', () => {

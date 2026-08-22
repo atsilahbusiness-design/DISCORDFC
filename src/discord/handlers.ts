@@ -1,4 +1,4 @@
-import { ButtonInteraction, ChatInputCommandInteraction, EmbedBuilder, StringSelectMenuInteraction, type ColorResolvable } from 'discord.js';
+import { ButtonInteraction, ChatInputCommandInteraction, EmbedBuilder, ModalSubmitInteraction, StringSelectMenuInteraction, type ColorResolvable } from 'discord.js';
 import { createInitialProfile, formatAbility, getRating, playMatch, recoverPlayer, trainPlayer } from '../domain/engine.js';
 import { ensureClubState, finishSeason, formatClubStanding, getClubRating, getNextClubFixture, playClubMatch, setClubFormation, setClubTactic } from '../domain/club-engine.js';
 import { buyMarketPlayer, claimDailyReward, formatMoney, generateDailyEvent, refreshMarket, resolveDailyEvent, sellClubPlayer } from '../domain/progression-engine.js';
@@ -7,10 +7,10 @@ import { advanceWeek, assignMatchExp, ensureGameplayState, formatDetailedSkills,
 import { formatContract, getContractStatus, renewContract, signContract } from '../domain/contract-engine.js';
 import { joinOfficialClub, listOfficialClubs } from '../domain/official-club-engine.js';
 import { acceptJobOffer, advanceCoachRound, assignCoachExp, createCoachCareer, declineJobOffer, formatCoachProfile, generateJobOffer, rebirthCoach, resolveCoachEvent, retireCoach, settleCoachSeason } from '../domain/coach-career-engine.js';
-import { createVersusClub, createVersusSeason, enrollVersus, formatVersusBattle, getVersusStandings, processVersusRound, settleVersusSeason, submitVersusLineup, syncVersusProfileWithSeason } from '../domain/versus-engine.js';
+import { configureVersusClub, createVersusClub, createVersusSeason, enrollVersus, formatVersusBattle, getVersusStandings, processVersusRound, settleVersusSeason, submitVersusLineup, syncVersusProfileWithSeason } from '../domain/versus-engine.js';
 import { ABILITY_LABELS, COACH_ABILITIES, COACH_ABILITY_LABELS, DETAILED_SKILL_LABELS, DETAILED_SKILLS, FORMATIONS, HONOR_CATEGORY_LABELS, POSITION_LABELS, TACTICS, TRAINER_CATALOG, TRICK_CATALOG, type AbilityId, type CoachAbilityId, type CultureSubject, type DetailedSkillId, type FormationId, type PlayerProfile, type Position, type TacticId, type VersusSeason } from '../domain/types.js';
 import type { BatchPlayerStore, PlayerStore, VersusGroupLockStore } from '../storage/json-store.js';
-import { careerControls, detailedTrainingControls, trainingControls, versusFinalizeControls, versusHomeControls, versusMarketControls, versusPositionControls, versusRankingControls, versusSetupControls, versusSponsorControls } from './components.js';
+import { careerControls, detailedTrainingControls, trainingControls, versusClubSetupModal, versusFinalizeControls, versusHomeControls, versusMarketControls, versusPositionControls, versusRankingControls, versusSetupControls, versusSponsorControls } from './components.js';
 import { log } from '../observability/logger.js';
 
 const BRAND_COLOR: ColorResolvable = '#1f8b4c';
@@ -143,6 +143,7 @@ function versusHomeEmbed(profile: PlayerProfile, season?: VersusSeason): EmbedBu
     .setTitle(`${club.name} · Versus Home`)
     .setDescription(`Group **${versus.groupCode ?? '-'}** · Season **${season?.id ?? versus.season?.id ?? '-'}**\n${season ? `Round **${Math.min(season.currentRound, totalRounds)}/${totalRounds}**` : 'Season belum aktif'}`)
     .addFields(
+      { name: 'Club identity', value: `${club.name}\nCountry ${club.country} · Crest ${club.crestId ?? 'default'}`, inline: true },
       { name: 'Record', value: `${club.wins}-${club.draws}-${club.losses} · ${club.goalsFor}-${club.goalsAgainst}`, inline: true },
       { name: 'Standing', value: standing ? `#${standing.rank} · ${standing.points} pts · GD ${standing.goalDifference}` : '-', inline: true },
       { name: 'Versus wallet', value: `${formatMoney(versus.versusMoney)} money · ${versus.versusCoin} coin`, inline: true },
@@ -676,6 +677,19 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
       return;
     }
 
+    if (command === 'versus-club') {
+      const profile = await requireProfile(interaction, store);
+      if (!profile) return;
+      const name = interaction.options.getString('name', true);
+      const country = interaction.options.getInteger('country', true);
+      const crestId = interaction.options.getString('crest', true);
+      const updated = configureVersusClub(profile, { name, country, crestId }, new Date());
+      await store.save(updated);
+      const club = updated.versus!.club;
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle('Versus Club Created').setDescription(`**${club.name}** siap masuk ke Versus competition.`).addFields({ name: 'Country', value: `${club.country}`, inline: true }, { name: 'Crest key', value: club.crestId ?? '-', inline: true }, { name: 'Starting balance', value: `${formatMoney(club.versusMoney)} money · ${club.versusCoin} coin`, inline: true }, { name: 'Next step', value: 'Gunakan `/versus-join group_code:<code>` untuk mendaftar ke competition.' }).setFooter({ text: 'Crest key adalah simbol Discord, bukan aset proprietary client.' })], components: careerControls(interaction.user.id) });
+      return;
+    }
+
     if (command === 'versus-join') {
       const profile = await requireProfile(interaction, store);
       if (!profile) return;
@@ -918,7 +932,7 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
     }
 
     if (command === 'help') {
-      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle('Football Rising Star — Panduan').setDescription('Bangun karier pemain dan kelola klub melalui loop mingguan yang terinspirasi dari gameplay publik dan client recovery. Formula yang belum memiliki method body resmi tetap diberi label RECOVERY_INFERRED.').addFields({ name: 'Player Mode', value: '`/start`, `/profile`, `/skills`, `/train-skill`, `/assign-exp`, `/match`, `/next-week`, `/league`' }, { name: 'Player progression', value: '`/injury`, `/trick`, `/trainer`, `/culture`, `/honors`, `/world-footballer`, `/retire`, `/rebirth`' }, { name: 'Coach Mode', value: '`/coach-career`, `/coach-profile`, `/coach-round`, `/coach-exp`, `/coach-event`, `/coach-job`, `/coach-retire`, `/coach-rebirth`' }, { name: 'Versus Mode', value: '`/versus-join`, `/versus-profile` → Versus Home, `/versus-roster`, `/versus-lineup`, `/versus-round`, `/versus-standings`, `/versus-season` — asynchronous group league dengan pre-match setup interaktif' }, { name: 'Club & economy', value: '`/club`, `/squad`, `/formation`, `/tactic`, `/club-match`, `/standings`, `/season-end`, `/daily`, `/event`, `/market`, `/buy-player`, `/sell-player`, `/contract`' })] });
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle('Football Rising Star — Panduan').setDescription('Bangun karier pemain dan kelola klub melalui loop mingguan yang terinspirasi dari gameplay publik dan client recovery. Formula yang belum memiliki method body resmi tetap diberi label RECOVERY_INFERRED.').addFields({ name: 'Player Mode', value: '`/start`, `/profile`, `/skills`, `/train-skill`, `/assign-exp`, `/match`, `/next-week`, `/league`' }, { name: 'Player progression', value: '`/injury`, `/trick`, `/trainer`, `/culture`, `/honors`, `/world-footballer`, `/retire`, `/rebirth`' }, { name: 'Coach Mode', value: '`/coach-career`, `/coach-profile`, `/coach-round`, `/coach-exp`, `/coach-event`, `/coach-job`, `/coach-retire`, `/coach-rebirth`' }, { name: 'Versus Mode', value: '`/versus-club` → `/versus-join` → `/versus-profile`/Versus Home, `/versus-roster`, `/versus-lineup`, `/versus-round`, `/versus-standings`, `/versus-season` — asynchronous group league dengan club identity, pre-match setup, dan deadline guards' }, { name: 'Club & economy', value: '`/club`, `/squad`, `/formation`, `/tactic`, `/club-match`, `/standings`, `/season-end`, `/daily`, `/event`, `/market`, `/buy-player`, `/sell-player`, `/contract`' })] });
       return;
     }
 
@@ -939,9 +953,36 @@ function componentOwner(customId: string, userId: string): string {
   return action;
 }
 
+export async function handleModal(interaction: ModalSubmitInteraction, store: PlayerStore): Promise<void> {
+  try {
+    const action = componentOwner(interaction.customId, interaction.user.id);
+    if (action !== 'versus-club-submit') throw new Error('Modal Versus tidak dikenal.');
+    await interaction.deferReply({ ephemeral: true });
+    const profile = await store.get(interaction.user.id);
+    if (!profile) throw new Error('Profil belum dibuat. Jalankan `/start position:<GK|DF|MF|FW>` terlebih dahulu.');
+    const name = interaction.fields.getTextInputValue('versus-club-name');
+    const country = Number(interaction.fields.getTextInputValue('versus-club-country'));
+    const crestId = interaction.fields.getTextInputValue('versus-club-crest');
+    const updated = configureVersusClub(profile, { name, country, crestId }, new Date());
+    await store.save(updated);
+    const club = updated.versus!.club;
+    await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle('Versus Club Created').setDescription(`**${club.name}** siap masuk ke Versus competition.`).addFields({ name: 'Country', value: `${club.country}`, inline: true }, { name: 'Crest key', value: club.crestId ?? '-', inline: true }, { name: 'Starting balance', value: `${formatMoney(club.versusMoney)} money · ${club.versusCoin} coin`, inline: true }, { name: 'Next step', value: 'Gunakan `/versus-join group_code:<code>` untuk mendaftar ke competition.' }).setFooter({ text: 'Crest key adalah simbol Discord, bukan aset proprietary client.' })], components: careerControls(interaction.user.id) });
+  } catch (error) {
+    log('error', 'modal_failed', { customId: interaction.customId, userId: interaction.user.id, error });
+    const message = error instanceof Error ? error.message : 'Terjadi kesalahan internal.';
+    if (interaction.replied || interaction.deferred) await interaction.followUp({ content: message, ephemeral: true });
+    else await interaction.reply({ content: message, ephemeral: true });
+  }
+}
+
 export async function handleComponent(interaction: ButtonInteraction | StringSelectMenuInteraction, store: PlayerStore): Promise<void> {
   try {
     const action = componentOwner(interaction.customId, interaction.user.id);
+    if (action === 'versus-club-setup') {
+      const profile = await store.get(interaction.user.id);
+      await interaction.showModal(versusClubSetupModal(interaction.user.id, profile?.versus?.club ? { name: profile.versus.club.name, country: profile.versus.club.country, crestId: profile.versus.club.crestId } : undefined));
+      return;
+    }
     await interaction.deferReply({ ephemeral: true });
     const profile = await store.get(interaction.user.id);
     if (!profile) throw new Error('Profil belum dibuat. Jalankan `/start position:<GK|DF|MF|FW>` terlebih dahulu.');

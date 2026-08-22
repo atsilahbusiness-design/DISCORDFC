@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createInitialProfile, SeededRandom } from '../src/domain/engine.js';
-import { createVersusSeason, enrollVersus, getVersusStandings, processVersusRound, settleVersusSeason, submitVersusLineup, syncVersusProfileWithSeason } from '../src/domain/versus-engine.js';
+import { configureVersusClub, createVersusSeason, createVersusClub, enrollVersus, getVersusStandings, processVersusRound, settleVersusSeason, submitVersusLineup, syncVersusProfileWithSeason } from '../src/domain/versus-engine.js';
 import type { PlayerProfile } from '../src/domain/types.js';
 
 function makeMembers(): PlayerProfile[] {
@@ -10,6 +10,19 @@ function makeMembers(): PlayerProfile[] {
     enrollVersus(createInitialProfile('versus-b', 'Versus B', 'MF'), 'GROUP-42', new Date('2026-01-01T00:00:00.000Z'))
   ];
 }
+
+test('Versus club creation persists identity before enrollment and preserves mode isolation', () => {
+  const initial = createInitialProfile('versus-identity', 'Identity Player', 'MF');
+  const configured = configureVersusClub(initial, { name: 'Jakarta Rising', country: 62, crestId: 'red-star' }, new Date('2026-01-01T00:00:00.000Z'));
+  assert.equal(configured.versus?.club.name, 'Jakarta Rising');
+  assert.equal(configured.versus?.club.country, 62);
+  assert.equal(configured.versus?.club.crestId, 'red-star');
+  assert.equal(configured.clubState, undefined);
+  assert.equal(configured.coach, undefined);
+  assert.equal(initial.versus, undefined);
+  assert.throws(() => configureVersusClub(enrollVersus(configured, 'GROUP-42', new Date('2026-01-01T00:00:00.000Z')), { name: 'Changed', country: 62, crestId: 'blue-star' }), /sebelum club masuk/);
+  assert.throws(() => configureVersusClub(createVersusClub(initial), { name: 'x', country: 62, crestId: 'red-star' }), /Nama club Versus/);
+});
 
 test('Versus creates an isolated multi-club home-away season', () => {
   const [first, second] = makeMembers();

@@ -18,7 +18,7 @@ Dua sumber utama yang lolos verifikasi visual adalah video dedicated `Footy Star
 |---|---|
 | Three-mode selector dan Versus entry | Versus Mode tetap aggregate terpisah dan dapat dibuka melalui mode control/dashboard. |
 | Club dashboard | Versus Home menampilkan club, group, season, round, record, rank, wallet, next battle, deadline, dan submission state. |
-| Registration / Sign-up | Registration surface menampilkan group code, competition, capacity, season state, club, round, dan next action. |
+| Club creation / Registration / Sign-up | `/versus-club` dan modal setup menangkap name, country code, symbolic crest key sebelum group registration; registration surface menampilkan group code, competition, capacity, season state, club, round, dan next action. |
 | Market / Deal / Scout | Home memiliki Market, Market memiliki tab Deal/Scout, dan roster/valuation ditampilkan sebagai read-only preview. |
 | Next match / preview | Next Battle membuka pre-match preview dengan opponent, estimated club rating, attack/defence, deadline, roster version, formation, dan tactic. Nilai rating ditandai `RECOVERY_INFERRED`. |
 | Pitch lineup | Formation select, tactic select, position-group XI selectors, captain, substitutes, review, dan confirm submission tersedia melalui Discord components. |
@@ -34,7 +34,7 @@ Dua sumber utama yang lolos verifikasi visual adalah video dedicated `Footy Star
 | Check | Result |
 |---|---|
 | TypeScript build | PASS |
-| Regression tests | 43 passing, 0 failing |
+| Regression tests | 44 passing, 0 failing |
 | Targeted audit | PASS |
 | Production dependency audit | No known vulnerabilities |
 | Diff whitespace | PASS |
@@ -42,7 +42,7 @@ Dua sumber utama yang lolos verifikasi visual adalah video dedicated `Footy Star
 
 ## Batas implementasi yang disengaja
 
-Auction bidding, normal Scout offer generation, Sponsor payout/cooldown, diamond shop spending, player-status improvement, exact country/logo persistence, Saves/Tackles telemetry, background notifications, dan literal mobile bottom navigation belum diaktifkan sebagai gameplay penuh. Footage membuktikan keberadaan surface tersebut, tetapi tidak memberikan seluruh cost, cooldown, server mutation, persistence, dan formula. Menampilkan tombol yang mengubah balance tanpa ruleset audit akan membuat UX tampak lebih mirip tetapi merusak correctness dan auditability.
+Auction bidding, normal Scout offer generation, Sponsor payout/cooldown, diamond shop spending, player-status improvement, exact country/logo catalog persistence, Saves/Tackles telemetry, background notifications, dan literal mobile bottom navigation belum diaktifkan sebagai gameplay penuh. Safe Versus identity setup (name/country/symbolic crest key) now works before enrollment; it does not ship original artwork or server asset IDs. Footage membuktikan keberadaan surface tersebut, tetapi tidak memberikan seluruh cost, cooldown, server mutation, persistence, dan formula. Menampilkan tombol yang mengubah balance tanpa ruleset audit akan membuat UX tampak lebih mirip tetapi merusak correctness dan auditability.
 
 Semua formula strength, reward, ranking tie-breaker, auction timing, scout effect, sponsor payout, season cadence, dan network semantics yang tidak dikonfirmasi tetap diberi status `RECOVERY_INFERRED`. Implementasi ini adalah high-fidelity UX reconstruction berbasis footage terverifikasi, bukan klaim pixel-perfect atau protocol parity 1:1.
 

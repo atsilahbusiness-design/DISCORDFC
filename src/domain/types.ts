@@ -388,6 +388,8 @@ export interface VersusClub {
   isNpc: boolean;
   grade: number;
   country: number;
+  /** Symbolic crest key; Discord renders text only and ships no proprietary artwork. */
+  crestId?: string;
   rosterVersion: number;
   formation: FormationId;
   tactic: TacticId;
