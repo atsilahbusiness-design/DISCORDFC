@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createInitialProfile, SeededRandom } from '../src/domain/engine.js';
-import { acceptJobOffer, advanceCoachRound, assignCoachExp, createCoachCareer, generateJobOffer, rebirthCoach, retireCoach } from '../src/domain/coach-career-engine.js';
+import { acceptJobOffer, advanceCoachRound, assignCoachExp, createCoachCareer, generateJobOffer, getCoachNextRoundAt, rebirthCoach, retireCoach } from '../src/domain/coach-career-engine.js';
 import { ensureClubState, playClubMatch, projectCoachLeagueStandings } from '../src/domain/club-engine.js';
 import { playChampionsLeague, startChampionsLeague } from '../src/domain/competition-engine.js';
 
@@ -19,6 +19,13 @@ test('Coach career has six abilities, round settlement, and manual EXP', () => {
   assert.equal(round.profile.coachClubState!.fixtures.filter((fixture) => fixture.played).length, 1);
   const allocated = assignCoachExp(round.profile, { formation: Math.min(50, round.profile.coach!.unassignedExp) });
   assert.equal(allocated.profile.coach!.unassignedExp, round.profile.coach!.unassignedExp - allocated.allocated);
+});
+
+test('Coach next-round fallback is deterministic from the supplied reference time', () => {
+  const profile = createCoachCareer(ensureClubState(createInitialProfile('coach-clock', 'Coach Clock', 'MF'), new Date('2026-01-01T00:00:00.000Z'), new SeededRandom(2)), 'Coach Clock', new Date('2026-01-01T00:00:00.000Z'));
+  profile.coachClubState!.fixtures = [];
+  const reference = new Date('2026-04-01T12:00:00.000Z');
+  assert.equal(getCoachNextRoundAt(profile, reference)?.toISOString(), '2026-04-08T12:00:00.000Z');
 });
 
 test('Coach league projection completes non-user standings after the user schedule', () => {

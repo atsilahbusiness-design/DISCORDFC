@@ -443,9 +443,9 @@ export function formatCoachProfile(profileInput: PlayerProfile): string {
   return `**${coach.coachName}** · age ${coach.age} · level ${coach.level}\nStatus **${coach.status}** · approval **${coach.approval}/100** · salary **${coach.salary}**\nUnassigned Coach EXP **${coach.unassignedExp}**\n\n${abilities}\n\nBoard target **${target.type}** · target rank **${target.targetRank}** · current rank **${target.progressRank ?? '-'}**`;
 }
 
-export function getCoachNextRoundAt(profileInput: PlayerProfile): Date | undefined {
+export function getCoachNextRoundAt(profileInput: PlayerProfile, now = new Date()): Date | undefined {
   const coach = coachOrThrow(profileInput);
   if (coach.status !== 'EMPLOYED') return undefined;
   const fixture = profileInput.coachClubState?.fixtures.find((item) => !item.played);
-  return fixture?.playedAt ? new Date(fixture.playedAt) : new Date(Date.now() + WEEK_MS);
+  return fixture?.playedAt ? new Date(fixture.playedAt) : new Date(now.getTime() + WEEK_MS);
 }
