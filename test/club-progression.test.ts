@@ -36,6 +36,17 @@ test('club state creates a roster and can change formation and tactic', () => {
   assert.equal(getClubRating(enriched) > 0, true);
 });
 
+test('club strategy mutations preserve seeded initialization determinism', () => {
+  const input = createInitialProfile('seeded-strategy', 'Seeded Strategy', 'MF');
+  const now = new Date('2026-01-01T00:00:00.000Z');
+  const formationProfile = setClubFormation(input, '4-3-3', now, 'coachClubState', new SeededRandom(17));
+  const tacticProfile = setClubTactic(input, 'attacking', now, 'coachClubState', new SeededRandom(17));
+  assert.deepEqual(formationProfile.coachClubState?.roster, tacticProfile.coachClubState?.roster);
+  assert.deepEqual(formationProfile.coachClubState?.fixtures, tacticProfile.coachClubState?.fixtures);
+  assert.equal(formationProfile.coachClubState?.formation, '4-3-3');
+  assert.equal(tacticProfile.coachClubState?.tactic, 'attacking');
+});
+
 test('club match updates fixture and standings', () => {
   const profile = ensureClubState(createInitialProfile('club-2', 'Match Coach', 'FW'), new Date('2026-01-01T00:00:00.000Z'), new SeededRandom(8));
   const result = playClubMatch(profile, new Date('2026-01-02T00:00:00.000Z'), new SeededRandom(9));

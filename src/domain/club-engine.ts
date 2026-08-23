@@ -218,16 +218,16 @@ export function getClubRating(profile: PlayerProfile, stateField: ClubStateField
   return Math.round(average * (formation.controlMultiplier * tactic.controlMultiplier) + club.level * 2 + club.prestige / 50);
 }
 
-export function setClubFormation(profileInput: PlayerProfile, formation: FormationId, now = new Date(), stateField: ClubStateField = 'clubState'): PlayerProfile {
-  const profile = ensureClubState(profileInput, now, new MathRandomSource(), stateField);
+export function setClubFormation(profileInput: PlayerProfile, formation: FormationId, now = new Date(), stateField: ClubStateField = 'clubState', rng: RandomSource = new MathRandomSource()): PlayerProfile {
+  const profile = ensureClubState(profileInput, now, rng, stateField);
   if (!FORMATIONS[formation]) throw new Error('Formasi tidak dikenal.');
   profile[stateField]!.formation = formation;
   profile.updatedAt = now.toISOString();
   return profile;
 }
 
-export function setClubTactic(profileInput: PlayerProfile, tactic: TacticId, now = new Date(), stateField: ClubStateField = 'clubState'): PlayerProfile {
-  const profile = ensureClubState(profileInput, now, new MathRandomSource(), stateField);
+export function setClubTactic(profileInput: PlayerProfile, tactic: TacticId, now = new Date(), stateField: ClubStateField = 'clubState', rng: RandomSource = new MathRandomSource()): PlayerProfile {
+  const profile = ensureClubState(profileInput, now, rng, stateField);
   if (!TACTICS[tactic]) throw new Error('Taktik tidak dikenal.');
   profile[stateField]!.tactic = tactic;
   profile.updatedAt = now.toISOString();
@@ -406,8 +406,8 @@ export function playClubMatch(profileInput: PlayerProfile, now = new Date(), rng
   };
 }
 
-export function getNextClubFixture(profileInput: PlayerProfile, now = new Date(), stateField: ClubStateField = 'clubState'): ClubFixture | undefined {
-  const profile = ensureClubState(profileInput, now, new MathRandomSource(), stateField);
+export function getNextClubFixture(profileInput: PlayerProfile, now = new Date(), stateField: ClubStateField = 'clubState', rng: RandomSource = new MathRandomSource()): ClubFixture | undefined {
+  const profile = ensureClubState(profileInput, now, rng, stateField);
   return profile[stateField]?.fixtures.find((fixture) => !fixture.played);
 }
 
@@ -445,8 +445,8 @@ export function finishSeason(profileInput: PlayerProfile, now = new Date(), stat
   return profile;
 }
 
-export function formatClubStanding(profileInput: PlayerProfile, now = new Date(), stateField: ClubStateField = 'clubState'): string {
-  const profile = ensureClubState(profileInput, now, new MathRandomSource(), stateField);
+export function formatClubStanding(profileInput: PlayerProfile, now = new Date(), stateField: ClubStateField = 'clubState', rng: RandomSource = new MathRandomSource()): string {
+  const profile = ensureClubState(profileInput, now, rng, stateField);
   return [...(profile[stateField]?.standings ?? [])]
     .sort((a, b) => (b.points - a.points) || ((b.goalsFor - b.goalsAgainst) - (a.goalsFor - a.goalsAgainst)))
     .map((standing, index) => `${index + 1}. ${standing.clubName} — ${standing.points} pts (${standing.wins}-${standing.draws}-${standing.losses})`)

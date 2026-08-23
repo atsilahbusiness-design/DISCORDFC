@@ -111,3 +111,11 @@ The relevant public evidence was rechecked through Apptopia’s version history 
 Latest verification: build PASS; 60 tests PASS; targeted audit PASS; stress simulation PASS for 300 trials per mode with 115,770 actions and zero invariant or determinism failures; dependency audit clean; secret/artifact guard clean.
 
 — Manus AI
+
+## Latest deterministic Club hardening
+
+A residual RNG leak was found in Club helper paths that initialize missing state: formation mutation, tactic mutation, next-fixture lookup, and standing formatting each created a fresh `MathRandomSource`. Each helper now accepts an optional seeded `RandomSource` while preserving all existing call signatures and default behavior. This closes a replay gap when Coach/Club state is first materialized through those paths; it does not change gameplay coefficients or outcomes for existing stored state.
+
+Latest verification: build PASS; 61 tests PASS; targeted audit PASS; stress simulation PASS for 300 trials per mode with 115,770 actions and zero invariant or determinism failures; dependency audit clean; secret/artifact guard clean.
+
+— Manus AI
