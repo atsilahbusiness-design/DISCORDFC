@@ -53,3 +53,9 @@ The final Coach replay mismatch was traced to `createCoachCareer` initializing t
 Final verification after the fix: build PASS; 59 tests PASS; targeted audit PASS; stress simulation PASS for 300 trials per mode with 115,770 actions and zero invariant or determinism failures; dependency audit clean; secret/artifact guard clean.
 
 — Manus AI
+
+## Evidence boundary clarification
+
+Direct extraction of the regional App Store pages for version 2.8.0 shows only the generic release note “Fixed several bugs.” Search-index snippets that mention group code, advanced Scout, or player-status improvement were not treated as independently verified gameplay rules. They remain corroborating metadata only; no implementation of their costs, cooldowns, payouts, or effects is justified.
+
+— Manus AI
