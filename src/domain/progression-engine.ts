@@ -206,8 +206,8 @@ export function refreshMarket(profileInput: PlayerProfile, now = new Date(), for
   return profile;
 }
 
-export function buyMarketPlayer(profileInput: PlayerProfile, listingId: string, now = new Date()): { profile: PlayerProfile; listing: MarketListing } {
-  const profile = ensureClubState(profileInput, now);
+export function buyMarketPlayer(profileInput: PlayerProfile, listingId: string, now = new Date(), rng: RandomSource = new MathRandomSource()): { profile: PlayerProfile; listing: MarketListing } {
+  const profile = ensureClubState(profileInput, now, rng);
   profile.market ??= [];
   const listing = profile.market.find((item) => item.id === listingId && item.status === 'OPEN');
   if (!listing) throw new Error('Listing tidak ditemukan atau sudah tidak tersedia.');
@@ -223,8 +223,8 @@ export function buyMarketPlayer(profileInput: PlayerProfile, listingId: string, 
   return { profile, listing };
 }
 
-export function sellClubPlayer(profileInput: PlayerProfile, playerId: string, now = new Date()): { profile: PlayerProfile; price: number; player: ClubPlayer } {
-  const profile = ensureClubState(profileInput, now);
+export function sellClubPlayer(profileInput: PlayerProfile, playerId: string, now = new Date(), rng: RandomSource = new MathRandomSource()): { profile: PlayerProfile; price: number; player: ClubPlayer } {
+  const profile = ensureClubState(profileInput, now, rng);
   const playerIndex = profile.clubState!.roster.findIndex((player) => player.id === playerId && !player.isUserPlayer);
   if (playerIndex === -1) throw new Error('Pemain tidak ditemukan atau pemain utama tidak dapat dijual.');
   const [player] = profile.clubState!.roster.splice(playerIndex, 1);

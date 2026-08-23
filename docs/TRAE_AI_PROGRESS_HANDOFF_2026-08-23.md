@@ -153,3 +153,13 @@ Direct public evidence was rechecked through the official App Store listing and 
 Latest verification: build PASS; 63 tests PASS; targeted audit PASS; stress simulation PASS for 300 trials per mode with 115,770 actions and zero invariant or determinism failures; dependency audit clean; secret/artifact guard clean.
 
 — Manus AI
+
+## Latest Player transfer-market determinism hardening
+
+The Player transfer-market buy and sell helpers now accept an optional seeded `RandomSource` and forward it when they materialize missing Club state. Existing callers retain their argument order and default behavior. Prices, market availability, roster limits, and economy rules were not changed; this only closes a replay gap for first-time state initialization.
+
+Direct evidence was rechecked through the official App Store listing and Apptopia version history. Public metadata supports battle/Versus feature history and historical fixes, but does not disclose server formulas, MMR, transfer prices, cooldowns, or payout rules. Those remain unimplemented unless independently verified.
+
+Latest verification: build PASS; 63 tests PASS; targeted audit PASS; stress simulation PASS for 300 trials per mode with 115,770 actions and zero invariant or determinism failures; dependency audit clean; secret/artifact guard clean.
+
+— Manus AI
