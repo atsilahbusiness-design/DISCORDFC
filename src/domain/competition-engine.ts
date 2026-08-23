@@ -54,8 +54,8 @@ function competitionClub(profile: PlayerProfile, mode: ChampionsLeagueMode) {
   return club;
 }
 
-export function startChampionsLeague(profileInput: PlayerProfile, now = new Date(), mode: ChampionsLeagueMode = 'PLAYER'): PlayerProfile {
-  const profile = ensureClubState(profileInput, now, undefined, mode === 'COACH' ? 'coachClubState' : 'clubState');
+export function startChampionsLeague(profileInput: PlayerProfile, now = new Date(), mode: ChampionsLeagueMode = 'PLAYER', rng: RandomSource = new MathRandomSource()): PlayerProfile {
+  const profile = ensureClubState(profileInput, now, rng, mode === 'COACH' ? 'coachClubState' : 'clubState');
   if (mode === 'COACH' && profile.coach?.status !== 'EMPLOYED') throw new Error('Coach harus employed untuk mengikuti Champions League.');
   const club = competitionClub(profile, mode);
   if (!club.championsLeagueQualified) throw new Error('Klub belum lolos Champions League. Selesaikan season dengan poin kualifikasi terlebih dahulu.');
@@ -79,7 +79,7 @@ export function startChampionsLeague(profileInput: PlayerProfile, now = new Date
 }
 
 export function playChampionsLeague(profileInput: PlayerProfile, now = new Date(), rng: RandomSource = new MathRandomSource(), mode: ChampionsLeagueMode = 'PLAYER'): { profile: PlayerProfile; homeGoals: number; awayGoals: number; status: ChampionsLeagueState['status']; commentary: string[] } {
-  const profile = startChampionsLeague(profileInput, now, mode);
+  const profile = startChampionsLeague(profileInput, now, mode, rng);
   const club = competitionClub(profile, mode);
   const state = competitionState(profile, mode)!;
   const rosterRating = club.roster.length ? club.roster.reduce((sum, player) => sum + player.overall, 0) / club.roster.length : 50;

@@ -121,3 +121,11 @@ A residual RNG leak was found in `rebirthCoach`: rebuilding the Coach club used 
 Latest verification: build PASS; 63 tests PASS; targeted audit PASS; stress simulation PASS for 300 trials per mode with 115,770 actions and zero invariant or determinism failures; dependency audit clean; secret/artifact guard clean.
 
 — Manus AI
+
+## Latest Champions League determinism hardening
+
+A remaining initialization gap was found in the Champions League path: `playChampionsLeague` accepted a seeded RNG, but `startChampionsLeague` materialized a missing Club state with a fresh default RNG. `startChampionsLeague` now accepts an optional `RandomSource`, and the play path forwards the same RNG. Existing callers retain their previous argument order and default behavior; no competition coefficient or reward was changed.
+
+Latest verification: build PASS; 63 tests PASS; targeted audit PASS; stress simulation PASS for 300 trials per mode with 115,770 actions and zero invariant or determinism failures; dependency audit clean; secret/artifact guard clean.
+
+— Manus AI
