@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createInitialProfile, SeededRandom } from '../src/domain/engine.js';
-import { ensureClubState, getClubRating, playClubMatch, setClubFormation, setClubTactic } from '../src/domain/club-engine.js';
+import { ensureClubState, formatClubStanding, getClubRating, playClubMatch, setClubFormation, setClubTactic } from '../src/domain/club-engine.js';
 import { joinOfficialClub, listOfficialClubs } from '../src/domain/official-club-engine.js';
 import { buyMarketPlayer, claimDailyReward, generateDailyEvent, refreshMarket, resolveDailyEvent, sellClubPlayer } from '../src/domain/progression-engine.js';
 
@@ -45,6 +45,22 @@ test('club strategy mutations preserve seeded initialization determinism', () =>
   assert.deepEqual(formationProfile.coachClubState?.fixtures, tacticProfile.coachClubState?.fixtures);
   assert.equal(formationProfile.coachClubState?.formation, '4-3-3');
   assert.equal(tacticProfile.coachClubState?.tactic, 'attacking');
+});
+
+test('formatted club standings use a stable tie-breaker', () => {
+  const now = new Date('2026-01-01T00:00:00.000Z');
+  const profile = ensureClubState(createInitialProfile('standing-order', 'Standing Order', 'MF'), now, new SeededRandom(19));
+  for (const standing of profile.clubState!.standings) {
+    standing.points = 10;
+    standing.wins = 3;
+    standing.draws = 1;
+    standing.losses = 0;
+    standing.goalsFor = 4;
+    standing.goalsAgainst = 2;
+  }
+  const expected = [...profile.clubState!.standings].map((standing) => standing.clubId).sort();
+  const names = formatClubStanding(profile, now).split('\n').map((line) => line.split('. ')[1]!.split(' — ')[0]);
+  assert.deepEqual(names, expected);
 });
 
 test('club match updates fixture and standings', () => {

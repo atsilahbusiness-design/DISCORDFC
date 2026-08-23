@@ -105,3 +105,11 @@ A residual RNG leak was found in Club helper paths that initialize missing state
 Latest verification: build PASS; 61 tests PASS; targeted audit PASS; stress simulation PASS for 300 trials per mode with 115,770 actions and zero invariant or determinism failures; dependency audit clean; secret/artifact guard clean.
 
 — Manus AI
+
+## Latest deterministic standings hardening
+
+The Club standing formatter previously stopped tie-breaking after points and goal difference. It now follows the deterministic order used by Versus standings: points, goal difference, goals scored, then stable club ID. A regression test covers equal-stat rows. The test initially exposed a missing import and an incorrect newline literal; both were corrected before final verification. No competitive formula was changed.
+
+Latest verification: build PASS; 62 tests PASS; targeted audit PASS; stress simulation PASS for 300 trials per mode with 115,770 actions and zero invariant or determinism failures; dependency audit clean; secret/artifact guard clean.
+
+— Manus AI

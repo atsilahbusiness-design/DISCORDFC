@@ -448,7 +448,7 @@ export function finishSeason(profileInput: PlayerProfile, now = new Date(), stat
 export function formatClubStanding(profileInput: PlayerProfile, now = new Date(), stateField: ClubStateField = 'clubState', rng: RandomSource = new MathRandomSource()): string {
   const profile = ensureClubState(profileInput, now, rng, stateField);
   return [...(profile[stateField]?.standings ?? [])]
-    .sort((a, b) => (b.points - a.points) || ((b.goalsFor - b.goalsAgainst) - (a.goalsFor - a.goalsAgainst)))
+    .sort((a, b) => (b.points - a.points) || ((b.goalsFor - b.goalsAgainst) - (a.goalsFor - a.goalsAgainst)) || (b.goalsFor - a.goalsFor) || a.clubId.localeCompare(b.clubId))
     .map((standing, index) => `${index + 1}. ${standing.clubName} — ${standing.points} pts (${standing.wins}-${standing.draws}-${standing.losses})`)
     .join('\n');
 }
