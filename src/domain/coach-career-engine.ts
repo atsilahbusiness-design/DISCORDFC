@@ -403,7 +403,7 @@ export function retireCoach(profileInput: PlayerProfile, now = new Date()): Play
   return profile;
 }
 
-export function rebirthCoach(profileInput: PlayerProfile, now = new Date()): PlayerProfile {
+export function rebirthCoach(profileInput: PlayerProfile, now = new Date(), rng: RandomSource = new MathRandomSource()): PlayerProfile {
   const profile = clone(profileInput);
   const oldCoach = coachOrThrow(profile);
   if (oldCoach.status !== 'RETIRED') throw new Error('Coach harus pensiun sebelum rebirth.');
@@ -412,7 +412,7 @@ export function rebirthCoach(profileInput: PlayerProfile, now = new Date()): Pla
   const previousCoachClub = coachClubName(profile);
   delete profile.coachClubState;
   const seed = { ...profile, club: previousCoachClub };
-  const rebuiltState = ensureClubState(seed, now, new MathRandomSource(), 'coachClubState');
+  const rebuiltState = ensureClubState(seed, now, rng, 'coachClubState');
   profile.coachClubState = rebuiltState.coachClubState;
   const abilities = defaultCoachAbilities();
   for (const id of COACH_ABILITIES) abilities[id].level += bonusLevels;

@@ -113,3 +113,11 @@ The Club standing formatter previously stopped tie-breaking after points and goa
 Latest verification: build PASS; 62 tests PASS; targeted audit PASS; stress simulation PASS for 300 trials per mode with 115,770 actions and zero invariant or determinism failures; dependency audit clean; secret/artifact guard clean.
 
 — Manus AI
+
+## Latest Coach rebirth hardening
+
+A residual RNG leak was found in `rebirthCoach`: rebuilding the Coach club used a fresh `MathRandomSource`, so two replays with the same intended seed could produce different rosters. `rebirthCoach` now accepts an optional seeded `RandomSource` and forwards it to `ensureClubState`; a regression test covers identical rebuilt roster and fixtures for identical seeds. Existing callers retain default behavior, and no rebirth bonus or gameplay coefficient changed.
+
+Latest verification: build PASS; 63 tests PASS; targeted audit PASS; stress simulation PASS for 300 trials per mode with 115,770 actions and zero invariant or determinism failures; dependency audit clean; secret/artifact guard clean.
+
+— Manus AI

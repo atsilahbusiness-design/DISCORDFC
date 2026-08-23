@@ -74,6 +74,16 @@ test('Coach job acceptance is deterministic with the same seeded RNG', () => {
   assert.deepEqual(first, second);
 });
 
+test('Coach rebirth preserves seeded rebuilt-club determinism', () => {
+  const start = new Date('2026-01-01T00:00:00.000Z');
+  let profile = createCoachCareer(createInitialProfile('coach-rebirth-seeded', 'Seeded Rebirth', 'FW'), 'Seeded Rebirth', start, new SeededRandom(4));
+  profile = retireCoach(profile, new Date('2026-02-01T00:00:00.000Z'));
+  const first = rebirthCoach(profile, new Date('2026-02-02T00:00:00.000Z'), new SeededRandom(31));
+  const second = rebirthCoach(profile, new Date('2026-02-02T00:00:00.000Z'), new SeededRandom(31));
+  assert.deepEqual(first.coachClubState?.roster, second.coachClubState?.roster);
+  assert.deepEqual(first.coachClubState?.fixtures, second.coachClubState?.fixtures);
+});
+
 test('Coach job, retirement, and rebirth preserve Player state while changing Coach state', () => {
   let profile = createCoachCareer(ensureClubState(createInitialProfile('coach-2', 'Coach Two', 'FW')), 'Coach Two');
   const playerClub = profile.club;
