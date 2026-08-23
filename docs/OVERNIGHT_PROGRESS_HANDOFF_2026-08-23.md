@@ -87,3 +87,13 @@ Public evidence was rechecked through Apptopia’s version history and official 
 Latest verification: build PASS; 60 tests PASS; targeted audit PASS; 300 trials per mode PASS; 115,770 actions; zero invariant and determinism failures; dependency audit clean; secret/artifact guard clean.
 
 — Manus AI
+
+## Latest safe UX correction
+
+The Versus Market embed now distinguishes available coin from total wallet coin and reserved escrow. It calls `availableVersusCoin(profile)` instead of presenting the total wallet as “Available coin”. This is a presentation/accounting correction only and does not alter auction rules or introduce unsupported economics.
+
+The relevant public evidence was rechecked through Apptopia’s version history and the official App Store listing. The public history records Versus in version 2.0.0, group code/advanced Scout/player-status improvements in version 2.1.0, and Versus ranking optimization in version 2.0.34. The current official listing shows version 2.8.0 with generic bug-fix notes. These sources support feature existence/history only; MMR, costs, cooldowns, payouts, and hidden formulas remain unverified and are not invented.
+
+Latest verification: build PASS; 60 tests PASS; targeted audit PASS; stress simulation PASS for 300 trials per mode with 115,770 actions and zero invariant or determinism failures; dependency audit clean; secret/artifact guard clean.
+
+— Manus AI
