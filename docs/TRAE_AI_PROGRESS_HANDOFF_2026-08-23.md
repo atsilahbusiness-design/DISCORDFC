@@ -143,3 +143,13 @@ A remaining initialization gap was found in the Champions League path: `playCham
 Latest verification: build PASS; 63 tests PASS; targeted audit PASS; stress simulation PASS for 300 trials per mode with 115,770 actions and zero invariant or determinism failures; dependency audit clean; secret/artifact guard clean.
 
 — Manus AI
+
+## Latest Champions League replay hardening
+
+The Champions League start path now accepts and forwards the same optional seeded `RandomSource` already used by match simulation. This prevents a missing Club/Coach state from being initialized with an unrelated default RNG before a seeded match begins. Existing callers retain their argument order and defaults; no coefficient, qualification rule, reward, or formula was changed.
+
+Direct public evidence was rechecked through the official App Store listing and Apptopia version history. The evidence supports historical battle/Versus surfaces and fixes for ranking inconsistency, transfer-market profit abuse, battle freezes, season dismissal, and missing Versus assets. It does not disclose server formulas, MMR, costs, cooldowns, or payout rules, so those remain unimplemented unless separately verified.
+
+Latest verification: build PASS; 63 tests PASS; targeted audit PASS; stress simulation PASS for 300 trials per mode with 115,770 actions and zero invariant or determinism failures; dependency audit clean; secret/artifact guard clean.
+
+— Manus AI
