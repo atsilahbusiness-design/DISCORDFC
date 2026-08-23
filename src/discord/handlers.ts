@@ -8,7 +8,7 @@ import { formatContract, getContractStatus, renewContract, signContract } from '
 import { joinOfficialClub, listOfficialClubs } from '../domain/official-club-engine.js';
 import { acceptJobOffer, advanceCoachRound, assignCoachExp, createCoachCareer, declineJobOffer, formatCoachProfile, generateJobOffer, rebirthCoach, resolveCoachEvent, retireCoach, settleCoachSeason } from '../domain/coach-career-engine.js';
 import { assignVersusMatchmaking, createVersusSeason, formatVersusBattle, getVersusStandings, processVersusRound, queueVersusMatchmaking, settleVersusSeason, submitVersusLineup, syncVersusProfileWithSeason } from '../domain/versus-engine.js';
-import { createVersusMarket, placeVersusBid, settleExpiredVersusMarket } from '../domain/versus-economy.js';
+import { availableVersusCoin, createVersusMarket, placeVersusBid, settleExpiredVersusMarket } from '../domain/versus-economy.js';
 import { ABILITY_LABELS, COACH_ABILITIES, COACH_ABILITY_LABELS, DETAILED_SKILL_LABELS, DETAILED_SKILLS, FORMATIONS, HONOR_CATEGORY_LABELS, POSITION_LABELS, TACTICS, TRAINER_CATALOG, TRICK_CATALOG, type AbilityId, type CoachAbilityId, type CultureSubject, type DetailedSkillId, type FormationId, type PlayerProfile, type Position, type TacticId, type VersusSeason } from '../domain/types.js';
 import type { BatchPlayerStore, PlayerStore, VersusGroupLockStore } from '../storage/json-store.js';
 import { careerControls, detailedTrainingControls, trainingControls, versusFinalizeControls, versusHomeControls, versusMarketControls, versusPositionControls, versusRankingControls, versusSetupControls, versusSponsorControls } from './components.js';
@@ -271,7 +271,7 @@ function versusMarketEmbed(profile: PlayerProfile, season: VersusSeason, tab: 'D
     .setTitle(`${profile.versus!.club.name} · Versus Market`)
     .setDescription(`**${tab === 'DEAL' ? 'Deal' : 'Scout'} tab**\n${tab === 'DEAL' ? dealLines || 'Belum ada listing.' : 'Candidate scout akan ditampilkan setelah ruleset Scout terverifikasi.'}\n\n${tab === 'DEAL' ? 'Gunakan `/versus-bid listing_id:<id> amount:<coin>` sebelum countdown berakhir.' : roster || 'Belum ada player.'}`)
     .addFields(
-      { name: 'Available coin', value: `${profile.versus!.versusCoin} total · reservations ${profile.versus!.reservations?.reduce((sum, item) => sum + item.amount, 0) ?? 0}`, inline: true },
+      { name: 'Available coin', value: `${availableVersusCoin(profile)} available · ${profile.versus!.versusCoin} total · reservations ${profile.versus!.reservations?.reduce((sum, item) => sum + item.amount, 0) ?? 0}`, inline: true },
       { name: 'Market state', value: `${listings.filter((listing) => listing.status === 'OPEN').length} open listing(s)`, inline: true },
       { name: 'Economy rule', value: 'Bid memakai reservation; coin baru didebit saat listing settled. Outbid melepaskan reservation secara atomic.' },
       { name: 'Evidence boundary', value: 'Listing, bid, countdown, dan market dapat diamati publik; exact increment, server timer, Scout effect, dan premium economics tetap versioned/inferred.' }
