@@ -67,3 +67,13 @@ Public version history reports that Versus was added in version 2.0.0, and that 
 Latest verification: build PASS; 60 tests PASS; targeted audit PASS; 300 trials per mode PASS; 115,770 actions; zero invariant and determinism failures; dependency audit clean; secret/artifact guard clean.
 
 — Manus AI
+
+## Latest safe UX parity improvement
+
+The Versus Global Ranking embed previously re-sorted standings with only points and goal difference, which could disagree with the canonical standings tie-break when goals scored or club ID decided a tie. It now renders `getVersusStandings()` directly, preserving the canonical rank and limiting the display to the same top-eight surface. This changes presentation consistency only; it does not add a new competitive formula.
+
+Relevant public version history was rechecked through Apptopia. It records Versus as added in version 2.0.0, battle group code/advanced Scout/player-status improvement in version 2.1.0, and Versus ranking optimization in version 2.0.34. These are feature-history signals only; hidden matchmaking, economic, and ranking coefficients remain unverified.
+
+Latest verification: build PASS; 60 tests PASS; targeted audit PASS; stress simulation PASS for 300 trials per mode with 115,770 actions and zero invariant or determinism failures; dependency audit clean; secret/artifact guard clean.
+
+— Manus AI

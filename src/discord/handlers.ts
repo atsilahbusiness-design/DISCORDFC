@@ -330,7 +330,7 @@ function versusRankingsEmbed(season: VersusSeason | undefined, profile: PlayerPr
 }
 
 function versusGlobalRankingEmbed(season: VersusSeason | undefined, profile: PlayerProfile): EmbedBuilder {
-  const standings = season ? getVersusStandings(season).sort((a, b) => b.points - a.points || b.goalDifference - a.goalDifference).map((standing, index) => `${index + 1}. **${standing.clubName}** · ${standing.points} pts · ${standing.wins}-${standing.draws}-${standing.losses}`).join('\n') : 'Belum ada global ranking.';
+  const standings = season ? getVersusStandings(season).slice(0, 8).map((standing) => `${standing.rank}. **${standing.clubName}** · ${standing.points} pts · ${standing.wins}-${standing.draws}-${standing.losses}`).join('\n') : 'Belum ada global ranking.';
   return new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`${profile.versus!.club.name} · Global Ranking`).setDescription(standings).setFooter({ text: 'Current implementation exposes the season-wide ranking; cross-season/global server aggregation requires a canonical shared ranking store.' });
 }
 
