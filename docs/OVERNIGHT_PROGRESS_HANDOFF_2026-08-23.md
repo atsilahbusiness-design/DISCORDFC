@@ -59,3 +59,11 @@ Final verification after the fix: build PASS; 59 tests PASS; targeted audit PASS
 Direct extraction of the regional App Store pages for version 2.8.0 shows only the generic release note “Fixed several bugs.” Search-index snippets that mention group code, advanced Scout, or player-status improvement were not treated as independently verified gameplay rules. They remain corroborating metadata only; no implementation of their costs, cooldowns, payouts, or effects is justified.
 
 — Manus AI
+
+## Latest parity hardening
+
+Public version history reports that Versus was added in version 2.0.0, and that group code, advanced Scout, and player-status improvement were added to battle mode in version 2.1.0; this history confirms feature existence but not hidden server rules. The repository therefore keeps group-code/matchmaking and preview surfaces while leaving Scout/status mutation coefficients unimplemented. A regression test now locks the existing deterministic Versus standings tie-break: points, goal difference, goals scored, then stable club ID.
+
+Latest verification: build PASS; 60 tests PASS; targeted audit PASS; 300 trials per mode PASS; 115,770 actions; zero invariant and determinism failures; dependency audit clean; secret/artifact guard clean.
+
+— Manus AI

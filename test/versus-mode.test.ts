@@ -73,6 +73,22 @@ test('Versus submission locks a legal owner lineup and rejects stale/deadline wr
   assert.throws(() => submitVersusLineup(season, battle.id, first.userId, lineup, [], lineup[0], '4-4-2', 'balanced', club.rosterVersion, new Date('2026-01-02T00:00:00.000Z')), /melewati deadline/);
 });
 
+test('Versus standings use a stable deterministic tie-breaker', () => {
+  const [first, second] = makeMembers();
+  const season = createVersusSeason('GROUP-42', [first, second], new Date('2026-01-01T00:00:00.000Z'), 4);
+  for (const club of season.clubs) {
+    club.wins = 1;
+    club.draws = 0;
+    club.losses = 1;
+    club.goalsFor = 2;
+    club.goalsAgainst = 1;
+  }
+  const expected = [...season.clubs].map((club) => club.id).sort();
+  const standings = getVersusStandings(season);
+  assert.deepEqual(standings.map((standing) => standing.clubId), expected);
+  assert.deepEqual(getVersusStandings(season), standings);
+});
+
 test('Versus season rewards are isolated and sync is idempotent', () => {
   let members = makeMembers();
   let season = createVersusSeason('GROUP-42', members, new Date('2026-01-01T00:00:00.000Z'), 4);
