@@ -1,0 +1,41 @@
+The following gameplay screens are visible in the provided video for **Football Rising Star**:
+
+### **Third Mode (Player Mode)**
+*   **Timestamps:** [19:12] – [23:25]
+*   **Description:** This mode allows the user to experience a career as an individual player rather than a manager. It includes role creation [19:43], where players select a birthplace, avatar, and position. The gameplay involves training sessions [20:52] to improve specific abilities and progressing through seasons [23:03] to gain fame and better contracts.
+
+### **Battle/Versus Mode**
+*   **Timestamps:** [13:25] – [19:11]
+*   **Description:** An online competitive mode where players manage their teams against others. The main interface [13:41] displays the next match countdown, last match results, and current club standings in the online league.
+
+### **Matchmaking**
+*   **Timestamps:** [14:27] – [14:54]
+*   **Description:** Visible as a "Match Preview" screen in Versus Mode. it compares the player's team against an opponent (e.g., Real Madrid), showing team strength, attack/defense abilities, and core star players.
+
+### **League**
+*   **Timestamps:** [06:35] – [06:52], [11:41] – [11:49], [17:49] – [17:55], [21:41] – [21:46], [23:03] – [23:08]
+*   **Description:** League screens appear across all modes. They display league tables (e.g., Italian B League, French B), match fixtures, and round-by-round results. In Versus Mode, a rewards screen [17:11] shows potential earnings based on final league positions.
+
+### **Roster**
+*   **Timestamps:** [01:22] – [01:29], [07:43] – [08:00], [14:06] – [14:26], [19:24] – [19:42], [21:11] – [21:30]
+*   **Description:** These screens manage team composition and individual player data. They show the pitch with player positions (e.g., 4-4-2 formation), player ratings, stamina bars, and morale indicators. In Player Mode, the roster screen focuses on the individual's "Ability" levels like passing, dribbling, and speed.
+
+### **Market**
+*   **Timestamps:** [02:51] – [03:03], [15:00] – [15:02], [16:52] – [16:58]
+*   **Description:** The transfer market lists available players with their name, position, ability, and market value. In Versus Mode, it includes a "Deal" tab for time-limited auctions where players can place bids [16:52].
+
+### **Scout**
+*   **Timestamps:** [03:45] – [04:54], [15:55] – [16:24]
+*   **Description:** A sub-feature of the Market. It allows players to hire a scout by specifying desired player parameters such as position, ability range, budget, and performance rating to find specific talent.
+
+### **Sponsor**
+*   **Timestamps:** [16:32] – [16:36]
+*   **Description:** A screen in Versus Mode where players can select from "Junior," "Senior," or "Top" sponsors to receive cash and coin injections for their club.
+
+### **Ranking**
+*   **Timestamps:** [17:49] – [17:55], [18:11] – [18:24]
+*   **Description:** Displays the team's standing. The "Ranking List" [18:11] shows a global leaderboard of teams based on their score and market value.
+
+### **Match-result**
+*   **Timestamps:** [09:58] – [10:32], [11:05] – [11:25], [15:14] – [15:25], [18:39] – [18:40], [21:58] – [22:30], [22:46] – [22:58]
+*   **Description:** These screens appear after match segments or full games. They show the final score, individual player performance ratings (e.g., 8.5, 6.7), and detailed match statistics like ball possession, shots, shots on target, and corners. In Coach and Player modes, this is followed by an "Assign Exp" screen to distribute experience points gained from the match.
