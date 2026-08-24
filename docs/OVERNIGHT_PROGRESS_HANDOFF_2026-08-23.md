@@ -149,3 +149,11 @@ Direct evidence was rechecked through the official App Store listing and Apptopi
 Latest verification: build PASS; 63 tests PASS; targeted audit PASS; stress simulation PASS for 300 trials per mode with 115,770 actions and zero invariant or determinism failures; dependency audit clean; secret/artifact guard clean.
 
 — Manus AI
+
+## Audit-only checkpoint after `40c2873`
+
+The latest main baseline was refreshed and found clean. Public evidence was rechecked through the official App Store listing and Apptopia version history, with focus on battle/Versus history and historical fixes for ranking consistency, transfer-market profit abuse, battle freezes, season dismissal, and missing Versus assets. No new server formula, MMR rule, price, cooldown, payout, or Scout/Sponsor effect was exposed.
+
+No production change was made in this checkpoint because the current deterministic RNG hardening and available-coin UX are already present on main, and adding unsupported behavior would reduce parity confidence. Verification remained green: build PASS; 63 tests PASS; dependency audit clean; diff and secret/artifact guards clean. The canonical 300-trial stress result remains 115,770 actions with zero invariant and determinism failures.
+
+— Manus AI
