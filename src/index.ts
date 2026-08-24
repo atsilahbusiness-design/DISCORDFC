@@ -4,7 +4,8 @@ import { Pool } from 'pg';
 import { handleCommand, handleComponent } from './discord/handlers.js';
 import { UserCommandQueue } from './discord/command-queue.js';
 import { UserRateLimiter } from './discord/rate-limit.js';
-import { runMaintenance } from './jobs/maintenance.js';
+import { runMaintenance, runVersusMaintenance } from './jobs/maintenance.js';
+import { createMaintenanceWorker } from './jobs/background-worker.js';
 import { log } from './observability/logger.js';
 import { JsonPlayerStore } from './storage/json-store.js';
 import { PostgresPlayerStore } from './storage/postgres-store.js';
@@ -20,20 +21,12 @@ const pool = process.env.DATABASE_URL ? new Pool({ connectionString: process.env
 const store: PlayerStore = pool ? new PostgresPlayerStore(pool) : new JsonPlayerStore(process.env.DATA_FILE ?? './data/players.json');
 const rateLimiter = new UserRateLimiter(12, 60_000);
 const commandQueue = new UserCommandQueue();
-let maintenanceRunning = false;
-const maintenanceTick = async (): Promise<void> => {
-  if (maintenanceRunning) return;
-  maintenanceRunning = true;
-  try {
-    const count = await runMaintenance(store);
-    log('info', 'maintenance_completed', { profiles: count });
-  } catch (error) {
-    log('error', 'maintenance_failed', { error });
-  } finally {
-    maintenanceRunning = false;
-  }
-};
-const maintenanceTimer = setInterval(() => void maintenanceTick(), 15 * 60_000);
+const maintenanceWorker = createMaintenanceWorker(async () => {
+  const now = new Date();
+  const profiles = await runMaintenance(store, now);
+  const settledListings = await runVersusMaintenance(store, now);
+  log('info', 'maintenance_completed', { profiles, settledListings });
+});
 
 client.once(Events.ClientReady, (readyClient) => {
   log('info', 'bot_ready', { user: readyClient.user.tag, persistence: pool ? 'postgresql' : 'json' });
@@ -57,7 +50,7 @@ client.on(Events.Error, (error) => log('error', 'discord_client_error', { error 
 
 const shutdown = async (signal: string): Promise<void> => {
   log('info', 'shutdown_requested', { signal });
-  clearInterval(maintenanceTimer);
+  maintenanceWorker.stop();
   client.destroy();
   if (pool) await pool.end();
   process.exit(0);
@@ -72,4 +65,4 @@ process.on('uncaughtException', (error) => {
 });
 
 await client.login(token);
-void maintenanceTick();
+maintenanceWorker.start();

@@ -157,3 +157,16 @@ The latest main baseline was refreshed and found clean. Public evidence was rech
 No production change was made in this checkpoint because the current deterministic RNG hardening and available-coin UX are already present on main, and adding unsupported behavior would reduce parity confidence. Verification remained green: build PASS; 63 tests PASS; dependency audit clean; diff and secret/artifact guards clean. The canonical 300-trial stress result remains 115,770 actions with zero invariant and determinism failures.
 
 — Manus AI
+
+## Follow-up hardening — 2026-08-24
+
+Implemented a dedicated `BackgroundWorker` lifecycle with single-flight protection, idempotent `start`/`stop`, immediate execution after Discord login, structured failure logging, and graceful shutdown integration. Player time maintenance remains isolated from Versus maintenance.
+
+Added `runVersusMaintenance`, which scans persisted Versus groups and settles expired market listings in a batch through the existing deterministic economy functions and atomic `saveBatch` contract. This removes the requirement for a user to open the Versus market before expired auctions are settled.
+
+Added regression coverage for worker overlap/lifecycle behavior and automatic Versus expired-listing settlement. Verification result: **66 tests passing, 0 failing; TypeScript build passing; `git diff --check` passing**.
+
+Remaining production work: PostgreSQL concurrency integration tests against a real database, multi-process worker coordination/lease, distributed rate limiting, deployment/load rehearsal, and richer automated Discord notifications. No unsupported original formulas were introduced.
+
+### Prompt for Trae A.I.
+Continue from this commit. Preserve the dedicated worker boundary and deterministic domain contracts. Next priority is a real PostgreSQL integration harness for concurrent bid/settlement operations, followed by worker lease/coordination and distributed abuse controls. Run build, tests, stress tests, and security checks before every push. Do not invent Football Rising Star formulas or add proprietary assets/secrets.
