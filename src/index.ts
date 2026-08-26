@@ -1,4 +1,6 @@
 import 'dotenv/config';
+import { mkdir, readFile as readTextFile, rm, writeFile } from 'node:fs/promises';
+import { dirname } from 'node:path';
 import { Client, Events, GatewayIntentBits } from 'discord.js';
 import { Pool } from 'pg';
 import { handleCommand, handleComponent } from './discord/handlers.js';
@@ -14,6 +16,38 @@ import type { MaintenanceLockStore, PlayerStore } from './storage/json-store.js'
 
 const config = loadRuntimeConfig();
 const token = config.discordToken;
+const runtimeLockFile = process.env.RUNTIME_LOCK_FILE ?? './data/discord-bot.lock';
+let releaseRuntimeLock: (() => Promise<void>) | undefined;
+
+async function acquireRuntimeLock(): Promise<void> {
+  await mkdir(dirname(runtimeLockFile), { recursive: true });
+  try {
+    await writeFile(runtimeLockFile, `${process.pid}\n`, { flag: 'wx' });
+  } catch (error) {
+    if (!(error instanceof Error) || !('code' in error) || error.code !== 'EEXIST') throw error;
+    const owner = Number.parseInt((await readTextFile(runtimeLockFile, 'utf8')).trim(), 10);
+    if (Number.isInteger(owner) && owner > 0) {
+      try {
+        process.kill(owner, 0);
+        throw new Error(`Another DISCORDFC process is already running (pid ${owner}). Stop it before starting a second gateway instance.`);
+      } catch (probeError) {
+        if (probeError instanceof Error && probeError.message.includes('already running')) throw probeError;
+      }
+    }
+    await rm(runtimeLockFile, { force: true });
+    await writeFile(runtimeLockFile, `${process.pid}\n`, { flag: 'wx' });
+  }
+  releaseRuntimeLock = async () => {
+    try {
+      const owner = Number.parseInt((await readTextFile(runtimeLockFile, 'utf8')).trim(), 10);
+      if (owner === process.pid) await rm(runtimeLockFile, { force: true });
+    } catch {
+      // Best-effort cleanup; a future process can reclaim a stale lock.
+    }
+  };
+}
+
+await acquireRuntimeLock();
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 const pool = config.databaseUrl ? new Pool({ connectionString: config.databaseUrl, max: 10, connectionTimeoutMillis: 10_000, idleTimeoutMillis: 30_000, application_name: 'football-rising-star-discord' }) : undefined;
@@ -80,6 +114,7 @@ const shutdown = async (signal: string, exitCode = 0): Promise<void> => {
   maintenanceWorker.stop();
   client.destroy();
   if (pool) await pool.end();
+  if (releaseRuntimeLock) await releaseRuntimeLock();
   process.exitCode = exitCode;
 };
 
