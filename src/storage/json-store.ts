@@ -16,14 +16,19 @@ export interface VersusGroupLockStore extends PlayerStore {
   withVersusGroupLock<T>(groupCode: string, operation: () => Promise<T>): Promise<T>;
 }
 
+export interface MaintenanceLockStore extends PlayerStore {
+  withMaintenanceLock<T>(operation: () => Promise<T>): Promise<T | undefined>;
+}
+
 interface StoreFile {
   players: Record<string, PlayerProfile>;
 }
 
-export class JsonPlayerStore implements BatchPlayerStore, VersusGroupLockStore {
+export class JsonPlayerStore implements BatchPlayerStore, VersusGroupLockStore, MaintenanceLockStore {
   private cache?: StoreFile;
   private writeTail: Promise<void> = Promise.resolve();
   private readonly groupQueues = new Map<string, Promise<void>>();
+  private maintenanceLock: Promise<void> = Promise.resolve();
 
   constructor(private readonly path: string) {}
 
@@ -71,6 +76,14 @@ export class JsonPlayerStore implements BatchPlayerStore, VersusGroupLockStore {
     });
     this.writeTail = next;
     await next;
+  }
+
+  async withMaintenanceLock<T>(operation: () => Promise<T>): Promise<T | undefined> {
+    const previous = this.maintenanceLock;
+    let release!: () => void;
+    this.maintenanceLock = new Promise<void>((resolve) => { release = resolve; });
+    await previous;
+    try { return await operation(); } finally { release(); }
   }
 
   async withVersusGroupLock<T>(groupCode: string, operation: () => Promise<T>): Promise<T> {

@@ -10,7 +10,7 @@ import { log } from './observability/logger.js';
 import { loadRuntimeConfig } from './config/runtime.js';
 import { JsonPlayerStore } from './storage/json-store.js';
 import { PostgresPlayerStore } from './storage/postgres-store.js';
-import type { PlayerStore } from './storage/json-store.js';
+import type { MaintenanceLockStore, PlayerStore } from './storage/json-store.js';
 
 const config = loadRuntimeConfig();
 const token = config.discordToken;
@@ -23,10 +23,18 @@ const mutationRateLimiter = new UserRateLimiter(Math.max(3, Math.floor(config.ra
 const mutationCommands = new Set(['versus-bid', 'versus-lineup', 'versus-round', 'versus-season', 'market', 'buy-player', 'train', 'next-week', 'play-match', 'daily-reward', 'claim-achievement', 'admin']);
 const commandQueue = new UserCommandQueue();
 const maintenanceWorker = createMaintenanceWorker(async () => {
-  const now = new Date();
-  const profiles = await runMaintenance(store, now);
-  const settledListings = await runVersusMaintenance(store, now);
-  log('info', 'maintenance_completed', { profiles, settledListings });
+  const run = async (): Promise<void> => {
+    const now = new Date();
+    const profiles = await runMaintenance(store, now);
+    const settledListings = await runVersusMaintenance(store, now);
+    log('info', 'maintenance_completed', { profiles, settledListings });
+  };
+  const lockStore = store as Partial<MaintenanceLockStore>;
+  if (typeof lockStore.withMaintenanceLock === 'function') {
+    await lockStore.withMaintenanceLock(run);
+    return;
+  }
+  await run();
 }, config.maintenanceIntervalMs);
 
 client.once(Events.ClientReady, (readyClient) => {

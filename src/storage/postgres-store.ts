@@ -1,9 +1,9 @@
 import { Pool } from 'pg';
 import type { PoolClient } from 'pg';
 import type { PlayerProfile } from '../domain/types.js';
-import type { BatchPlayerStore, PlayerStore, VersusGroupLockStore } from './json-store.js';
+import type { BatchPlayerStore, MaintenanceLockStore, PlayerStore, VersusGroupLockStore } from './json-store.js';
 
-export class PostgresPlayerStore implements BatchPlayerStore, VersusGroupLockStore {
+export class PostgresPlayerStore implements BatchPlayerStore, VersusGroupLockStore, MaintenanceLockStore {
   constructor(private readonly pool: Pool) {}
 
   async get(userId: string): Promise<PlayerProfile | undefined> {
@@ -121,6 +121,15 @@ export class PostgresPlayerStore implements BatchPlayerStore, VersusGroupLockSto
     } finally {
       client.release();
     }
+  }
+
+  async withMaintenanceLock<T>(operation: () => Promise<T>): Promise<T | undefined> {
+    const client = await this.pool.connect();
+    try {
+      const lock = await client.query<{ locked: boolean }>("SELECT pg_try_advisory_lock(hashtextextended($1, 0)) AS locked", ['football-rising-star-maintenance']);
+      if (!lock.rows[0]?.locked) return undefined;
+      try { return await operation(); } finally { await client.query('SELECT pg_advisory_unlock(hashtextextended($1, 0))', ['football-rising-star-maintenance']); }
+    } finally { client.release(); }
   }
 
   async withVersusGroupLock<T>(groupCode: string, operation: () => Promise<T>): Promise<T> {
