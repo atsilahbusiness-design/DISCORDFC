@@ -45,17 +45,17 @@ client.on(Events.InteractionCreate, async (interaction) => {
   if (interaction.user?.bot) return;
   if (!interaction.isChatInputCommand() && !interaction.isButton() && !interaction.isStringSelectMenu()) return;
   const scope = interaction.isChatInputCommand() ? interaction.commandName : interaction.customId.split(':', 1)[0];
-  if (!rateLimiter.consume(interaction.user.id, Date.now(), 'global') || (interaction.isChatInputCommand() && mutationCommands.has(interaction.commandName) && !mutationRateLimiter.consume(interaction.user.id, Date.now(), 'mutation'))) {
-    log('warn', 'interaction_rate_limited', { userId: interaction.user.id, scope });
-    if (!interaction.replied && !interaction.deferred) await interaction.reply({ content: 'Terlalu banyak aksi dalam waktu singkat. Coba lagi sebentar.', ephemeral: true });
-    return;
-  }
   try {
     if (!interaction.replied && !interaction.deferred) {
       await interaction.deferReply({ ephemeral: !interaction.isChatInputCommand() });
     }
   } catch (error) {
     log('error', 'interaction_ack_failed', { scope, userId: interaction.user.id, error });
+    return;
+  }
+  if (!rateLimiter.consume(interaction.user.id, Date.now(), 'global') || (interaction.isChatInputCommand() && mutationCommands.has(interaction.commandName) && !mutationRateLimiter.consume(interaction.user.id, Date.now(), 'mutation'))) {
+    log('warn', 'interaction_rate_limited', { userId: interaction.user.id, scope });
+    await interaction.editReply({ content: 'Terlalu banyak aksi dalam waktu singkat. Coba lagi sebentar.' });
     return;
   }
   if (interaction.isChatInputCommand()) {
