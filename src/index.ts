@@ -59,12 +59,15 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
 client.on(Events.Error, (error) => log('error', 'discord_client_error', { error }));
 
-const shutdown = async (signal: string): Promise<void> => {
-  log('info', 'shutdown_requested', { signal });
+let shuttingDown = false;
+const shutdown = async (signal: string, exitCode = 0): Promise<void> => {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  log('info', 'shutdown_requested', { signal, exitCode });
   maintenanceWorker.stop();
   client.destroy();
   if (pool) await pool.end();
-  process.exit(0);
+  process.exitCode = exitCode;
 };
 
 process.once('SIGINT', () => void shutdown('SIGINT'));
@@ -72,7 +75,7 @@ process.once('SIGTERM', () => void shutdown('SIGTERM'));
 process.on('unhandledRejection', (reason) => log('error', 'unhandled_rejection', { reason }));
 process.on('uncaughtException', (error) => {
   log('error', 'uncaught_exception', { error });
-  void shutdown('uncaughtException');
+  void shutdown('uncaughtException', 1);
 });
 
 await client.login(token);
