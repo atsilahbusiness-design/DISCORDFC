@@ -3,7 +3,7 @@ import { createInitialProfile, formatAbility, getRating, playMatch, recoverPlaye
 import { ensureClubState, finishSeason, formatClubStanding, getClubRating, getNextClubFixture, playClubMatch, setClubFormation, setClubTactic } from '../domain/club-engine.js';
 import { buyMarketPlayer, claimDailyReward, formatMoney, generateDailyEvent, refreshMarket, resolveDailyEvent, sellClubPlayer } from '../domain/progression-engine.js';
 import { claimAchievement, formatAchievements, playChampionsLeague, startChampionsLeague, syncAchievements } from '../domain/competition-engine.js';
-import { advanceWeek, assignMatchExp, ensureGameplayState, formatDetailedSkills, formatGameplayStatus, hireTrainer, listTrainerCatalog, rebirthPlayer, releaseTrainer, retirePlayer, startCultureStudy, startTrickTraining, trainDetailedSkill, treatInjury } from '../domain/gameplay-engine.js';
+import { assignMatchExp, ensureGameplayState, formatDetailedSkills, formatGameplayStatus, hireTrainer, listTrainerCatalog, playPreparedWeek, preparePlayerWeek, rebirthPlayer, releaseTrainer, retirePlayer, startCultureStudy, startTrickTraining, trainDetailedSkill, treatInjury } from '../domain/gameplay-engine.js';
 import { formatContract, getContractStatus, renewContract, signContract } from '../domain/contract-engine.js';
 import { joinOfficialClub, listOfficialClubs } from '../domain/official-club-engine.js';
 import { acceptJobOffer, advanceCoachRound, assignCoachExp, createCoachCareer, declineJobOffer, formatCoachProfile, generateJobOffer, rebirthCoach, resolveCoachEvent, retireCoach, settleCoachSeason } from '../domain/coach-career-engine.js';
@@ -11,7 +11,7 @@ import { assignVersusMatchmaking, createVersusSeason, formatVersusBattle, getVer
 import { availableVersusCoin, createVersusMarket, placeVersusBid, settleExpiredVersusMarket } from '../domain/versus-economy.js';
 import { ABILITY_LABELS, COACH_ABILITIES, COACH_ABILITY_LABELS, DETAILED_SKILL_LABELS, DETAILED_SKILLS, FORMATIONS, HONOR_CATEGORY_LABELS, POSITION_LABELS, TACTICS, TRAINER_CATALOG, TRICK_CATALOG, type AbilityId, type CoachAbilityId, type CultureSubject, type DetailedSkillId, type FormationId, type PlayerProfile, type Position, type TacticId, type VersusSeason } from '../domain/types.js';
 import type { BatchPlayerStore, PlayerStore, VersusGroupLockStore } from '../storage/json-store.js';
-import { careerControls, detailedTrainingControls, trainingControls, versusFinalizeControls, versusHomeControls, versusMarketControls, versusPositionControls, versusRankingControls, versusSetupControls, versusSponsorControls } from './components.js';
+import { careerControls, coachControls, coachEventControls, detailedTrainingControls, mainMenuControls, pendingExpControls, playerCreationControls, trainingControls, versusFinalizeControls, versusHomeControls, versusMarketControls, versusPositionControls, versusRankingControls, versusSetupControls, versusSponsorControls } from './components.js';
 import { log } from '../observability/logger.js';
 import { resolveModeCommand } from './commands.js';
 
@@ -52,6 +52,57 @@ function profileEmbed(profile: PlayerProfile): EmbedBuilder {
       { name: 'Career statistics', value: `Appearances **${profile.career.appearances}** · W-D-L **${profile.career.wins}-${profile.career.draws}-${profile.career.losses}**\nGoals **${profile.career.goals}** · Assists **${profile.career.assists}** · Clean sheets **${profile.career.cleanSheets}**` }
     )
     .setFooter({ text: 'Football Rising Star Discord · Formula pertandingan modular untuk kalibrasi internal.' });
+}
+
+function createPlayerProfile(userId: string, displayName: string, position: Position, now = new Date()): PlayerProfile {
+  let profile = createInitialProfile(userId, displayName, position, now);
+  profile = ensureClubState(profile, now);
+  profile = refreshMarket(profile, now);
+  profile = generateDailyEvent(profile, now);
+  return profile;
+}
+
+function gameHomeEmbed(profile?: PlayerProfile): EmbedBuilder {
+  if (!profile) {
+    return new EmbedBuilder()
+      .setColor(BRAND_COLOR)
+      .setTitle('Football Rising Star · Game Home')
+      .setDescription('Pilih mode untuk mulai. Player, Coach, dan Versus memiliki state yang terpisah; operasi berikutnya dilakukan melalui tombol dan menu.')
+      .addFields(
+        { name: 'Player Mode', value: 'Karier individu: weekly update, training, match, EXP, transfer, injury, dan honors.' },
+        { name: 'Coach Mode', value: 'Manajemen klub: roster, formation, tactic, fixture, board, event, dan season.' },
+        { name: 'Versus Mode', value: 'Kompetisi online asynchronous: system assignment, lineup, countdown, result, standings, Deal, dan rewards.' }
+      );
+  }
+  return new EmbedBuilder()
+    .setColor(BRAND_COLOR)
+    .setTitle(`${profile.displayName} · Game Home`)
+    .setDescription('Pilih mode yang ingin dimainkan. Mode tidak berbagi progression secara otomatis.')
+    .addFields(
+      { name: 'Player Mode', value: `${profile.club} · rating ${getRating(profile)} · age ${profile.age}`, inline: true },
+      { name: 'Coach Mode', value: profile.coach ? `${profile.coach.coachName} · ${profile.coach.status} · approval ${profile.coach.approval}/100` : 'Belum dimulai', inline: true },
+      { name: 'Versus Mode', value: profile.versus ? `${profile.versus.club.name} · ${profile.versus.status}` : 'Belum ditugaskan', inline: true }
+    )
+    .setFooter({ text: 'Gunakan tombol mode; command /play hanya berfungsi sebagai pintu masuk.' });
+}
+
+function coachHomeEmbed(profile: PlayerProfile): EmbedBuilder {
+  const coach = profile.coach;
+  if (!coach) throw new Error('Karier Coach belum dibuat.');
+  const club = profile.coachClubState;
+  const nextFixture = club?.fixtures.find((fixture) => !fixture.played);
+  return new EmbedBuilder()
+    .setColor(BRAND_COLOR)
+    .setTitle(`${coach.coachName} · Coach Home`)
+    .setDescription(`Kelola klub **${club?.name ?? profile.club}** melalui tombol di bawah. Formation dan tactic memengaruhi simulasi dalam ruleset reconstructed.`)
+    .addFields(
+      { name: 'Career', value: `Age ${coach.age} · Year ${coach.careerYear} · Level ${coach.level}\nStatus ${coach.status} · Approval ${coach.approval}/100`, inline: true },
+      { name: 'Board', value: `${coach.boardTarget.type}\nTarget rank ${coach.boardTarget.targetRank}\nCurrent rank ${coach.boardTarget.progressRank ?? '-'}`, inline: true },
+      { name: 'Club', value: `${club?.name ?? '-'}\nFormation ${club?.formation ?? '-'}\nTactic ${club ? TACTICS[club.tactic].name : '-'}`, inline: true },
+      { name: 'Next fixture', value: nextFixture ? `${nextFixture.homeClub} vs ${nextFixture.awayClub}\nMatchday ${nextFixture.matchday}` : 'Season selesai; buka season settlement.' },
+      { name: 'Coach EXP', value: `${coach.unassignedExp} pending · salary ${formatMoney(coach.salary)}`, inline: true },
+      { name: 'Honors', value: `${coach.honors.length}`, inline: true }
+    );
 }
 
 async function requireProfile(interaction: ChatInputCommandInteraction, store: PlayerStore): Promise<PlayerProfile | undefined> {
@@ -359,6 +410,11 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
   const command = resolveModeCommand(rootCommand, interaction.options.getSubcommand(false) ?? undefined, interaction.options.getSubcommandGroup(false) ?? undefined);
   try {
     if (!interaction.replied && !interaction.deferred) await interaction.deferReply();
+    if (command === 'play') {
+      const profile = await store.get(interaction.user.id);
+      await interaction.editReply({ embeds: [gameHomeEmbed(profile ?? undefined)], components: mainMenuControls(interaction.user.id) });
+      return;
+    }
     if (command === 'start') {
       const existing = await store.get(interaction.user.id);
       if (existing) {
@@ -366,10 +422,7 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
         return;
       }
       const position = interaction.options.getString('position', true) as Position;
-      let profile = createInitialProfile(interaction.user.id, interaction.user.globalName ?? interaction.user.username, position);
-      profile = ensureClubState(profile);
-      profile = refreshMarket(profile);
-      profile = generateDailyEvent(profile);
+      const profile = createPlayerProfile(interaction.user.id, interaction.user.globalName ?? interaction.user.username, position);
       await store.save(profile);
       await interaction.editReply({ embeds: [profileEmbed(profile)], components: careerControls(interaction.user.id) });
       return;
@@ -430,10 +483,9 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
     if (command === 'next-week') {
       const profile = await requireProfile(interaction, store);
       if (!profile) return;
-      const result = advanceWeek(profile);
+      const result = preparePlayerWeek(profile);
       await store.save(result.profile);
-      const matchText = result.match ? `Match: ${result.match.outcome} ${result.match.playerGoals}-${result.match.opponentGoals} vs ${result.match.opponent}` : 'Tidak ada match yang dimainkan minggu ini.';
-      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`Week ${result.week} selesai`).setDescription(result.narrative.join('\n')).addFields({ name: 'Match', value: matchText }, { name: 'Pending EXP', value: `${result.expAwaitingAssignment}`, inline: true }, { name: 'Status', value: `${result.profile.careerStatus} · age ${result.profile.age} · year ${result.profile.careerYear} · week ${result.profile.careerWeek}`, inline: true }).setFooter({ text: result.retired ? 'Gunakan /rebirth setelah retirement.' : result.expAwaitingAssignment > 0 ? 'Gunakan /assign-exp sebelum /next-week berikutnya.' : 'Gunakan /skills untuk melihat progression.' })] });
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`Weekly Update · Week ${result.week}`).setDescription(result.narrative.join('\n')).addFields({ name: 'Stage', value: result.stage, inline: true }, { name: 'Condition', value: `HP ${result.profile.hp}/${result.profile.maxHp}\nEnergy ${result.profile.energy}/${result.profile.maxEnergy}`, inline: true }, { name: 'Next step', value: 'Tekan Play match untuk melanjutkan ke hasil pertandingan.', inline: false })] });
       return;
     }
 
@@ -550,10 +602,11 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
     if (command === 'match') {
       const profile = await requireProfile(interaction, store);
       if (!profile) return;
-      const result = playMatch(profile);
+      const result = playPreparedWeek(profile);
       await store.save(result.profile);
-      const outcomeLabel = result.record.outcome === 'WIN' ? 'VICTORY' : result.record.outcome === 'DRAW' ? 'DRAW' : 'DEFEAT';
-      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`${outcomeLabel} · ${result.profile.club} ${result.record.playerGoals}–${result.record.opponentGoals} ${result.record.opponent}`).setDescription(result.narrative.join('\n')).addFields({ name: 'Player score', value: `${result.record.playerScore}`, inline: true }, { name: 'Rewards', value: `${formatMoney(result.record.rewards.money)} money\n${result.record.rewards.exp} EXP`, inline: true }, { name: 'Condition', value: `HP ${result.profile.hp}/${result.profile.maxHp}\nEnergy ${result.profile.energy}/${result.profile.maxEnergy}`, inline: true }).setFooter({ text: `Season ${result.profile.league.season} · Matchday ${result.profile.league.matchday}` })] });
+      const outcomeLabel = result.match?.outcome === 'WIN' ? 'VICTORY' : result.match?.outcome === 'DRAW' ? 'DRAW' : result.match?.outcome === 'LOSS' ? 'DEFEAT' : 'NO MATCH';
+      const matchText = result.match ? `${result.profile.club} ${result.match.playerGoals}–${result.match.opponentGoals} ${result.match.opponent}` : 'Tidak ada match karena kondisi atau cedera.';
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`${outcomeLabel} · Week ${result.week}`).setDescription(`${matchText}\n\n${result.narrative.join('\n')}`).addFields({ name: 'Player rating', value: result.match ? `${result.match.playerRating}` : '-', inline: true }, { name: 'Pending EXP', value: `${result.expAwaitingAssignment}`, inline: true }, { name: 'Condition', value: `HP ${result.profile.hp}/${result.profile.maxHp}\nEnergy ${result.profile.energy}/${result.profile.maxEnergy}`, inline: true }).setFooter({ text: result.expAwaitingAssignment > 0 ? 'Gunakan Player Home untuk memilih skill alokasi EXP.' : 'Kembali ke Weekly Update untuk cycle berikutnya.' })], components: result.expAwaitingAssignment > 0 ? pendingExpControls(interaction.user.id) : careerControls(interaction.user.id) });
       return;
     }
 
@@ -1043,13 +1096,105 @@ function componentOwner(customId: string, userId: string): string {
 export async function handleComponent(interaction: ButtonInteraction | StringSelectMenuInteraction, store: PlayerStore): Promise<void> {
   try {
     const action = componentOwner(interaction.customId, interaction.user.id);
-    await interaction.deferReply({ ephemeral: true });
+    if (!interaction.replied && !interaction.deferred) await interaction.deferReply({ ephemeral: true });
     let profile = await store.get(interaction.user.id);
-    if (!profile) throw new Error('Profil belum dibuat. Jalankan `/start position:<GK|DF|MF|FW>` terlebih dahulu.');
+
+    if (action === 'menu-home') {
+      await interaction.editReply({ embeds: [gameHomeEmbed(profile ?? undefined)], components: mainMenuControls(interaction.user.id) });
+      return;
+    }
+
+    if (action === 'menu-player') {
+      if (!profile) {
+        await interaction.editReply({ embeds: [gameHomeEmbed().setTitle('Player Mode · Create Player').setDescription('Player Mode dimulai dari pemain muda. Pilih posisi untuk membuat profil tanpa mengetik command.')], components: playerCreationControls(interaction.user.id) });
+      } else {
+        const enriched = ensureGameplayState(profile);
+        await store.save(enriched);
+        await interaction.editReply({ embeds: [profileEmbed(enriched)], components: careerControls(interaction.user.id) });
+      }
+      return;
+    }
+
+    if (action === 'menu-coach') {
+      if (!profile) {
+        await interaction.editReply({ embeds: [gameHomeEmbed().setTitle('Coach Mode · Account Setup').setDescription('Coach Mode memakai account profile yang sama, tetapi career dan club state tetap terisolasi. Buat Player profile terlebih dahulu melalui menu posisi.')], components: playerCreationControls(interaction.user.id) });
+        return;
+      }
+      const updated = profile.coach ? profile : createCoachCareer(profile, interaction.user.globalName ?? interaction.user.username);
+      await store.save(updated);
+      await interaction.editReply({ embeds: [coachHomeEmbed(updated)], components: coachControls(interaction.user.id) });
+      return;
+    }
+
+    if (action === 'menu-versus') {
+      if (!profile) {
+        await interaction.editReply({ embeds: [gameHomeEmbed().setTitle('Versus Mode · Account Setup').setDescription('Versus memakai aggregate multiplayer yang terpisah. Buat account profile melalui menu posisi; assignment team dan competition akan dikelola sistem.')], components: playerCreationControls(interaction.user.id) });
+        return;
+      }
+      const assigned = await ensurePublicVersusAssignment(store, profile, new Date());
+      profile = assigned.profile;
+      await interaction.editReply({ embeds: [versusHomeEmbed(profile, assigned.season)], components: versusHomeControls(interaction.user.id) });
+      return;
+    }
+
+    if (action === 'player-create-select') {
+      if (!interaction.isStringSelectMenu()) throw new Error('Pilih posisi Player melalui menu yang tersedia.');
+      if (profile) {
+        await interaction.editReply({ embeds: [profileEmbed(profile)], components: careerControls(interaction.user.id) });
+        return;
+      }
+      const position = interaction.values[0] as Position;
+      if (!['GK', 'DF', 'MF', 'FW'].includes(position)) throw new Error('Posisi Player tidak valid.');
+      profile = createPlayerProfile(interaction.user.id, interaction.user.globalName ?? interaction.user.username, position, new Date());
+      await store.save(profile);
+      await interaction.editReply({ embeds: [profileEmbed(profile)], components: careerControls(interaction.user.id) });
+      return;
+    }
+
+    if (action === 'coach-event-select') {
+      if (!profile?.coach || !interaction.isStringSelectMenu()) throw new Error('Coach event tidak valid atau sudah kedaluwarsa.');
+      const event = profile.coach.event;
+      if (!event || event.resolved) throw new Error('Tidak ada Coach event yang menunggu keputusan.');
+      const updated = resolveCoachEvent(profile, interaction.values[0]);
+      await store.save(updated);
+      await interaction.editReply({ embeds: [coachHomeEmbed(updated).setTitle(`Coach Event Resolved · ${event.title}`)], components: coachControls(interaction.user.id) });
+      return;
+    }
+
+    if (!profile) throw new Error('Profil belum dibuat. Pilih Player Mode dari Game Home untuk membuat profil.');
 
     if (action === 'coach-profile') {
-      if (!profile.coach) throw new Error('Karier Coach belum dibuat. Jalankan `/coach-career action:start`.');
-      await interaction.editReply({ content: formatCoachProfile(profile), components: careerControls(interaction.user.id) });
+      if (!profile.coach) throw new Error('Karier Coach belum dibuat. Pilih Coach Mode dari Game Home.');
+      await interaction.editReply({ embeds: [coachHomeEmbed(profile)], components: coachControls(interaction.user.id) });
+      return;
+    }
+
+    if (action === 'coach-round') {
+      if (!profile.coach) throw new Error('Karier Coach belum dibuat. Pilih Coach Mode dari Game Home.');
+      const result = advanceCoachRound(profile);
+      await store.save(result.profile);
+      const eventText = result.event ? ` Coach event baru: **${result.event.title}**.` : '';
+      await interaction.editReply({ embeds: [coachHomeEmbed(result.profile).setTitle(`Coach Round · ${result.match.outcome}`).setDescription(`${result.match.commentary.join('\n')}${eventText}`).addFields({ name: 'Score', value: `${result.match.homeGoals}–${result.match.awayGoals} (HT ${result.match.halftime.homeGoals}–${result.match.halftime.awayGoals})`, inline: true }, { name: 'Coach EXP', value: `+${result.coachExp} · pending ${result.profile.coach!.unassignedExp}`, inline: true }, { name: 'Approval', value: `${result.profile.coach!.approval}/100`, inline: true })], components: coachControls(interaction.user.id) });
+      return;
+    }
+
+    if (action === 'coach-club') {
+      if (!profile.coach) throw new Error('Karier Coach belum dibuat. Pilih Coach Mode dari Game Home.');
+      const club = ensureClubState(profile, new Date(), undefined, 'coachClubState').coachClubState!;
+      const fixture = club.fixtures.find((item) => !item.played);
+      await store.save({ ...profile, coachClubState: club });
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`${club.name} · Coach Club Office`).setDescription(`Club rating **${getClubRating({ ...profile, coachClubState: club })}** · Level **${club.level}**`).addFields({ name: 'Resources', value: `Prestige **${club.prestige}**\nAssets **${formatMoney(club.assets)}**\nSalary budget **${formatMoney(club.salaryBudget)}**`, inline: true }, { name: 'Strategy', value: `Formation **${club.formation}**\nTactic **${TACTICS[club.tactic].name}**`, inline: true }, { name: 'Next fixture', value: fixture ? `${fixture.homeClub} vs ${fixture.awayClub}\nMatchday ${fixture.matchday}` : 'Season selesai.' })], components: coachControls(interaction.user.id) });
+      return;
+    }
+
+    if (action === 'coach-event') {
+      if (!profile.coach) throw new Error('Karier Coach belum dibuat. Pilih Coach Mode dari Game Home.');
+      const event = profile.coach.event;
+      if (!event || event.resolved) {
+        await interaction.editReply({ embeds: [coachHomeEmbed(profile).setTitle('Coach Board · No Pending Event').setDescription('Belum ada event yang menunggu keputusan. Event baru dapat muncul setelah Coach Round.')], components: coachControls(interaction.user.id) });
+      } else {
+        await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`Coach Event · ${event.title}`).setDescription(event.description).addFields({ name: 'Choices', value: event.choices.map((choice) => `**${choice.label}** — ${choice.description}`).join('\n') })], components: coachEventControls(interaction.user.id, event.choices) });
+      }
       return;
     }
 
@@ -1225,9 +1370,9 @@ export async function handleComponent(interaction: ButtonInteraction | StringSel
     }
 
     if (action === 'next-week') {
-      const result = advanceWeek(profile);
+      const result = preparePlayerWeek(profile);
       await store.save(result.profile);
-      await interaction.editReply({ content: `Week ${result.week} selesai.\n${result.narrative.join('\n')}\nPending EXP: ${result.expAwaitingAssignment}.`, components: careerControls(interaction.user.id) });
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`Weekly Update · Week ${result.week}`).setDescription(result.narrative.join('\n')).addFields({ name: 'Stage', value: result.stage, inline: true }, { name: 'Condition', value: `HP ${result.profile.hp}/${result.profile.maxHp}\nEnergy ${result.profile.energy}/${result.profile.maxEnergy}`, inline: true }, { name: 'Next step', value: 'Tekan Play match untuk melanjutkan.', inline: false })], components: careerControls(interaction.user.id) });
       return;
     }
 
@@ -1257,11 +1402,22 @@ export async function handleComponent(interaction: ButtonInteraction | StringSel
       return;
     }
 
-    if (action === 'match') {
-      const result = playMatch(profile);
+    if (action === 'pending-exp-select' && interaction.isStringSelectMenu()) {
+      const skill = interaction.values[0] as DetailedSkillId;
+      const pending = profile.unassignedMatchExp ?? 0;
+      const result = assignMatchExp(profile, { [skill]: pending });
       await store.save(result.profile);
-      const outcomeLabel = result.record.outcome === 'WIN' ? 'VICTORY' : result.record.outcome === 'DRAW' ? 'DRAW' : 'DEFEAT';
-      await interaction.editReply({ content: `**${outcomeLabel}** · ${result.profile.club} ${result.record.playerGoals}–${result.record.opponentGoals} ${result.record.opponent}\n${result.narrative.join('\n')}\nReward: ${formatMoney(result.record.rewards.money)} money / ${result.record.rewards.exp} EXP.`, components: careerControls(interaction.user.id) });
+      await interaction.editReply({ embeds: [profileEmbed(result.profile).setTitle(`EXP Allocated · ${DETAILED_SKILL_LABELS[skill]}`).setDescription(`Seluruh pending match EXP (**${pending}**) dialokasikan ke **${DETAILED_SKILL_LABELS[skill]}**.`)], components: careerControls(interaction.user.id) });
+      return;
+    }
+
+    if (action === 'match') {
+      const result = playPreparedWeek(profile);
+      await store.save(result.profile);
+      const outcomeLabel = result.match?.outcome === 'WIN' ? 'VICTORY' : result.match?.outcome === 'DRAW' ? 'DRAW' : result.match?.outcome === 'LOSS' ? 'DEFEAT' : 'NO MATCH';
+      const matchText = result.match ? `${result.profile.club} ${result.match.playerGoals}–${result.match.opponentGoals} ${result.match.opponent}` : 'Tidak ada match karena kondisi atau cedera.';
+      const components = result.expAwaitingAssignment > 0 ? pendingExpControls(interaction.user.id) : careerControls(interaction.user.id);
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`${outcomeLabel} · Week ${result.week}`).setDescription(`${matchText}\n\n${result.narrative.join('\n')}`).addFields({ name: 'Player rating', value: result.match ? `${result.match.playerRating}` : '-', inline: true }, { name: 'Pending EXP', value: `${result.expAwaitingAssignment}`, inline: true }, { name: 'Next step', value: result.expAwaitingAssignment > 0 ? 'Pilih skill untuk mengalokasikan EXP.' : 'Kembali ke Weekly Update untuk cycle berikutnya.', inline: false })], components });
       return;
     }
 

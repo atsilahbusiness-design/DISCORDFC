@@ -2,7 +2,7 @@ import { recoverPlayer } from '../domain/engine.js';
 import { syncAchievements } from '../domain/competition-engine.js';
 import { generateDailyEvent } from '../domain/progression-engine.js';
 import { settleExpiredVersusMarket } from '../domain/versus-economy.js';
-import { syncVersusProfileWithSeason } from '../domain/versus-engine.js';
+import { processVersusRound, settleVersusSeason, syncVersusProfileWithSeason } from '../domain/versus-engine.js';
 import type { PlayerProfile, VersusSeason } from '../domain/types.js';
 import type { BatchPlayerStore, PlayerStore } from '../storage/json-store.js';
 
@@ -38,14 +38,33 @@ export async function runVersusMaintenance(store: PlayerStore, now = new Date())
 
   let settledCount = 0;
   for (const members of groups.values()) {
-    const season = members.find((profile) => profile.versus?.season)?.versus?.season as VersusSeason | undefined;
-    if (!season?.market) continue;
-    const results = settleExpiredVersusMarket(members, season, now);
-    if (results.length === 0) continue;
-    const latestSeason = results[results.length - 1].season;
-    const nextProfiles = members.map((profile) => syncVersusProfileWithSeason(profile, latestSeason, now));
+    let season = members.find((profile) => profile.versus?.season)?.versus?.season as VersusSeason | undefined;
+    if (!season) continue;
+    let changed = false;
+    const totalRounds = Math.max(1, 2 * (season.clubs.length - 1));
+    const deadline = new Date(season.roundDeadline).getTime();
+    if (season.state === 'ACTIVE' && season.currentRound <= totalRounds && Number.isFinite(deadline) && now.getTime() >= deadline) {
+      const processedSeason = processVersusRound(season, season.currentRound, now);
+      settledCount += processedSeason.battles.filter((battle) => battle.roundId === processedSeason.currentRound - 1 && battle.state === 'PUBLISHED').length;
+      season = processedSeason;
+      changed = true;
+      if (season.currentRound > totalRounds) {
+        season = settleVersusSeason(season, now);
+        changed = true;
+      }
+    }
+    if (season.market) {
+      const profiles = members.map((profile) => structuredClone(profile));
+      const results = settleExpiredVersusMarket(profiles, season, now);
+      if (results.length > 0) {
+        season = results[results.length - 1].season;
+        settledCount += results.length;
+        changed = true;
+      }
+    }
+    if (!changed) continue;
+    const nextProfiles = members.map((profile) => syncVersusProfileWithSeason(profile, season!, now));
     await batchStore.saveBatch(nextProfiles);
-    settledCount += results.length;
   }
   return settledCount;
 }

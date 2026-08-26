@@ -7,6 +7,7 @@ export type FormationId = '4-4-2' | '4-3-3' | '3-5-2' | '5-3-2' | '4-1-3-2' | '3
 export type ListingStatus = 'OPEN' | 'SOLD' | 'CANCELLED';
 export type CareerMode = 'PLAYER' | 'COACH';
 export type CareerStatus = 'ACTIVE' | 'RETIRED';
+export type PlayerWeekStage = 'READY' | 'MATCH_READY' | 'EXP_PENDING' | 'SEASON_BREAK';
 export type CoachStatus = 'EMPLOYED' | 'UNEMPLOYED' | 'RETIRED';
 export type CoachAbilityId = 'formation' | 'tactics' | 'stateAdjustment' | 'trainingLevel' | 'lockerRoom' | 'charisma';
 export type CoachTargetType = 'PROMOTION' | 'CHAMPIONSHIP' | 'AVOID_RELEGATION' | 'QCL';
@@ -647,6 +648,7 @@ export interface PlayerProfile {
   careerYear?: number;
   careerWeek?: number;
   seasonWeek?: number;
+  weekStage?: PlayerWeekStage;
   rebirthCount?: number;
   detailedSkills?: DetailedSkills;
   unassignedMatchExp?: number;
@@ -707,6 +709,13 @@ export interface GameplayActionResult {
   message: string;
 }
 
+export interface WeekPreparationResult {
+  profile: PlayerProfile;
+  week: number;
+  narrative: string[];
+  stage: PlayerWeekStage;
+}
+
 export interface WeekResult {
   profile: PlayerProfile;
   week: number;
@@ -717,6 +726,7 @@ export interface WeekResult {
   injury?: InjuryState;
   award?: WorldFootballerState;
   retired: boolean;
+  stage?: PlayerWeekStage;
 }
 
 export interface ClubMatchResult {

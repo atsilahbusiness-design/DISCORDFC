@@ -5,6 +5,7 @@ import { commandDefinitions, resolveModeCommand } from '../src/discord/commands.
 
 test('Discord registry groups Player, Coach, and Versus modes without technical matchmake command', () => {
   const roots = new Map(commandDefinitions.map((command) => [command.name, command]));
+  assert.equal(roots.has('play'), true);
   assert.equal(roots.has('player'), true);
   assert.equal(roots.has('coach'), true);
   assert.equal(roots.has('versus'), true);
@@ -27,6 +28,7 @@ test('Discord registry groups Player, Coach, and Versus modes without technical 
   assert.equal(names.includes('versus-matchmake'), false);
   assert.equal(names.includes('versus-club'), false);
 
+  assert.equal(resolveModeCommand('play'), 'play');
   assert.equal(resolveModeCommand('player', 'start', 'career'), 'start');
   assert.equal(resolveModeCommand('player', 'train', 'training'), 'train');
   assert.equal(resolveModeCommand('player', 'overview', 'club'), 'club');

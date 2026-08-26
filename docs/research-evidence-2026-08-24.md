@@ -59,3 +59,57 @@ URL: https://www.taptap.cn/app/220982/topic?page=16
 The page is the official forum area for the game and visibly exposes categories including guides, feedback, team recruitment, and videos. The index page itself shows community posts with match-score screenshots, but the fetched page did not expose a complete battle-mode guide. Search results for the same TapTap forum include user posts discussing battle-mode player market bidding and coin usage, including claims about preserving a player after bidding; these are user-generated reports and may describe exploits rather than intended mechanics. They must not be implemented as rules without primary confirmation.
 
 Evidence level: low-to-medium for the existence of an active official forum and battle-related community discussion; low for any gameplay rule inferred from forum advice.
+
+
+## Riset ulang 2026-08-26
+
+The refreshed Google Play listing states that the current public product is presented as two unique modes, Player and Coach, with no tedious operation/easy simulation, a fast rhythm, diverse tactics, trophies, and hundreds of achievements. It explicitly describes Player as a 15-year-old joining a professional club over 20 years of competitions, training, and transfers, and Coach as a retired star managing clubs with changing formations and flexible tactics. The listing was updated 12 June 2026 and exposes user reports describing repeated week taps, stamina/energy depletion, injury recovery, season waits, ad-gated recovery, and forced retirement; these user reports are evidence of observed live behavior but not official rules or formulas.
+
+The refreshed UK App Store listing confirms the same Player/Coach description, version 2.8.0 (12 June), in-app purchases, advertisements, and public complaints about waiting after seasons, energy/injury recovery, and forced retirement around 33. These reports strengthen the hypothesis that the original loop is time-gated and resource-gated, but they do not prove exact timers or coefficients.
+
+MWM's interface-decoding page, which states its screenshots/description are sourced from the official store listing but is itself a secondary editorial source, identifies visual surfaces: game mode selection, 4-2-3-1 formation with player ratings, Earth Cup bracket, Hall of Honor, birthplace/position creation, post-match ratings and EXP allocation, award celebration, and Club standings with last/next match. This supports a screen/state-oriented parity target rather than a formula target.
+
+Soft112's public version history records version 2.2.0 as adding battle-mode name change and gold-coin exchange, version 2.7.0 as updating player data, and version 2.8.0 as bug fixes. This is secondary evidence for feature history only; it does not establish server formulas.
+
+
+## Direct walkthrough trace — 2026-08-26
+
+A newly analyzed public Android walkthrough provides a concrete Player Mode sequence. At 00:00–00:12 it shows character/profile setup, a visible six-attribute radar (SPD, STA, TEC, DEF, OFF, PHY), a successful contract signing, and joining Triumphal Arch in the French B League. The observed loop then proceeds as weekly update/training result → match simulation → post-match EXP allocation → league table.
+
+The same recording shows 80 EXP allocated across detailed skills after the first match, regular training, a later 56-point and 36-point EXP allocation, a Trick Training screen with unlockable Bicycle Kick and Jumping Kick, transfers to Sandhausen in the German B League with a displayed salary of 5000, Basic Treat for injury, Culture Study selecting Arts, a windfall event granting 100 Fans, and Bicycle Kick training accelerated with 50 Diamonds. The recording shows a winter break screen, World Footballer candidates, a holiday King of Soccer event granting +100 EXP to Hold Off Defenders, and a World Player of the Year award. The visible top-right resources are Money and Diamonds; bottom navigation surfaces are Home, Training (Regular/Trick/Personal), Match (Simulation/League), Personal (Contract/Negotiation), and Achievements.
+
+This is direct visual evidence for Player state surfaces and ordering in the recorded build. It is not evidence for exact underlying coefficients, whether all later UI survives in version 2.8.0, or the original server-side formula. The trace exposes concrete parity gaps to audit in DISCORDFC: onboarding contract/club selection, explicit weekly update before match, Fans and Diamonds resource surfaces, bottom-tab-equivalent navigation, winter break/annual awards/events, and transfer salary presentation.
+
+
+## Direct manager/career walkthrough trace — 2026-08-26
+
+A second public gameplay video shows a two-path main menu with Player Mode and Coach Mode, but the recorded session selects Player Mode. It directly shows birthplace choices including China, Argentina, Brazil, England, Spain, Italy, Germany, France, Malaysia, and Others; position choices including GK, CB, LB, RB, CDM, CM, CAM, LM, RM, and ST; and avatar portraits. A `Signed successfully` popup confirms joining US Boulogne.
+
+The visible management hub presents player rating, age, value, Money, Diamonds, and navigation tabs Home, Ability, Training, Personal, and Club. League screens show round identity (for example Round 1 of French B) and a table with Rank, Team, Played, Won, Draw, Loss, Goal Difference, and Points. The Assign EXP screen exposes position-specific technical attributes; the analyzed goalkeeper example includes Strike, Reaction, Hand Toss, GK Kick, Save Penalty, Hold Position, GK Pass Ball, Command Defense, plus Balance, Jump, and Willpower.
+
+Training surfaces include Regular Training categories Short, Dribbling, Speed, Stamina, Pass, Defense, and Physical; Trick Training with thresholds such as `Unlock at Willpower level 10`; and Personal Training with Junior, Senior, and Master coaches affecting EXP recovery/training effects. Personal finance and negotiation expose Ask for pay, Transfer, and Negotiation; transfer offers show club ranking, position competitiveness (for example Slightly competitive), and weekly salary.
+
+Match simulation visibly lists participating players and performance ratings, with a scoreboard and audience count. Hall of Honor includes World Player of the Year, European Golden Shoe, and League MVP. The recording also shows winter break, World Footballer/Player of the Year selection, and endorsements described as increasing fame and currency. These are direct UI/state observations from the recorded build; they do not establish formulas for recovery, training effects, endorsement payout, or transfer valuation.
+
+
+## Mandarin/App Store and TapTap review — 2026-08-26
+
+The current Macau App Store page for the Mandarin build exposes official screenshots with a title screen that visibly contains Player Mode, Coach Mode, and Vs/Versus Mode labels, plus formation and roster-style screens. The extracted version text on that page is sparse and does not expose a complete Battle Mode ruleset.
+
+TapTap's official forum page 16 is active and includes guide, feedback, team recruitment, and video categories. The visible posts include screenshot-based match results such as Argentina 4–0 Belgium/Spain/Germany/Netherlands/Italy, with tables showing player ratings and match statistics. Search result text for the same official forum reports a community complaint that C-level battle league opponents can have ratings above 90 and youth goalkeepers above 100 even when the user's average is around 65. This is a balance complaint, not proof of intended matchmaking; it suggests that a naive equal-rating assumption would be unsafe and that opponent strength may be skewed or snapshot-based.
+
+## Coach tactical-counter and Bilibili evidence — 2026-08-26
+
+A public Chinese strategy page dated 2024-12-11 lists a discrete Coach tactic counter chain: Long Pass is countered by Wing Attack; Counterattack by Possession; Middle Breakthrough by Wing Attack; All-out Attack by All-out Defense; Wing Attack by Long Pass; Balanced Attack/Defense by Counterattack and All-out Attack; and Possession by Middle Breakthrough. The page is community/secondary evidence rather than an official rules reference, so it supports exposing a tactic-choice/counter concept but not treating the exact chain as authoritative without in-game confirmation.
+
+A Bilibili upload titled `足球:巨星崛起 百粉之作` (2021-08-21) is a 6-minute compilation with three short episodes labeled Forward (29 years, Champions League), Attacking Midfielder (28 years, Champions League), and Goalkeeper (26 years, Champions League). Its description says the game requires watching many advertisements. The page is useful as corroboration that short repeatable Player-career examples and position-specific runs circulate in the Chinese community, but the embedded player was not available for frame-level inspection in this session; no Versus rules are inferred from it.
+
+## Implementasi evidence-backed — 2026-08-26
+
+Berdasarkan trace Player dan audit state machine, Player weekly flow kini memiliki stage eksplisit `READY → MATCH_READY → EXP_PENDING → READY` (serta `SEASON_BREAK` setelah award). `preparePlayerWeek` hanya melakukan weekly update/recovery/training settlement; `playPreparedWeek` menjalankan match dan menghasilkan pending EXP; `advanceWeek` dipertahankan sebagai compatibility wrapper untuk caller lama. Ini meniru urutan layar yang terlihat tanpa mengubah angka balance yang belum terbukti.
+
+Discord kini menyediakan `/play` sebagai entry tunggal Game Home. Player creation memilih posisi melalui select menu; Player Home memiliki tombol Weekly Update, Match, dan pending EXP allocation. Coach memiliki Coach Home, Round, Club Office, dan Event selector. Component handler tidak lagi melakukan double-defer ketika `InteractionCreate` sudah meng-acknowledge interaction.
+
+Worker Versus kini memproses round yang sudah melewati deadline secara idempotent melalui `processVersusRound`, lalu melakukan season settlement setelah seluruh round selesai. Settlement market tetap berjalan pada worker yang sama. Queue policy, timer asli, MMR, payout, dan semua coefficients tetap diklasifikasikan sebagai inferred sampai ada evidence primer.
+
+Verifikasi perubahan: TypeScript build pass; 73 tests pass; production dependency audit tidak menemukan vulnerability high; diff whitespace bersih; stress simulation 300 trials per mode / 115,770 actions / zero invariant dan determinism failures. Registrasi Discord belum diulang pada sandbox karena credential tidak tersedia di environment dan sandbox REST latency sebelumnya melampaui interaction acknowledgement window.

@@ -181,6 +181,7 @@ export function createInitialProfile(userId: string, displayName: string, positi
     careerYear: 1,
     careerWeek: 1,
     seasonWeek: 1,
+    weekStage: 'READY',
     rebirthCount: 0,
     detailedSkills: initialDetailedSkills(position),
     unassignedMatchExp: 0,

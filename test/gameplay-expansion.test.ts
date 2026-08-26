@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { advanceWeek, assignMatchExp, ensureGameplayState, hireTrainer, rebirthPlayer, retirePlayer, startTrickTraining, trainDetailedSkill, treatInjury } from '../src/domain/gameplay-engine.js';
+import { advanceWeek, assignMatchExp, ensureGameplayState, hireTrainer, playPreparedWeek, preparePlayerWeek, rebirthPlayer, retirePlayer, startTrickTraining, trainDetailedSkill, treatInjury } from '../src/domain/gameplay-engine.js';
 import { createInitialProfile, playMatch, SeededRandom } from '../src/domain/engine.js';
 
 test('new player starts at age 15 with twelve detailed skills', () => {
@@ -9,6 +9,7 @@ test('new player starts at age 15 with twelve detailed skills', () => {
   assert.equal(Object.keys(profile.detailedSkills ?? {}).length, 12);
   assert.equal(profile.careerStatus, 'ACTIVE');
   assert.equal(profile.careerWeek, 1);
+  assert.equal(profile.weekStage, 'READY');
 });
 
 test('legacy profile is migrated into a valid gameplay state', () => {
@@ -19,6 +20,7 @@ test('legacy profile is migrated into a valid gameplay state', () => {
   assert.equal(Object.keys(migrated.detailedSkills ?? {}).length, 12);
   assert.equal(migrated.careerWeek, 1);
   assert.equal(migrated.unassignedMatchExp, 0);
+  assert.equal(migrated.weekStage, 'READY');
 });
 
 test('detailed training and manual match EXP allocation mutate only requested skills', () => {
@@ -43,6 +45,21 @@ test('observed bicycle kick trick unlocks after prerequisites', () => {
   const result = startTrickTraining(profile, 'bicycle-kick');
   assert.equal(result.profile.unlockedTricks?.includes('bicycle-kick'), true);
   assert.equal(result.profile.energy, 76);
+});
+
+test('Player weekly loop exposes update, match, and EXP stages', () => {
+  const profile = createInitialProfile('gameplay-stage', 'Stage Star', 'FW');
+  const prepared = preparePlayerWeek(profile, new Date('2026-01-01T00:00:00.000Z'));
+  assert.equal(prepared.stage, 'MATCH_READY');
+  assert.equal(prepared.profile.weekStage, 'MATCH_READY');
+  assert.throws(() => preparePlayerWeek(prepared.profile), /Weekly update sudah selesai/);
+  const played = playPreparedWeek(prepared.profile, new Date('2026-01-01T00:00:00.000Z'), new SeededRandom(9));
+  assert.equal(played.profile.weekStage, 'EXP_PENDING');
+  assert.ok((played.profile.unassignedMatchExp ?? 0) > 0);
+  assert.throws(() => playPreparedWeek(played.profile), /Weekly Update terlebih dahulu/);
+  const allocated = assignMatchExp(played.profile, { shots: played.profile.unassignedMatchExp });
+  assert.equal(allocated.remaining, 0);
+  assert.equal(allocated.profile.weekStage, 'READY');
 });
 
 test('trainer, weekly progression, and annual award state are persisted', () => {

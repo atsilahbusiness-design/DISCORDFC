@@ -33,6 +33,29 @@ test('maintenance updates time-based profile state', async () => {
   }
 });
 
+test('Versus maintenance settles a due round without user interaction', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'frs-versus-round-maintenance-'));
+  const file = join(directory, 'players.json');
+  try {
+    const started = new Date('2026-01-01T00:00:00.000Z');
+    const members = [
+      enrollVersus(createInitialProfile('maintenance-round-a', 'Round A', 'FW'), 'ROUND-MAINT-42', started),
+      enrollVersus(createInitialProfile('maintenance-round-b', 'Round B', 'MF'), 'ROUND-MAINT-42', started)
+    ];
+    const season = createVersusSeason('ROUND-MAINT-42', members, started, 4);
+    const profiles = members.map((profile) => syncVersusProfileWithSeason(profile, season, started));
+    const store = new JsonPlayerStore(file);
+    await store.saveBatch(profiles);
+    const settled = await runVersusMaintenance(store, new Date('2026-01-02T00:00:00.000Z'));
+    const updated = await store.all();
+    assert.ok(settled >= 2);
+    assert.equal(updated.every((profile) => profile.versus?.season?.currentRound === 2), true);
+    assert.equal(updated.every((profile) => profile.versus?.season?.battles.filter((battle) => battle.roundId === 1).every((battle) => battle.state === 'PUBLISHED')), true);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
 test('Versus maintenance settles expired listings without user interaction', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'frs-versus-maintenance-'));
   const file = join(directory, 'players.json');

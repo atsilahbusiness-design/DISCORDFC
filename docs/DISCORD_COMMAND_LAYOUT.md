@@ -1,6 +1,6 @@
 # Discord Command Layout
 
-The guild registry is organized around the three gameplay modes rather than a flat list of commands.
+The guild registry is organized around the three gameplay modes rather than a flat list of commands. `/play` is the single player-facing entry point; it opens Game Home and the following actions use owner-bound buttons/select menus whenever possible.
 
 ## Player Mode
 
@@ -11,7 +11,7 @@ Use `/player` for the individual career. The command groups are:
 - `/player club ...` for the official club, squad, formation, tactic, fixtures, standings, and transfer market.
 - `/player honors ...` for honors, World Footballer, achievements, and claims.
 
-The Player root command maps to existing internal handler names, so this is a Discord adapter/UX change and does not alter Player domain formulas or state isolation.
+The Player root command maps to existing internal handler names, so this is a Discord adapter/UX change and does not alter Player domain formulas or state isolation. From Game Home, Player creation is now position-select driven, and Player Home exposes Profile, Training, Weekly Update, Match, Club Office, and mode navigation buttons. The weekly flow is explicitly `Weekly Update → Match → pending EXP allocation → next cycle`; the legacy `advanceWeek` primitive remains as a compatibility wrapper for existing internal callers.
 
 ## Coach Mode
 
@@ -23,6 +23,6 @@ Use `/versus` for system-managed multiplayer. The supported subcommands are `hom
 
 ## Help and migration
 
-`/help` explains the mode-first workflow. The guild registry now contains five root commands: `/player`, `/coach`, `/versus`, `/help`, and `/admin`. The previous flat commands are no longer registered, preventing Discord's command menu from mixing all gameplay modes. Internal handler aliases remain in source only to preserve domain routing and test compatibility.
+`/help` explains the mode-first workflow. The guild registry now contains six root commands: `/play`, `/player`, `/coach`, `/versus`, `/help`, and `/admin`. `/play` is the recommended user entry; the grouped roots remain available as explicit fallback and operator surfaces. The previous flat commands are no longer registered, preventing Discord's command menu from mixing all gameplay modes. Internal handler aliases remain in source only to preserve domain routing and test compatibility.
 
-All mutating roots are included in the mutation rate-limit bucket. Every chat input command is acknowledged before rate limiting and per-user queue work. The handler then resolves the root/subcommand path to the existing internal command name and runs the original isolated domain logic.
+All mutating roots are included in the mutation rate-limit bucket. Every chat input command is acknowledged before rate limiting and per-user queue work. Component interactions are also acknowledged centrally; `handleComponent` only defers when an interaction has not already been acknowledged. The handler then resolves the root/subcommand path to the existing internal command name and runs the original isolated domain logic.

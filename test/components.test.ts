@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { careerControls, detailedTrainingControls, trainingControls, versusFinalizeControls, versusHomeControls, versusPositionControls, versusSetupControls } from '../src/discord/components.js';
+import { careerControls, coachControls, detailedTrainingControls, mainMenuControls, pendingExpControls, playerCreationControls, trainingControls, versusFinalizeControls, versusHomeControls, versusPositionControls, versusSetupControls } from '../src/discord/components.js';
 import { createInitialProfile } from '../src/domain/engine.js';
 import { createVersusClub } from '../src/domain/versus-engine.js';
 
 test('career components are owner-bound and actionable', () => {
   const rows = careerControls('user-1').map((row) => row.toJSON());
   const ids = rows.flatMap((row) => row.components.map((component) => component.custom_id));
-  assert.deepEqual(ids, ['frs:user-1:profile', 'frs:user-1:train', 'frs:user-1:match', 'frs:user-1:club', 'frs:user-1:coach-profile', 'frs:user-1:versus-home']);
+  assert.deepEqual(ids, ['frs:user-1:profile', 'frs:user-1:train', 'frs:user-1:next-week', 'frs:user-1:match', 'frs:user-1:club', 'frs:user-1:menu-home', 'frs:user-1:menu-coach', 'frs:user-1:versus-home']);
   assert.equal(ids.every((id) => id.startsWith('frs:user-1:')), true);
 });
 
@@ -28,6 +28,18 @@ test('Versus Home and lineup controls preserve owner, battle, and roster context
   const home = versusHomeControls('user-4').flatMap((row) => row.toJSON().components.map((component) => component.custom_id));
   assert.equal(home.every((id) => id?.startsWith('frs:user-4:')), true);
   for (const action of ['versus-registration', 'versus-market', 'versus-rewards', 'versus-schedule', 'versus-rankings', 'versus-global-ranking']) assert.ok(home.includes(`frs:user-4:${action}`));
+});
+
+test('main menu exposes the three gameplay modes and player creation is menu-driven', () => {
+  const menuIds = mainMenuControls('user-menu').flatMap((row) => row.toJSON().components.map((component) => component.custom_id));
+  assert.deepEqual(menuIds, ['frs:user-menu:menu-player', 'frs:user-menu:menu-coach', 'frs:user-menu:menu-versus']);
+  const creation = playerCreationControls('user-menu').flatMap((row) => row.toJSON().components.map((component) => component.custom_id));
+  assert.deepEqual(creation, ['frs:user-menu:player-create-select', 'frs:user-menu:menu-home']);
+  const coach = coachControls('user-menu').flatMap((row) => row.toJSON().components.map((component) => component.custom_id));
+  assert.ok(coach.includes('frs:user-menu:coach-round'));
+  assert.ok(coach.includes('frs:user-menu:coach-event'));
+  const pending = pendingExpControls('user-menu').flatMap((row) => row.toJSON().components.map((component) => component.custom_id));
+  assert.deepEqual(pending, ['frs:user-menu:pending-exp-select', 'frs:user-menu:menu-home']);
 });
 
 test('training component exposes all six abilities', () => {

@@ -83,10 +83,11 @@ const coach = new SlashCommandBuilder().setName('coach').setDescription('Coach M
 
 const versus = new SlashCommandBuilder().setName('versus').setDescription('Versus Mode — multiplayer matchmaking dan league').addSubcommand((sub) => sub.setName('home').setDescription('Buka Versus Home dan assigned team')).addSubcommand((sub) => sub.setName('profile').setDescription('Lihat assigned team dan season')).addSubcommand((sub) => sub.setName('roster').setDescription('Lihat roster dan eligibility')).addSubcommand((sub) => sub.setName('lineup').setDescription('Submit lineup battle').addStringOption((option) => option.setName('battle_id').setDescription('Battle ID').setRequired(true)).addStringOption((option) => option.setName('lineup').setDescription('11 player ID dipisahkan koma').setRequired(true)).addStringOption((option) => option.setName('captain').setDescription('Captain ID').setRequired(true)).addStringOption((option) => addFormation(option)).addStringOption((option) => addTactic(option)).addIntegerOption((option) => option.setName('roster_version').setDescription('Roster version').setRequired(true).setMinValue(1)).addStringOption((option) => option.setName('substitutes').setDescription('Maksimal 5 player ID').setRequired(false))).addSubcommand((sub) => sub.setName('bid').setDescription('Bid coin pada Deal listing').addStringOption((option) => option.setName('listing_id').setDescription('ID listing').setRequired(true)).addIntegerOption((option) => option.setName('amount').setDescription('Jumlah coin').setRequired(true).setMinValue(1))).addSubcommand((sub) => sub.setName('standings').setDescription('Lihat klasemen Versus')).addSubcommand((sub) => sub.setName('round').setDescription('Proses round Versus')).addSubcommand((sub) => sub.setName('season').setDescription('Lihat atau tutup season').addStringOption((option) => option.setName('action').setDescription('Aksi season').setRequired(false).addChoices({ name: 'Status', value: 'status' }, { name: 'Settle', value: 'settle' }))).addSubcommand((sub) => sub.setName('join').setDescription('Fallback private group join').addStringOption((option) => option.setName('group_code').setDescription('Kode private group').setRequired(true)));
 
+const play = new SlashCommandBuilder().setName('play').setDescription('Buka Game Home Football Rising Star');
 const help = new SlashCommandBuilder().setName('help').setDescription('Lihat panduan mode dan command Football Rising Star');
 const admin = new SlashCommandBuilder().setName('admin').setDescription('Admin maintenance command').setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild.toString()).addStringOption((option) => option.setName('action').setDescription('Aksi admin').setRequired(true).addChoices({ name: 'Stats', value: 'stats' }, { name: 'Refresh all markets', value: 'refresh-markets' }));
 
-export const commandDefinitions = [player, coach, versus, help, admin].map((command) => command.toJSON());
+export const commandDefinitions = [play, player, coach, versus, help, admin].map((command) => command.toJSON());
 
 export const modeCommandMap: Record<string, string> = {
   'player.career.start': 'start', 'player.career.profile': 'profile', 'player.career.match': 'match', 'player.career.next-week': 'next-week', 'player.career.league': 'league', 'player.career.injury': 'injury', 'player.career.retire': 'retire', 'player.career.rebirth': 'rebirth', 'player.career.daily': 'daily', 'player.career.event': 'event', 'player.career.contract': 'contract', 'player.career.champions': 'champions',
@@ -98,6 +99,7 @@ export const modeCommandMap: Record<string, string> = {
 };
 
 export function resolveModeCommand(commandName: string, subcommand?: string, subcommandGroup?: string): string {
+  if (commandName === 'play') return 'play';
   if (commandName === 'player' || commandName === 'coach' || commandName === 'versus') {
     const key = [commandName, subcommandGroup, subcommand].filter(Boolean).join('.');
     return modeCommandMap[key] ?? commandName;

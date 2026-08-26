@@ -22,6 +22,7 @@ import {
   type TrainerState,
   type TreatmentResult,
   type TrainerTier,
+  type WeekPreparationResult,
   type WeekResult,
   type WorldFootballerState
 } from './types.js';
@@ -68,6 +69,7 @@ export function ensureGameplayState(profileInput: PlayerProfile, now = new Date(
   profile.careerYear ??= Math.max(1, profile.league.season || 1);
   profile.careerWeek ??= 1;
   profile.seasonWeek ??= Math.max(1, profile.league.matchday || 1);
+  profile.weekStage ??= 'READY';
   profile.rebirthCount ??= 0;
   profile.charm ??= 0;
   profile.unassignedMatchExp ??= 0;
@@ -153,6 +155,7 @@ export function assignMatchExp(profileInput: PlayerProfile, allocations: Partial
   if (allocated > pending) throw new Error(`Alokasi EXP melebihi pool. Sisa EXP hanya ${pending}.`);
   for (const [skill, amount] of entries) levelsGained += grantSkillExp(profile, skill as DetailedSkillId, amount);
   profile.unassignedMatchExp = pending - allocated;
+  if (profile.unassignedMatchExp === 0 && profile.weekStage === 'EXP_PENDING') profile.weekStage = (profile.seasonWeek ?? 1) === 1 ? 'SEASON_BREAK' : 'READY';
   syncMacroStats(profile);
   touch(profile, now);
   return { profile, allocated, remaining: profile.unassignedMatchExp, levelsGained };
@@ -354,19 +357,32 @@ function maybeRetire(profile: PlayerProfile, now: Date): boolean {
   return true;
 }
 
-export function advanceWeek(profileInput: PlayerProfile, now = new Date(), rng: RandomSource = new MathRandomSource()): WeekResult {
-  let profile = ensureGameplayState(profileInput, now);
+export function preparePlayerWeek(profileInput: PlayerProfile, now = new Date()): WeekPreparationResult {
+  const profile = ensureGameplayState(profileInput, now);
   requireActive(profile);
-  if ((profile.unassignedMatchExp ?? 0) > 0) throw new Error(`Assign EXP sebelum melanjutkan week. Sisa EXP: ${profile.unassignedMatchExp}.`);
+  if ((profile.unassignedMatchExp ?? 0) > 0) throw new Error(`Assign EXP sebelum memulai week berikutnya. Sisa EXP: ${profile.unassignedMatchExp}.`);
+  if (profile.weekStage === 'MATCH_READY') throw new Error('Weekly update sudah selesai. Lanjutkan ke Match Ready terlebih dahulu.');
+  if (profile.weekStage === 'EXP_PENDING') throw new Error('Assign EXP hasil pertandingan terlebih dahulu.');
   const week = currentWeek(profile);
-  const narrative: string[] = [`Week ${week} dimulai untuk ${profile.displayName}.`];
+  const narrative: string[] = [`Weekly Update · Week ${week} dimulai untuk ${profile.displayName}.`];
+  if (profile.weekStage === 'SEASON_BREAK') narrative.push('Season break selesai; career memasuki weekly cycle berikutnya.');
   recoverWeekly(profile);
   const trainerMessage = settleTrainer(profile);
   if (trainerMessage) narrative.push(trainerMessage);
   const injuryMessage = settleInjury(profile);
   if (injuryMessage) narrative.push(injuryMessage);
   syncMacroStats(profile);
+  profile.weekStage = 'MATCH_READY';
+  touch(profile, now);
+  return { profile, week, narrative, stage: profile.weekStage };
+}
 
+export function playPreparedWeek(profileInput: PlayerProfile, now = new Date(), rng: RandomSource = new MathRandomSource()): WeekResult {
+  let profile = ensureGameplayState(profileInput, now);
+  requireActive(profile);
+  if (profile.weekStage !== 'MATCH_READY') throw new Error('Jalankan Weekly Update terlebih dahulu sebelum memainkan match.');
+  const week = currentWeek(profile);
+  const narrative: string[] = [`Match Ready · Week ${week}.`];
   let match;
   let injury;
   if (!profile.injury && profile.energy >= GAME_BALANCE.match.energyCost && profile.hp >= GAME_BALANCE.match.hpCost) {
@@ -403,9 +419,17 @@ export function advanceWeek(profileInput: PlayerProfile, now = new Date(), rng: 
   }
   const retired = maybeRetire(profile, now);
   if (retired) narrative.push(`Karier berakhir pada usia ${profile.age}. Gunakan /rebirth untuk memulai karier baru.`);
+  profile.weekStage = profile.unassignedMatchExp! > 0 ? 'EXP_PENDING' : award ? 'SEASON_BREAK' : 'READY';
   syncMacroStats(profile);
   touch(profile, now);
-  return { profile, week, season: profile.league.season, narrative, match, expAwaitingAssignment: profile.unassignedMatchExp ?? 0, injury, award, retired };
+  return { profile, week, season: profile.league.season, narrative, match, expAwaitingAssignment: profile.unassignedMatchExp ?? 0, injury, award, retired, stage: profile.weekStage };
+}
+
+/** Compatibility path retained for existing commands and stress tests. */
+export function advanceWeek(profileInput: PlayerProfile, now = new Date(), rng: RandomSource = new MathRandomSource()): WeekResult {
+  const prepared = preparePlayerWeek(profileInput, now);
+  const played = playPreparedWeek(prepared.profile, now, rng);
+  return { ...played, narrative: [...prepared.narrative, ...played.narrative] };
 }
 
 export function retirePlayer(profileInput: PlayerProfile, now = new Date()): GameplayActionResult {
@@ -445,6 +469,7 @@ export function rebirthPlayer(profileInput: PlayerProfile, now = new Date()): Ga
   profile.worldFootballer = undefined;
   profile.retirement = undefined;
   profile.unlockedTricks = [];
+  profile.weekStage = 'READY';
   profile.trainer = undefined;
   profile.energy = profile.maxEnergy;
   profile.hp = profile.maxHp;
@@ -466,7 +491,7 @@ export function formatGameplayStatus(profileInput: PlayerProfile): string {
   const trainer = profile.trainer?.active ? `${profile.trainer.tier} (${profile.trainer.weeklyCost}/week)` : 'None';
   const culture = profile.cultureStudy ? `${profile.cultureStudy.subject} until week ${profile.cultureStudy.completeAtWeek}` : 'None';
   const training = profile.activeTraining ? `${DETAILED_SKILL_LABELS[profile.activeTraining.skill]} until week ${profile.activeTraining.completeAtWeek}` : 'None';
-  return `Mode ${profile.mode}\nCareer ${profile.careerStatus} · Age ${profile.age} · Year ${currentCareerYear(profile)} · Week ${currentWeek(profile)}\nPending match EXP ${profile.unassignedMatchExp ?? 0}\nInjury ${injury}\nTraining ${training}\nTrainer ${trainer}\nCulture ${culture}\nCharm ${profile.charm ?? 0}\nTricks ${profile.unlockedTricks?.length ?? 0}\nHonors ${profile.honors?.length ?? 0}`;
+  return `Mode ${profile.mode}\nCareer ${profile.careerStatus} · Age ${profile.age} · Year ${currentCareerYear(profile)} · Week ${currentWeek(profile)}\nPending match EXP ${profile.unassignedMatchExp ?? 0}\nInjury ${injury}\nTraining ${training}\nTrainer ${trainer}\nCulture ${culture}\nCharm ${profile.charm ?? 0}\n  Tricks ${profile.unlockedTricks?.length ?? 0}\nHonors ${profile.honors?.length ?? 0}\nWeek stage ${profile.weekStage}`;
 }
 
 export function listTrainerCatalog(): Array<TrainerState & { hiredAtWeek: number }> {

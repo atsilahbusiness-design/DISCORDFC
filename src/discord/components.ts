@@ -9,9 +9,64 @@ import { DETAILED_SKILLS, DETAILED_SKILL_LABELS, FORMATIONS, TACTICS, type Forma
 
 function modeControls(userId: string): ActionRowBuilder<ButtonBuilder> {
   return new ActionRowBuilder<ButtonBuilder>().addComponents(
-    new ButtonBuilder().setCustomId(`frs:${userId}:coach-profile`).setLabel('Coach Mode').setStyle(ButtonStyle.Primary),
+    new ButtonBuilder().setCustomId(`frs:${userId}:menu-home`).setLabel('Game Home').setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId(`frs:${userId}:menu-coach`).setLabel('Coach Mode').setStyle(ButtonStyle.Primary),
     new ButtonBuilder().setCustomId(`frs:${userId}:versus-home`).setLabel('Versus Mode').setStyle(ButtonStyle.Success)
   );
+}
+
+export function mainMenuControls(userId: string): ActionRowBuilder<ButtonBuilder>[] {
+  return [
+    new ActionRowBuilder<ButtonBuilder>().addComponents(
+      new ButtonBuilder().setCustomId(`frs:${userId}:menu-player`).setLabel('Player Mode').setStyle(ButtonStyle.Primary),
+      new ButtonBuilder().setCustomId(`frs:${userId}:menu-coach`).setLabel('Coach Mode').setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId(`frs:${userId}:menu-versus`).setLabel('Versus Mode').setStyle(ButtonStyle.Success)
+    )
+  ];
+}
+
+export function playerCreationControls(userId: string): ActionRowBuilder<StringSelectMenuBuilder | ButtonBuilder>[] {
+  const positionSelect = new StringSelectMenuBuilder()
+    .setCustomId(`frs:${userId}:player-create-select`)
+    .setPlaceholder('Pilih posisi awal pemain')
+    .setMinValues(1)
+    .setMaxValues(1)
+    .addOptions(
+      new StringSelectMenuOptionBuilder().setValue('GK').setLabel('Goalkeeper'),
+      new StringSelectMenuOptionBuilder().setValue('DF').setLabel('Defender'),
+      new StringSelectMenuOptionBuilder().setValue('MF').setLabel('Midfielder'),
+      new StringSelectMenuOptionBuilder().setValue('FW').setLabel('Forward')
+    );
+  return [
+    new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(positionSelect),
+    new ActionRowBuilder<ButtonBuilder>().addComponents(new ButtonBuilder().setCustomId(`frs:${userId}:menu-home`).setLabel('Back to Game Home').setStyle(ButtonStyle.Secondary))
+  ];
+}
+
+export function coachControls(userId: string): ActionRowBuilder<ButtonBuilder>[] {
+  return [
+    new ActionRowBuilder<ButtonBuilder>().addComponents(
+      new ButtonBuilder().setCustomId(`frs:${userId}:coach-profile`).setLabel('Coach Profile').setStyle(ButtonStyle.Primary),
+      new ButtonBuilder().setCustomId(`frs:${userId}:coach-round`).setLabel('Play Round').setStyle(ButtonStyle.Success),
+      new ButtonBuilder().setCustomId(`frs:${userId}:coach-club`).setLabel('Club Office').setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId(`frs:${userId}:coach-event`).setLabel('Board/Event').setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId(`frs:${userId}:menu-home`).setLabel('Game Home').setStyle(ButtonStyle.Secondary)
+    ),
+    new ActionRowBuilder<ButtonBuilder>().addComponents(new ButtonBuilder().setCustomId(`frs:${userId}:versus-home`).setLabel('Versus Mode').setStyle(ButtonStyle.Success))
+  ];
+}
+
+export function coachEventControls(userId: string, choices: Array<{ id: string; label: string }>): ActionRowBuilder<StringSelectMenuBuilder | ButtonBuilder>[] {
+  const selector = new StringSelectMenuBuilder()
+    .setCustomId(`frs:${userId}:coach-event-select`)
+    .setPlaceholder('Pilih keputusan Coach event')
+    .setMinValues(1)
+    .setMaxValues(1)
+    .addOptions(choices.map((choice) => new StringSelectMenuOptionBuilder().setValue(choice.id).setLabel(choice.label.slice(0, 100))));
+  return [
+    new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selector),
+    new ActionRowBuilder<ButtonBuilder>().addComponents(new ButtonBuilder().setCustomId(`frs:${userId}:menu-home`).setLabel('Game Home').setStyle(ButtonStyle.Secondary))
+  ];
 }
 
 export function careerControls(userId: string): ActionRowBuilder<ButtonBuilder>[] {
@@ -19,6 +74,7 @@ export function careerControls(userId: string): ActionRowBuilder<ButtonBuilder>[
     new ActionRowBuilder<ButtonBuilder>().addComponents(
       new ButtonBuilder().setCustomId(`frs:${userId}:profile`).setLabel('Profile').setStyle(ButtonStyle.Primary),
       new ButtonBuilder().setCustomId(`frs:${userId}:train`).setLabel('Train').setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId(`frs:${userId}:next-week`).setLabel('Weekly Update').setStyle(ButtonStyle.Success),
       new ButtonBuilder().setCustomId(`frs:${userId}:match`).setLabel('Play match').setStyle(ButtonStyle.Success),
       new ButtonBuilder().setCustomId(`frs:${userId}:club`).setLabel('Club office').setStyle(ButtonStyle.Secondary)
     ),
@@ -45,6 +101,16 @@ export function detailedTrainingControls(userId: string): ActionRowBuilder<Strin
     new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
       new StringSelectMenuBuilder().setCustomId(`frs:${userId}:detailed-train-select`).setPlaceholder('Pilih detailed skill untuk dilatih').addOptions(options)
     )
+  ];
+}
+
+export function pendingExpControls(userId: string): ActionRowBuilder<StringSelectMenuBuilder | ButtonBuilder>[] {
+  const options = DETAILED_SKILLS.map((skill) => new StringSelectMenuOptionBuilder().setValue(skill).setLabel(`Assign ke ${DETAILED_SKILL_LABELS[skill]}`));
+  return [
+    new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+      new StringSelectMenuBuilder().setCustomId(`frs:${userId}:pending-exp-select`).setPlaceholder('Pilih skill untuk menerima seluruh pending EXP').addOptions(options)
+    ),
+    new ActionRowBuilder<ButtonBuilder>().addComponents(new ButtonBuilder().setCustomId(`frs:${userId}:menu-home`).setLabel('Game Home').setStyle(ButtonStyle.Secondary))
   ];
 }
 
