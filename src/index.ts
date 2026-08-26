@@ -50,6 +50,14 @@ client.on(Events.InteractionCreate, async (interaction) => {
     if (!interaction.replied && !interaction.deferred) await interaction.reply({ content: 'Terlalu banyak aksi dalam waktu singkat. Coba lagi sebentar.', ephemeral: true });
     return;
   }
+  try {
+    if (!interaction.replied && !interaction.deferred) {
+      await interaction.deferReply({ ephemeral: !interaction.isChatInputCommand() });
+    }
+  } catch (error) {
+    log('error', 'interaction_ack_failed', { scope, userId: interaction.user.id, error });
+    return;
+  }
   if (interaction.isChatInputCommand()) {
     await commandQueue.run(interaction.user.id, () => handleCommand(interaction, store));
   } else {
