@@ -7,5 +7,6 @@ data/*.json
 !data/recovery/
 !data/recovery/*.json
 data/*.tmp
+data/*.lock
 *.log
 .DS_Store
