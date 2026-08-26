@@ -64,3 +64,11 @@ test('rate limiter blocks after configured request count', () => {
   assert.equal(limiter.consume('u', 300), false);
   assert.equal(limiter.consume('u', 1_101), true);
 });
+
+test('rate limiter isolates operation scopes', () => {
+  const limiter = new UserRateLimiter(1, 1_000);
+  assert.equal(limiter.consume('u', 100, 'read'), true);
+  assert.equal(limiter.consume('u', 200, 'read'), false);
+  assert.equal(limiter.consume('u', 200, 'mutation'), true);
+  assert.equal(limiter.consume('other', 200, 'read'), true);
+});
