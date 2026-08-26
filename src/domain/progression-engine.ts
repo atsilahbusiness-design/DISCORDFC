@@ -1,7 +1,7 @@
 import { ensureClubState } from './club-engine.js';
 import { createInitialProfile, MathRandomSource, type RandomSource } from './engine.js';
 import { ensureGameplayState } from './gameplay-engine.js';
-import { DETAILED_SKILLS, deriveMacroStats, type ClubPlayer, type DetailedSkillId, type EconomyLedgerEntry, type EventState, type ListingStatus, type MarketListing, type PlayerProfile } from './types.js';
+import { type ClubPlayer, type EconomyLedgerEntry, type ListingStatus, type MarketListing, type PlayerProfile } from './types.js';
 import { SEED_MARKET_PLAYERS } from '../config/seed-data.js';
 import { RECOVERY_PLAYERS, RECOVERY_CLUB_BY_ID } from '../config/recovery-data.js';
 
@@ -48,100 +48,12 @@ export function claimDailyReward(profileInput: PlayerProfile, now = new Date()):
   return { profile, amount, exp, streak: profile.daily.streak };
 }
 
-const EVENT_TEMPLATES: Array<Omit<EventState, 'dayKey' | 'resolved'>> = [
-  {
-    eventId: 'academy-visitor',
-    title: 'Pelatih Akademi Berkunjung',
-    description: 'Seorang pelatih muda menawarkan sesi khusus untuk meningkatkan kemampuan pemain.',
-    choices: [
-      { id: 'accept', label: 'Ikuti sesi latihan', cost: 100, rewardMoney: 0, rewardExp: 65, moraleDelta: 4, skillEffects: { endurance: 12 }, energyDelta: -8 },
-      { id: 'decline', label: 'Tolak dengan sopan', cost: 0, rewardMoney: 40, rewardExp: 15, moraleDelta: 0, charmDelta: 1 }
-    ]
-  },
-  {
-    eventId: 'sponsor-call',
-    title: 'Telepon Sponsor',
-    description: 'Sponsor klub menawarkan bonus cepat dengan imbalan komitmen promosi.',
-    choices: [
-      { id: 'sign', label: 'Terima tawaran sponsor', cost: 0, rewardMoney: 180, rewardExp: 25, moraleDelta: -1, charmDelta: 2 },
-      { id: 'wait', label: 'Tunggu tawaran lebih baik', cost: 0, rewardMoney: 30, rewardExp: 10, moraleDelta: 2, skillEffects: { willpower: 8 } }
-    ]
-  },
-  {
-    eventId: 'locker-room',
-    title: 'Kejadian Ruang Ganti',
-    description: 'Tim membutuhkan pemimpin untuk menyelesaikan ketegangan sebelum pertandingan.',
-    choices: [
-      { id: 'lead', label: 'Ambil tanggung jawab', cost: 50, rewardMoney: 20, rewardExp: 60, moraleDelta: 8, skillEffects: { teamwork: 14 } },
-      { id: 'avoid', label: 'Biarkan kapten menangani', cost: 0, rewardMoney: 0, rewardExp: 15, moraleDelta: -2, skillEffects: { willpower: 4 } }
-    ]
-  },
-  {
-    eventId: 'media-interview',
-    title: 'Wawancara Media',
-    description: 'Media lokal meminta komentar menjelang pertandingan penting.',
-    choices: [
-      { id: 'focused', label: 'Jawab dengan fokus pada tim', cost: 0, rewardMoney: 70, rewardExp: 30, moraleDelta: 3, skillEffects: { teamwork: 6 }, charmDelta: 2 },
-      { id: 'bold', label: 'Buat pernyataan berani', cost: 0, rewardMoney: 110, rewardExp: 22, moraleDelta: -2, skillEffects: { willpower: 8 }, charmDelta: 4 }
-    ]
-  },
-  {
-    eventId: 'teammate-meal',
-    title: 'Makan Bersama Rekan Tim',
-    description: 'Rekan setim mengajak makan bersama untuk membangun chemistry.',
-    choices: [
-      { id: 'join', label: 'Ikut makan bersama', cost: 45, rewardMoney: 0, rewardExp: 35, moraleDelta: 8, skillEffects: { teamwork: 10 }, energyDelta: 6 },
-      { id: 'rest', label: 'Istirahat sendiri', cost: 0, rewardMoney: 0, rewardExp: 20, moraleDelta: 2, energyDelta: 12 }
-    ]
-  }
-];
-
-export function generateDailyEvent(profileInput: PlayerProfile, now = new Date(), rng: RandomSource = new MathRandomSource()): PlayerProfile {
-  const profile = ensureGameplayState(profileInput, now);
-  const today = dayKey(now);
-  if (profile.event?.dayKey === today) return profile;
-  const template = EVENT_TEMPLATES[Math.floor(rng.next() * EVENT_TEMPLATES.length)];
-  profile.event = { ...clone(template), dayKey: today, resolved: false };
-  profile.updatedAt = now.toISOString();
-  return profile;
-}
-
-function applyEventSkillEffects(profile: PlayerProfile, effects: Partial<Record<DetailedSkillId, number>> | undefined): void {
-  if (!effects) return;
-  for (const [skill, amount] of Object.entries(effects)) {
-    if (!DETAILED_SKILLS.includes(skill as DetailedSkillId) || !amount || amount <= 0) continue;
-    const state = profile.detailedSkills![skill as DetailedSkillId];
-    state.exp += Math.floor(amount);
-    profile.totalExp += Math.floor(amount);
-    while (state.exp >= Math.max(50, state.level * 100)) {
-      state.exp -= Math.max(50, state.level * 100);
-      state.level += 1;
-    }
-  }
-}
-
-export function resolveDailyEvent(profileInput: PlayerProfile, choiceId: string, now = new Date()): { profile: PlayerProfile; choice: EventState['choices'][number] } {
-  const profile = ensureGameplayState(profileInput, now);
-  if (!profile.event || profile.event.dayKey !== dayKey(now)) throw new Error('Belum ada event aktif hari ini.');
-  if (profile.event.resolved) throw new Error('Event hari ini sudah diselesaikan.');
-  const choice = profile.event.choices.find((item) => item.id === choiceId);
-  if (!choice) throw new Error('Pilihan event tidak ditemukan.');
-  if (profile.money < choice.cost) throw new Error('Money tidak cukup untuk pilihan ini.');
-  if (choice.cost > 0) ledger(profile, 'EVENT_COST', -choice.cost, `Cost event ${profile.event.eventId}`, now);
-  if (choice.rewardMoney > 0) ledger(profile, 'EVENT_REWARD', choice.rewardMoney, `Reward event ${profile.event.eventId}`, now);
-  profile.totalExp += choice.rewardExp;
-  applyEventSkillEffects(profile, choice.skillEffects);
-  profile.level = Math.max(profile.level, Math.floor(profile.totalExp / 100) + 1);
-  profile.stats = deriveMacroStats(profile.detailedSkills!);
-  profile.energy = clamp(profile.energy + (choice.energyDelta ?? 0), 0, profile.maxEnergy);
-  profile.charm = Math.max(0, (profile.charm ?? 0) + (choice.charmDelta ?? 0));
-  const userPlayer = profile.clubState?.roster.find((player) => player.isUserPlayer);
-  if (userPlayer) userPlayer.morale = clamp(userPlayer.morale + choice.moraleDelta, 0, 100);
-  profile.event.resolved = true;
-  profile.updatedAt = now.toISOString();
-  profile.lastActionAt = now.toISOString();
-  return { profile, choice };
-}
+/**
+ * Player incidents are intentionally not generated here. The recovered/public
+ * evidence supports conditional career activities and seasonal content, but it
+ * does not validate a daily random choice table or Money costs. Legacy JSON
+ * rows named `event` are ignored by the active Player lifecycle.
+ */
 
 function marketPlayer(id: string, name: string, position: ClubPlayer['position'], overall: number, price: number, now: Date, originClubId?: number): MarketListing {
   const stats = {

@@ -1,6 +1,5 @@
 import { recoverPlayer } from '../domain/engine.js';
 import { syncAchievements } from '../domain/competition-engine.js';
-import { generateDailyEvent } from '../domain/progression-engine.js';
 import { settleExpiredVersusMarket } from '../domain/versus-economy.js';
 import { processVersusRound, settleVersusSeason, syncVersusProfileWithSeason } from '../domain/versus-engine.js';
 import type { PlayerProfile, VersusSeason } from '../domain/types.js';
@@ -10,7 +9,6 @@ export async function runMaintenance(store: PlayerStore, now = new Date()): Prom
   const profiles = await store.all();
   for (const profile of profiles) {
     let updated = recoverPlayer(profile, now);
-    updated = generateDailyEvent(updated, now);
     updated = syncAchievements(updated);
     if (updated.contract && updated.contract.state === 'ACTIVE' && new Date(updated.contract.endTime).getTime() <= now.getTime()) updated.contract.state = 'EXPIRED';
     await store.save(updated);

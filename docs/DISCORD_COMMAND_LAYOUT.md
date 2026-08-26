@@ -11,11 +11,11 @@ Use `/player` for the individual career. The command groups are:
 - `/player club ...` for the official club, squad, formation, tactic, fixtures, standings, and transfer market.
 - `/player honors ...` for honors, World Footballer, achievements, and claims.
 
-The Player root command maps to existing internal handler names, so this is a Discord adapter/UX change and does not alter Player domain formulas or state isolation. From Game Home, Player creation is now position-select driven, and Player Home exposes Profile, Training, Weekly Update, Match, Club Office, and mode navigation buttons. The weekly flow is explicitly `Weekly Update → Match → pending EXP allocation → next cycle`; the legacy `advanceWeek` primitive remains as a compatibility wrapper for existing internal callers.
+The Player root command maps to existing internal handler names, so this is a Discord adapter/UX change and does not alter Player domain formulas or state isolation. From Game Home, Player creation is now position-select driven, and Player Home exposes Profile, Training, Weekly Update, Match, Club Office, and mode navigation buttons. The weekly flow is explicitly `Weekly Update → Match → pending EXP allocation → next cycle`; the legacy `advanceWeek` primitive remains as a compatibility wrapper for existing internal callers. Player Daily Event is not registered or generated; conditional career incidents remain evidence-gated and must not be represented as a daily Money choice.
 
 ## Coach Mode
 
-Use `/coach` for management career. The supported subcommands are `career`, `profile`, `event`, `round`, `exp`, `formation`, `tactic`, `job`, `retire`, `rebirth`, and `champions`. Formation, tactic, and Champions actions default to Coach state when invoked through the Coach root.
+Use `/coach` for management career. The supported subcommands are `career`, `profile`, `event`, `round`, `exp`, `formation`, `tactic`, `job`, `retire`, `rebirth`, and `champions`. Here `event` means a pending **Coach management decision** and not a Player daily event. Formation, tactic, and Champions actions default to Coach state when invoked through the Coach root.
 
 ## Versus Mode
 

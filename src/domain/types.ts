@@ -138,9 +138,16 @@ export interface CoachEventChoice {
   ability?: CoachAbilityId;
 }
 
+export type CoachEventFamily = 'PRESS_MEDIA' | 'LOCKER_ROOM' | 'TEAM_BUILDING' | 'YOUTH_SYSTEM' | 'FINANCE' | 'MEDICAL' | 'SEASON_TARGET';
+export type CoachEventTrigger = 'ROUND_SETTLEMENT' | 'SEASON_START' | 'SEASON_END' | 'BOARD_TARGET';
+
 export interface CoachEvent {
   id: string;
   templateId: 'press-criticism' | 'locker-room-speech' | 'team-building' | 'player-discipline' | 'financial-crisis';
+  family?: CoachEventFamily;
+  trigger?: CoachEventTrigger;
+  /** True when the next Coach round must wait for this decision. */
+  blocking?: boolean;
   title: string;
   description: string;
   choices: CoachEventChoice[];
@@ -332,27 +339,6 @@ export interface MarketListing {
 export interface DailyState {
   lastClaimDate?: string;
   streak: number;
-}
-
-export interface EventChoice {
-  id: string;
-  label: string;
-  cost: number;
-  rewardMoney: number;
-  rewardExp: number;
-  moraleDelta: number;
-  skillEffects?: Partial<Record<DetailedSkillId, number>>;
-  energyDelta?: number;
-  charmDelta?: number;
-}
-
-export interface EventState {
-  dayKey: string;
-  eventId: string;
-  title: string;
-  description: string;
-  choices: EventChoice[];
-  resolved: boolean;
 }
 
 export type VersusUserStatus = 'IDLE' | 'ENROLLED' | 'IN_GAME' | 'GAMEOVER';
@@ -636,7 +622,6 @@ export interface PlayerProfile {
   clubState?: ClubState;
   coachClubState?: ClubState;
   daily?: DailyState;
-  event?: EventState;
   championsLeague?: ChampionsLeagueState;
   contract?: ContractState;
   achievements?: AchievementState[];

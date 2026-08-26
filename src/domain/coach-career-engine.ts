@@ -11,6 +11,8 @@ import {
   type CoachCareerState,
   type CoachEvent,
   type CoachEventChoice,
+  type CoachEventFamily,
+  type CoachEventTrigger,
   type CoachExpAllocationResult,
   type CoachJobOffer,
   type CoachRoundResult,
@@ -152,6 +154,16 @@ function eventTemplate(templateId: CoachEvent['templateId']): { title: string; d
   return clone(templates[templateId]);
 }
 
+function classifyCoachEvent(templateId: CoachEvent['templateId']): { family: CoachEventFamily; trigger: CoachEventTrigger } {
+  switch (templateId) {
+    case 'press-criticism': return { family: 'PRESS_MEDIA', trigger: 'ROUND_SETTLEMENT' };
+    case 'locker-room-speech':
+    case 'player-discipline': return { family: 'LOCKER_ROOM', trigger: 'ROUND_SETTLEMENT' };
+    case 'team-building': return { family: 'TEAM_BUILDING', trigger: 'ROUND_SETTLEMENT' };
+    case 'financial-crisis': return { family: 'FINANCE', trigger: 'ROUND_SETTLEMENT' };
+  }
+}
+
 function makeCoachEvent(profile: PlayerProfile, rng: RandomSource, now: Date): CoachEvent | undefined {
   if (profile.coach?.event && !profile.coach.event.resolved) return profile.coach.event;
   if (rng.next() >= GAME_BALANCE.coach.eventChance) return undefined;
@@ -161,6 +173,8 @@ function makeCoachEvent(profile: PlayerProfile, rng: RandomSource, now: Date): C
   return {
     id: `coach-event-${profile.coach?.season ?? 1}-${profile.coachClubState?.fixtures.filter((fixture) => fixture.played).length ?? 0}-${templateId}`,
     templateId,
+    ...classifyCoachEvent(templateId),
+    blocking: true,
     title: template.title,
     description: template.description,
     choices: template.choices,
@@ -198,7 +212,7 @@ export function advanceCoachRound(profileInput: PlayerProfile, now = new Date(),
   const prepared = ensureCoachClubState(profileInput, now, rng);
   const coach = coachOrThrow(prepared);
   if (coach.status !== 'EMPLOYED') throw new Error('Coach tidak sedang terikat kontrak dengan club. Terima job offer terlebih dahulu.');
-  if (coach.event && !coach.event.resolved) throw new Error('Selesaikan Coach event terlebih dahulu dengan `/coach-event`.');
+  if (coach.event && !coach.event.resolved && coach.event.blocking !== false) throw new Error('Selesaikan Coach management decision terlebih dahulu dari Coach Home.');
   if (!prepared.coachClubState?.fixtures.some((fixture) => !fixture.played)) throw new Error('Season Coach sudah selesai. Gunakan `/season-end` untuk memulai season berikutnya.');
   const match = playClubMatch(prepared, now, rng, 'coachClubState');
   const profile = match.profile;

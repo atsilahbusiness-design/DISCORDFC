@@ -23,6 +23,21 @@ test('Coach career has six abilities, round settlement, and manual EXP', () => {
   assert.equal(allocated.profile.updatedAt, allocationTime.toISOString());
 });
 
+test('Coach decisions are classified and block the next round until resolved', () => {
+  const start = new Date('2026-01-01T00:00:00.000Z');
+  const profile = createCoachCareer(ensureClubState(createInitialProfile('coach-event-classification', 'Coach Event', 'MF'), start, new SeededRandom(1)), 'Coach Event', start);
+  let eventRound;
+  for (let seed = 1; seed <= 100 && !eventRound; seed += 1) {
+    const candidate = advanceCoachRound(profile, new Date('2026-01-02T00:00:00.000Z'), new SeededRandom(seed));
+    if (candidate.event) eventRound = candidate;
+  }
+  assert.ok(eventRound?.event);
+  assert.ok(eventRound.event.family);
+  assert.equal(eventRound.event.trigger, 'ROUND_SETTLEMENT');
+  assert.equal(eventRound.event.blocking, true);
+  assert.throws(() => advanceCoachRound(eventRound.profile, new Date('2026-01-03T00:00:00.000Z'), new SeededRandom(101)), /management decision/);
+});
+
 test('Coach next-round fallback is deterministic from the supplied reference time', () => {
   const profile = createCoachCareer(ensureClubState(createInitialProfile('coach-clock', 'Coach Clock', 'MF'), new Date('2026-01-01T00:00:00.000Z'), new SeededRandom(2)), 'Coach Clock', new Date('2026-01-01T00:00:00.000Z'));
   profile.coachClubState!.fixtures = [];

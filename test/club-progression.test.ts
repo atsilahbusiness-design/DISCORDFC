@@ -3,7 +3,7 @@ import test from 'node:test';
 import { createInitialProfile, SeededRandom } from '../src/domain/engine.js';
 import { ensureClubState, formatClubStanding, getClubRating, playClubMatch, setClubFormation, setClubTactic } from '../src/domain/club-engine.js';
 import { joinOfficialClub, listOfficialClubs } from '../src/domain/official-club-engine.js';
-import { buyMarketPlayer, claimDailyReward, generateDailyEvent, refreshMarket, resolveDailyEvent, sellClubPlayer } from '../src/domain/progression-engine.js';
+import { buyMarketPlayer, claimDailyReward, refreshMarket, sellClubPlayer } from '../src/domain/progression-engine.js';
 
 test('official club data exposes league 1011 and supports club transfer', () => {
   const clubs = listOfficialClubs(1011);
@@ -81,15 +81,9 @@ test('daily reward enforces one claim per day and streaks on consecutive days', 
   assert.equal(second.amount > first.amount, true);
 });
 
-test('daily event can be resolved and writes a reward', () => {
-  const profile = ensureClubState(generateDailyEvent(createInitialProfile('event-1', 'Event', 'DF'), new Date('2026-01-01T00:00:00.000Z'), new SeededRandom(2)), new Date('2026-01-01T00:00:00.000Z'), new SeededRandom(3));
-  const choice = profile.event!.choices[0];
-  const moraleBefore = profile.clubState!.roster.find((player) => player.isUserPlayer)!.morale;
-  const result = resolveDailyEvent(profile, choice.id, new Date('2026-01-01T01:00:00.000Z'));
-  const moraleAfter = result.profile.clubState!.roster.find((player) => player.isUserPlayer)!.morale;
-  assert.equal(result.profile.event?.resolved, true);
-  assert.equal(result.profile.totalExp >= choice.rewardExp, true);
-  assert.equal(moraleAfter, Math.min(100, moraleBefore + choice.moraleDelta));
+test('Player profile does not create an unsupported daily event state', () => {
+  const profile = ensureClubState(createInitialProfile('event-1', 'Event', 'DF'), new Date('2026-01-01T00:00:00.000Z'), new SeededRandom(3));
+  assert.equal(Object.hasOwn(profile, 'event'), false);
 });
 
 test('market refresh supports buying and selling non-user players', () => {

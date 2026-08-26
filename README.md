@@ -8,13 +8,13 @@ Proyek ini mengembangkan Football Rising Star menjadi pengalaman game berbasis D
 
 | Area | Fitur |
 | --- | --- |
-| Player Mode | Profil GK/DF/MF/FW, six macro abilities, twelve detailed skills, weekly progression, training orders, HP/energy, match, manual EXP, injury, trainers, culture, tricks, events, awards, retirement/rebirth |
-| Coach Mode | Enam Coach abilities, roster, seven formations, ten tactics, two-half match, halftime context, 38-round home-away season, full projected league standings, board targets, approval, events, job offers, isolated Champions League aggregate, retirement/rebirth |
+| Player Mode | Profil GK/DF/MF/FW, six macro abilities, twelve detailed skills, weekly progression, training orders, HP/energy, match, manual EXP, injury, trainers, culture, tricks, awards, retirement/rebirth; conditional career incidents remain evidence-gated |
+| Coach Mode | Enam Coach abilities, roster, seven formations, ten tactics, two-half match, halftime context, 38-round home-away season, full projected league standings, board targets, approval, classified management decisions, job offers, isolated Champions League aggregate, retirement/rebirth |
 | Versus Mode | System-managed matchmaking/assignment, assigned roster/wallet terpisah, group-code registration fallback, competition sign-up state, pre-match setup interaktif, legal XI/substitute/captain/formation/tactic submission, roster-version/deadline checks, locked snapshots, fast two-half seeded settlement, result/history, standings, Market Deal/Scout surfaces, Sponsor tiers, Rewards, Schedule, Rankings, Global Ranking, lifecycle state, reward ledger |
 | Club | Roster, squad rating, dynamic recovered-league fixtures, formation, tactics, assets, prestige |
 | Competition | Fixture, matchday, standings, promotion/relegation thresholds, Player Champions League, dan Coach Champions League yang state/season/reward-nya terisolasi |
 | Economy | Money, atomic economy ledger, salary, contract, market listing, buy/sell player |
-| Progression | Daily reward streak, daily event choices, achievements, MVP, season scoring |
+| Progression | Daily reward streak, achievements, MVP, season scoring; unsupported Player daily-event choices are disabled |
 | Production | PostgreSQL store dengan optimistic concurrency, atomic multi-profile batch save, advisory group lock untuk Versus, schema migration, JSON-to-PostgreSQL import, Docker image, Compose stack, rate limiter, per-user command queue, structured logging, admin stats |
 
 ## Slash commands
@@ -33,7 +33,7 @@ Proyek ini mengembangkan Football Rising Star menjadi pengalaman game berbasis D
 | `/tactic id:attacking` | Mengubah taktik klub |
 | `/club-match` | Memainkan fixture Player Club dan memperbarui standings |
 | `/coach-career`, `/coach-profile` | Memulai atau melihat karier Coach |
-| `/coach-round`, `/coach-exp`, `/coach-event` | Memainkan round Coach, alokasikan EXP, dan selesaikan event |
+| `/coach-round`, `/coach-exp`, `/coach-event` | Memainkan round Coach, alokasikan EXP, dan selesaikan classified management decision |
 | `/coach-job`, `/coach-retire`, `/coach-rebirth` | Mengelola job offer, retirement, dan rebirth Coach |
 | `/league` atau `/standings` | Melihat klasemen dan progres Player Club season |
 | `/versus-join group_code:CODE` | Fallback untuk bergabung ke private Versus group dengan group code |
@@ -50,8 +50,6 @@ Proyek ini mengembangkan Football Rising Star menjadi pengalaman game berbasis D
 | `/season-end` | Memulai season berikutnya setelah seluruh fixture selesai |
 | `/contract action:sign` | Menandatangani atau memperpanjang kontrak |
 | `/daily` | Mengambil daily reward dan menaikkan streak |
-| `/event` | Melihat event harian |
-| `/event choice:accept` | Menyelesaikan pilihan event |
 | `/market action:refresh` | Membuat daftar pemain market |
 | `/buy-player listing:listing-market-1` | Membeli pemain dari market |
 | `/sell-player player:npc-1` | Menjual pemain non-user dari roster |

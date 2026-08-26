@@ -13,11 +13,15 @@ test('Discord registry groups Player, Coach, and Versus modes without technical 
 
   const playerGroups = (roots.get('player')?.options ?? []).map((option) => option.name);
   assert.deepEqual(playerGroups, ['career', 'training', 'club', 'honors']);
+  const careerGroup = (roots.get('player')?.options ?? []).find((option) => option.name === 'career');
+  const careerCommands = (careerGroup?.options ?? []).map((option) => option.name);
+  assert.equal(careerCommands.includes('event'), false);
 
   const coachCommands = (roots.get('coach')?.options ?? []).map((option) => option.name);
   assert.equal(coachCommands.includes('career'), true);
   assert.equal(coachCommands.includes('formation'), true);
   assert.equal(coachCommands.includes('tactic'), true);
+  assert.equal(coachCommands.includes('event'), true);
 
   const versusCommands = (roots.get('versus')?.options ?? []).map((option) => option.name);
   assert.equal(versusCommands.includes('profile'), true);
@@ -32,6 +36,7 @@ test('Discord registry groups Player, Coach, and Versus modes without technical 
   assert.equal(resolveModeCommand('player', 'start', 'career'), 'start');
   assert.equal(resolveModeCommand('player', 'train', 'training'), 'train');
   assert.equal(resolveModeCommand('player', 'overview', 'club'), 'club');
+  assert.equal(resolveModeCommand('player', 'event', 'career'), 'player-event-disabled');
   assert.equal(resolveModeCommand('coach', 'formation'), 'formation');
   assert.equal(resolveModeCommand('versus', 'bid'), 'versus-bid');
 });

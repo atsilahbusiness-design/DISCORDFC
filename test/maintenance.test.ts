@@ -25,7 +25,7 @@ test('maintenance updates time-based profile state', async () => {
     assert.equal(count, 1);
     assert.equal(updated?.hp > 40, true);
     assert.equal(updated?.energy > 20, true);
-    assert.equal(updated?.event?.dayKey, '2026-01-03');
+    assert.equal(Object.hasOwn(updated ?? {}, 'event'), false);
     assert.equal(updated?.contract?.state, 'EXPIRED');
     assert.equal((await readFile(file, 'utf8')).length > 0, true);
   } finally {

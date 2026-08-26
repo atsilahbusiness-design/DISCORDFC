@@ -1,7 +1,7 @@
 import { ButtonInteraction, ChatInputCommandInteraction, EmbedBuilder, StringSelectMenuInteraction, type ColorResolvable } from 'discord.js';
 import { createInitialProfile, formatAbility, getRating, playMatch, recoverPlayer, trainPlayer } from '../domain/engine.js';
 import { ensureClubState, finishSeason, formatClubStanding, getClubRating, getNextClubFixture, playClubMatch, setClubFormation, setClubTactic } from '../domain/club-engine.js';
-import { buyMarketPlayer, claimDailyReward, formatMoney, generateDailyEvent, refreshMarket, resolveDailyEvent, sellClubPlayer } from '../domain/progression-engine.js';
+import { buyMarketPlayer, claimDailyReward, formatMoney, refreshMarket, sellClubPlayer } from '../domain/progression-engine.js';
 import { claimAchievement, formatAchievements, playChampionsLeague, startChampionsLeague, syncAchievements } from '../domain/competition-engine.js';
 import { assignMatchExp, ensureGameplayState, formatDetailedSkills, formatGameplayStatus, hireTrainer, listTrainerCatalog, playPreparedWeek, preparePlayerWeek, rebirthPlayer, releaseTrainer, retirePlayer, startCultureStudy, startTrickTraining, trainDetailedSkill, treatInjury } from '../domain/gameplay-engine.js';
 import { formatContract, getContractStatus, renewContract, signContract } from '../domain/contract-engine.js';
@@ -58,7 +58,6 @@ function createPlayerProfile(userId: string, displayName: string, position: Posi
   let profile = createInitialProfile(userId, displayName, position, now);
   profile = ensureClubState(profile, now);
   profile = refreshMarket(profile, now);
-  profile = generateDailyEvent(profile, now);
   return profile;
 }
 
@@ -70,7 +69,7 @@ function gameHomeEmbed(profile?: PlayerProfile): EmbedBuilder {
       .setDescription('Pilih mode untuk mulai. Player, Coach, dan Versus memiliki state yang terpisah; operasi berikutnya dilakukan melalui tombol dan menu.')
       .addFields(
         { name: 'Player Mode', value: 'Karier individu: weekly update, training, match, EXP, transfer, injury, dan honors.' },
-        { name: 'Coach Mode', value: 'Manajemen klub: roster, formation, tactic, fixture, board, event, dan season.' },
+        { name: 'Coach Mode', value: 'Manajemen klub: board target, job offer, roster, formation, tactic, fixture, decision, dan season.' },
         { name: 'Versus Mode', value: 'Kompetisi online asynchronous: system assignment, lineup, countdown, result, standings, Deal, dan rewards.' }
       );
   }
@@ -94,7 +93,7 @@ function coachHomeEmbed(profile: PlayerProfile): EmbedBuilder {
   return new EmbedBuilder()
     .setColor(BRAND_COLOR)
     .setTitle(`${coach.coachName} · Coach Home`)
-    .setDescription(`Kelola klub **${club?.name ?? profile.club}** melalui tombol di bawah. Formation dan tactic memengaruhi simulasi dalam ruleset reconstructed.`)
+    .setDescription(`Kelola klub **${club?.name ?? profile.club}** melalui tombol di bawah. Board, job, squad, formation, tactic, match, dan management decision memiliki state terpisah.`)
     .addFields(
       { name: 'Career', value: `Age ${coach.age} · Year ${coach.careerYear} · Level ${coach.level}\nStatus ${coach.status} · Approval ${coach.approval}/100`, inline: true },
       { name: 'Board', value: `${coach.boardTarget.type}\nTarget rank ${coach.boardTarget.targetRank}\nCurrent rank ${coach.boardTarget.progressRank ?? '-'}`, inline: true },
@@ -954,20 +953,8 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
       return;
     }
 
-    if (command === 'event') {
-      const profile = await requireProfile(interaction, store);
-      if (!profile) return;
-      const choiceId = interaction.options.getString('choice');
-      let enriched = generateDailyEvent(profile);
-      if (choiceId) {
-        const result = resolveDailyEvent(enriched, choiceId);
-        await store.save(result.profile);
-        await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`${result.profile.event!.title} · Resolved`).setDescription(`Pilihan: **${result.choice.label}**\nReward: **${result.choice.rewardMoney} money** dan **${result.choice.rewardExp} EXP**.`)] });
-      } else {
-        await store.save(enriched);
-        const event = enriched.event!;
-        await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(event.title).setDescription(`${event.description}\n\n${event.choices.map((choice) => `**${choice.id}** — ${choice.label} (cost ${choice.cost}, reward ${choice.rewardMoney} money / ${choice.rewardExp} EXP)`).join('\n')}`).setFooter({ text: 'Pilih dengan /event choice:<id>' })] });
-      }
+    if (command === 'player-event-disabled') {
+      await interaction.editReply('Player Event harian sudah dinonaktifkan. Alur Player menggunakan weekly update, match, EXP allocation, training, career, club, dan honors; incident hanya boleh muncul dari timeline yang terverifikasi.');
       return;
     }
 
@@ -1191,9 +1178,9 @@ export async function handleComponent(interaction: ButtonInteraction | StringSel
       if (!profile.coach) throw new Error('Karier Coach belum dibuat. Pilih Coach Mode dari Game Home.');
       const event = profile.coach.event;
       if (!event || event.resolved) {
-        await interaction.editReply({ embeds: [coachHomeEmbed(profile).setTitle('Coach Board · No Pending Event').setDescription('Belum ada event yang menunggu keputusan. Event baru dapat muncul setelah Coach Round.')], components: coachControls(interaction.user.id) });
+        await interaction.editReply({ embeds: [coachHomeEmbed(profile).setTitle('Coach Board · No Pending Decision').setDescription('Belum ada management decision yang menunggu. Keputusan baru dapat muncul sebagai bagian dari timeline Coach setelah round.')], components: coachControls(interaction.user.id) });
       } else {
-        await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`Coach Event · ${event.title}`).setDescription(event.description).addFields({ name: 'Choices', value: event.choices.map((choice) => `**${choice.label}** — ${choice.description}`).join('\n') })], components: coachEventControls(interaction.user.id, event.choices) });
+        await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`Coach Decision · ${event.family ?? 'MANAGEMENT'} · ${event.title}`).setDescription(`${event.description}\n\nTrigger: ${event.trigger ?? 'LEGACY'} · Blocking: ${event.blocking === false ? 'no' : 'yes'}`).addFields({ name: 'Choices', value: event.choices.map((choice) => `**${choice.label}** — ${choice.description}`).join('\n') })], components: coachEventControls(interaction.user.id, event.choices) });
       }
       return;
     }
