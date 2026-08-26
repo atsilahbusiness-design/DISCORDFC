@@ -20,7 +20,7 @@ const pool = config.databaseUrl ? new Pool({ connectionString: config.databaseUr
 const store: PlayerStore = pool ? new PostgresPlayerStore(pool) : new JsonPlayerStore(config.dataFile);
 const rateLimiter = new UserRateLimiter(config.rateLimitMax, config.rateLimitWindowMs);
 const mutationRateLimiter = new UserRateLimiter(Math.max(3, Math.floor(config.rateLimitMax / 2)), Math.min(config.rateLimitWindowMs, 10_000));
-const mutationCommands = new Set(['versus-bid', 'versus-lineup', 'versus-round', 'versus-season', 'market', 'buy-player', 'train', 'next-week', 'play-match', 'daily-reward', 'claim-achievement', 'admin']);
+const mutationCommands = new Set(['player', 'coach', 'versus', 'versus-bid', 'versus-lineup', 'versus-round', 'versus-season', 'market', 'buy-player', 'train', 'next-week', 'play-match', 'daily-reward', 'claim-achievement', 'admin']);
 const commandQueue = new UserCommandQueue();
 const maintenanceWorker = createMaintenanceWorker(async () => {
   const run = async (): Promise<void> => {
@@ -45,12 +45,17 @@ client.on(Events.InteractionCreate, async (interaction) => {
   if (interaction.user?.bot) return;
   if (!interaction.isChatInputCommand() && !interaction.isButton() && !interaction.isStringSelectMenu()) return;
   const scope = interaction.isChatInputCommand() ? interaction.commandName : interaction.customId.split(':', 1)[0];
+  const receivedAt = Date.now();
+  const interactionAgeMs = receivedAt - interaction.createdTimestamp;
+  const ackStartedAt = receivedAt;
+  log('info', 'interaction_received', { scope, userId: interaction.user.id, interactionAgeMs });
   try {
     if (!interaction.replied && !interaction.deferred) {
       await interaction.deferReply({ ephemeral: !interaction.isChatInputCommand() });
     }
+    log('info', 'interaction_acknowledged', { scope, userId: interaction.user.id, interactionAgeMs, ackLatencyMs: Date.now() - ackStartedAt });
   } catch (error) {
-    log('error', 'interaction_ack_failed', { scope, userId: interaction.user.id, error });
+    log('error', 'interaction_ack_failed', { scope, userId: interaction.user.id, interactionAgeMs, ackLatencyMs: Date.now() - ackStartedAt, error });
     return;
   }
   if (!rateLimiter.consume(interaction.user.id, Date.now(), 'global') || (interaction.isChatInputCommand() && mutationCommands.has(interaction.commandName) && !mutationRateLimiter.consume(interaction.user.id, Date.now(), 'mutation'))) {

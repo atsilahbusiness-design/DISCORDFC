@@ -13,6 +13,7 @@ import { ABILITY_LABELS, COACH_ABILITIES, COACH_ABILITY_LABELS, DETAILED_SKILL_L
 import type { BatchPlayerStore, PlayerStore, VersusGroupLockStore } from '../storage/json-store.js';
 import { careerControls, detailedTrainingControls, trainingControls, versusFinalizeControls, versusHomeControls, versusMarketControls, versusPositionControls, versusRankingControls, versusSetupControls, versusSponsorControls } from './components.js';
 import { log } from '../observability/logger.js';
+import { resolveModeCommand } from './commands.js';
 
 const BRAND_COLOR: ColorResolvable = '#1f8b4c';
 const ADMIN_USER_IDS = new Set((process.env.ADMIN_USER_IDS ?? '').split(',').map((value) => value.trim()).filter(Boolean));
@@ -354,7 +355,8 @@ function draftSummary(draft: VersusDraft, club: import('../domain/types.js').Ver
 }
 
 export async function handleCommand(interaction: ChatInputCommandInteraction, store: PlayerStore): Promise<void> {
-  const command = interaction.commandName;
+  const rootCommand = interaction.commandName;
+  const command = resolveModeCommand(rootCommand, interaction.options.getSubcommand(false) ?? undefined, interaction.options.getSubcommandGroup(false) ?? undefined);
   try {
     if (!interaction.replied && !interaction.deferred) await interaction.deferReply();
     if (command === 'start') {
@@ -607,7 +609,7 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
       const profile = await requireProfile(interaction, store);
       if (!profile) return;
       const formation = interaction.options.getString('id', true) as keyof typeof FORMATIONS;
-      const mode = interaction.options.getString('mode') ?? 'PLAYER';
+      const mode = interaction.options.getString('mode') ?? (rootCommand === 'coach' ? 'COACH' : 'PLAYER');
       if (mode === 'COACH' && !profile.coach) throw new Error('Karier Coach belum dibuat. Jalankan `/coach-career action:start`.');
       const updated = setClubFormation(profile, formation, new Date(), mode === 'COACH' ? 'coachClubState' : 'clubState');
       await store.save(updated);
@@ -619,7 +621,7 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
       const profile = await requireProfile(interaction, store);
       if (!profile) return;
       const tactic = interaction.options.getString('id', true) as keyof typeof TACTICS;
-      const mode = interaction.options.getString('mode') ?? 'PLAYER';
+      const mode = interaction.options.getString('mode') ?? (rootCommand === 'coach' ? 'COACH' : 'PLAYER');
       if (mode === 'COACH' && !profile.coach) throw new Error('Karier Coach belum dibuat. Jalankan `/coach-career action:start`.');
       const updated = setClubTactic(profile, tactic, new Date(), mode === 'COACH' ? 'coachClubState' : 'clubState');
       await store.save(updated);
@@ -967,7 +969,7 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
       const profile = await requireProfile(interaction, store);
       if (!profile) return;
       const action = interaction.options.getString('action') ?? 'status';
-      const mode = (interaction.options.getString('mode') ?? 'PLAYER') as import('../domain/competition-engine.js').ChampionsLeagueMode;
+      const mode = (interaction.options.getString('mode') ?? (rootCommand === 'coach' ? 'COACH' : 'PLAYER')) as import('../domain/competition-engine.js').ChampionsLeagueMode;
       const modeLabel = mode === 'COACH' ? 'Coach Mode' : 'Player Mode';
       if (action === 'play') {
         const result = playChampionsLeague(profile, new Date(), undefined, mode);
@@ -1017,7 +1019,7 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, st
     }
 
     if (command === 'help') {
-      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle('Football Rising Star — Panduan').setDescription('Bangun karier pemain dan kelola klub melalui loop mingguan yang terinspirasi dari gameplay publik dan client recovery. Formula yang belum memiliki method body resmi tetap diberi label RECOVERY_INFERRED.').addFields({ name: 'Player Mode', value: '`/start`, `/profile`, `/skills`, `/train-skill`, `/assign-exp`, `/match`, `/next-week`, `/league`' }, { name: 'Player progression', value: '`/injury`, `/trick`, `/trainer`, `/culture`, `/honors`, `/world-footballer`, `/retire`, `/rebirth`' }, { name: 'Coach Mode', value: '`/coach-career`, `/coach-profile`, `/coach-round`, `/coach-exp`, `/coach-event`, `/coach-job`, `/coach-retire`, `/coach-rebirth`' }, { name: 'Versus Mode', value: '`Versus Mode` → `/versus-profile`/Versus Home, `/versus-roster`, `/versus-lineup`, `/versus-bid`, `/versus-round`, `/versus-standings`, `/versus-season`; `/versus-join` hanya private-group fallback — asynchronous system-assigned competition dengan pre-match setup, market escrow, dan deadline guards' }, { name: 'Club & economy', value: '`/club`, `/squad`, `/formation`, `/tactic`, `/club-match`, `/standings`, `/season-end`, `/daily`, `/event`, `/market`, `/buy-player`, `/sell-player`, `/contract`' })] });
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle('Football Rising Star — Mode Select').setDescription('Pilih mode utama terlebih dahulu. Semua state Player, Coach, dan Versus tetap terisolasi. Formula yang belum memiliki evidence primer tetap diberi label RECOVERY_INFERRED.').addFields({ name: 'PLAYER · karier individu', value: '`/player career start`, `/player career profile`, `/player career match`, `/player training train`, `/player training skills`, `/player club overview`, `/player honors list`' }, { name: 'COACH · manajemen klub', value: '`/coach career`, `/coach profile`, `/coach round`, `/coach event`, `/coach job`, `/coach formation`, `/coach tactic`, `/coach champions`' }, { name: 'VERSUS · multiplayer otomatis', value: '`/versus home`, `/versus profile`, `/versus roster`, `/versus lineup`, `/versus bid`, `/versus standings`, `/versus round`, `/versus season`' }, { name: 'Cara mulai', value: 'Player: `/player career start` lalu pilih position. Coach: `/coach career action:Start`. Versus: `/versus home`; assignment dan matchmaking dikelola sistem.' }, { name: 'Command layout', value: 'Registry guild sekarang memakai root command berbasis mode. Command datar lama tidak lagi didaftarkan agar menu Discord tetap rapi.' })] });
       return;
     }
 
