@@ -61,7 +61,11 @@ Proyek ini mengembangkan Football Rising Star menjadi pengalaman game berbasis D
 | `/admin action:refresh-markets` | Refresh market semua profil, hanya admin |
 | `/help` | Melihat bantuan command |
 
-Setelah `/start` atau `/profile`, dashboard menyediakan tombol **Profile**, **Train**, **Play match**, **Club office**, **Coach Mode**, dan **Versus Mode**. Versus masuk melalui system matchmaking; `/versus-join` hanya menjadi fallback untuk private group code. Tombol serta training select terikat pada Discord user pemilik profile sehingga tidak dapat dipakai user lain. Versus assignment tetap terpisah dari Player dan Coach aggregate.
+Setelah `/play`, Game Home menyediakan tombol **Player Mode**, **Coach Mode**, dan **Versus Mode**. Seluruh operasi gameplay utama kemudian dilanjutkan melalui button dan select menu yang owner-bound: Player memiliki weekly update, match, EXP, training, recovery, club office, honors, contract, dan Champions; Coach memiliki round, management decision, EXP, formation/tactic, job offer, club office, dan Champions; Versus memiliki assignment, next battle, lineup builder, result, standings, market, rewards, schedule, rankings, dan sponsor surfaces. Command root tetap tersedia sebagai fallback operator, tetapi pengguna normal tidak perlu mengetik command untuk setiap aksi. Versus masuk melalui system matchmaking; `/versus-join` hanya menjadi fallback untuk private group code. Tombol serta select terikat pada Discord user pemilik profile sehingga tidak dapat dipakai user lain. Versus assignment tetap terpisah dari Player dan Coach aggregate.
+
+## Button-driven gameplay
+
+Flow yang direkomendasikan adalah `/play` → pilih mode → pilih aksi pada menu konteks mode → kembali ke home setelah setiap aksi. Player tidak lagi memiliki daily event menu; daily reward, injury/recovery, training, weekly update, match, dan pending EXP memiliki panel masing-masing. Coach `Decision` hanya menampilkan keputusan manajemen ketika event Coach memang pending. Versus tidak membuat pengguna mengetik technical matchmaking command; sistem menyiapkan assignment dan menu **Next Battle/Lineup** menjadi entry pre-match.
 
 ## Data client 2.8.0
 

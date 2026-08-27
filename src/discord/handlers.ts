@@ -11,7 +11,7 @@ import { assignVersusMatchmaking, createVersusSeason, formatVersusBattle, getVer
 import { availableVersusCoin, createVersusMarket, placeVersusBid, settleExpiredVersusMarket } from '../domain/versus-economy.js';
 import { ABILITY_LABELS, COACH_ABILITIES, COACH_ABILITY_LABELS, DETAILED_SKILL_LABELS, DETAILED_SKILLS, FORMATIONS, HONOR_CATEGORY_LABELS, POSITION_LABELS, TACTICS, TRAINER_CATALOG, TRICK_CATALOG, type AbilityId, type CoachAbilityId, type CultureSubject, type DetailedSkillId, type FormationId, type PlayerProfile, type Position, type TacticId, type VersusSeason } from '../domain/types.js';
 import type { BatchPlayerStore, PlayerStore, VersusGroupLockStore } from '../storage/json-store.js';
-import { careerControls, coachControls, coachEventControls, detailedTrainingControls, mainMenuControls, pendingExpControls, playerCreationControls, trainingControls, versusFinalizeControls, versusHomeControls, versusMarketControls, versusPositionControls, versusRankingControls, versusSetupControls, versusSponsorControls } from './components.js';
+import { careerControls, championsControls, coachControls, coachEventControls, coachExpControls, coachJobControls, coachStrategyControls, detailedTrainingControls, mainMenuControls, pendingExpControls, playerClubControls, playerCreationControls, playerCultureControls, playerInjuryControls, playerStrategyControls, trainingControls, versusFinalizeControls, versusHomeControls, versusMarketControls, versusPositionControls, versusRankingControls, versusSetupControls, versusSponsorControls } from './components.js';
 import { log } from '../observability/logger.js';
 import { resolveModeCommand } from './commands.js';
 
@@ -1342,6 +1342,227 @@ export async function handleComponent(interaction: ButtonInteraction | StringSel
       return;
     }
 
+    if (action === 'daily-reward') {
+      const result = claimDailyReward(profile);
+      await store.save(result.profile);
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle('Daily Reward').setDescription(`Anda menerima **${formatMoney(result.amount)} money** dan **${result.exp} EXP**.`).addFields({ name: 'Streak', value: `${result.streak} hari`, inline: true }, { name: 'Balance', value: formatMoney(result.profile.money), inline: true })], components: careerControls(interaction.user.id) });
+      return;
+    }
+
+    if (action === 'injury') {
+      const enriched = ensureGameplayState(profile);
+      await store.save(enriched);
+      const injuryText = enriched.injury ? `Cedera **${enriched.injury.severity}** · tersisa **${enriched.injury.weeksRemaining} minggu**\nSource: ${enriched.injury.source}\nTreatment used: ${enriched.injury.treatmentUsed ? 'yes' : 'no'}` : 'Pemain sedang sehat. Recovery tetap diproses oleh timeline maintenance.';
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle('Player · Injury & Recovery').setDescription(injuryText).addFields({ name: 'Condition', value: `HP ${enriched.hp}/${enriched.maxHp}\nEnergy ${enriched.energy}/${enriched.maxEnergy}` })], components: playerInjuryControls(interaction.user.id) });
+      return;
+    }
+
+    if (action === 'injury-treatment-select' && interaction.isStringSelectMenu()) {
+      const selected = interaction.values[0];
+      if (selected === 'view') {
+        const enriched = ensureGameplayState(profile);
+        await store.save(enriched);
+        await interaction.editReply({ content: enriched.injury ? `Cedera **${enriched.injury.severity}** tersisa **${enriched.injury.weeksRemaining} minggu**.` : 'Pemain sedang sehat.', components: playerInjuryControls(interaction.user.id) });
+      } else {
+        const result = treatInjury(profile, selected === 'expert-treatment' ? 'EXPERT' : 'BASIC');
+        await store.save(result.profile);
+        await interaction.editReply({ content: `Treatment **${result.treatment}** selesai. Durasi dikurangi **${result.weeksRemoved} minggu**; biaya **${formatMoney(result.moneySpent)}**. ${result.profile.injury ? `Sisa cedera: ${result.profile.injury.weeksRemaining} minggu.` : 'Cedera sudah pulih.'}`, components: careerControls(interaction.user.id) });
+      }
+      return;
+    }
+
+    if (action === 'honors') {
+      const enriched = syncAchievements(ensureGameplayState(profile));
+      await store.save(enriched);
+      const categories = (['PERSONAL', 'TEAM', 'NATIONAL'] as const).map((category) => {
+        const honors = enriched.honors!.filter((honor) => honor.category === category);
+        return `**${HONOR_CATEGORY_LABELS[category]}**\n${honors.length ? honors.map((honor) => `${honor.title} · season ${honor.season}`).join('\n') : 'Belum ada honor.'}`;
+      }).join('\n\n');
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle('Hall of Honor').setDescription(categories)], components: careerControls(interaction.user.id) });
+      return;
+    }
+
+    if (action === 'contract') {
+      const current = getContractStatus(profile);
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle('Player Contract').setDescription(formatContract(current))], components: careerControls(interaction.user.id) });
+      return;
+    }
+
+    if (action === 'player-champions' || action === 'player-champions-status') {
+      const enriched = startChampionsLeague(profile, new Date(), 'PLAYER');
+      await store.save(enriched);
+      const state = enriched.championsLeague;
+      if (!state) throw new Error('Player Champions League state tidak tersedia.');
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle('Champions League · Player · Status').setDescription(`Status **${state.status}**\nSeason **${state.season}**\nRound **${state.round}**\nOpponent **${state.opponent}**\nAggregate **${state.aggregate}**`)], components: championsControls(interaction.user.id, 'PLAYER') });
+      return;
+    }
+
+    if (action === 'player-champions-play') {
+      const result = playChampionsLeague(profile, new Date(), undefined, 'PLAYER');
+      await store.save(result.profile);
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`Champions League · Player · ${result.status}`).setDescription(result.commentary.join('\n'))], components: championsControls(interaction.user.id, 'PLAYER') });
+      return;
+    }
+
+    if (action === 'player-club-match') {
+      const result = playClubMatch(profile);
+      await store.save(result.profile);
+      const label = result.outcome === 'WIN' ? 'VICTORY' : result.outcome === 'DRAW' ? 'DRAW' : 'DEFEAT';
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`Club Match · ${label}`).setDescription(result.commentary.join('\n')).addFields({ name: 'Score', value: `${result.homeGoals}–${result.awayGoals} (HT ${result.halftime.homeGoals}–${result.halftime.awayGoals})`, inline: true }, { name: 'Fixture', value: `${result.fixture.homeClub} vs ${result.fixture.awayClub}`, inline: true }, { name: 'MVP', value: result.mvp.name, inline: true })], components: playerClubControls(interaction.user.id) });
+      return;
+    }
+
+    if (action === 'player-league') {
+      const enriched = ensureClubState(recoverPlayer(profile));
+      await store.save(enriched);
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`${enriched.club} · League Table`).setDescription(formatClubStanding(enriched)).addFields({ name: 'Progress', value: `Matchday ${enriched.league.matchday}\nPoints ${enriched.league.points}\nRecord ${enriched.league.wins}-${enriched.league.draws}-${enriched.league.losses}` })], components: playerClubControls(interaction.user.id) });
+      return;
+    }
+
+    if (action === 'player-squad') {
+      const enriched = ensureClubState(profile);
+      await store.save(enriched);
+      const roster = enriched.clubState!.roster.map((player) => `${player.name} · ${player.position} · OVR ${player.overall} · HP ${player.hp}/${player.maxHp}${player.isUserPlayer ? ' · YOU' : ''}`).join('\n');
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`${enriched.club} · Squad`).setDescription(roster.slice(0, 3900))], components: playerClubControls(interaction.user.id) });
+      return;
+    }
+
+    if (action === 'player-market') {
+      const enriched = profile.market?.length ? profile : refreshMarket(profile);
+      await store.save(enriched);
+      const listings = enriched.market!.filter((listing) => listing.status === 'OPEN').map((listing) => `${listing.player.name} · ${listing.player.position} · OVR ${listing.player.overall} · ${formatMoney(listing.price)}`).join('\n');
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle('Player Transfer Market').setDescription(listings || 'Market kosong.')], components: playerClubControls(interaction.user.id) });
+      return;
+    }
+
+    if (action === 'player-strategy') {
+      const enriched = ensureClubState(profile);
+      await store.save(enriched);
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle('Player Club · Formation & Tactic').setDescription(`Formation **${enriched.clubState!.formation}**\nTactic **${TACTICS[enriched.clubState!.tactic].name}**\n${TACTICS[enriched.clubState!.tactic].description}`)], components: playerStrategyControls(interaction.user.id, enriched.clubState!.formation, enriched.clubState!.tactic) });
+      return;
+    }
+
+    if (action === 'player-formation-select' && interaction.isStringSelectMenu()) {
+      const updated = setClubFormation(profile, interaction.values[0] as FormationId, new Date(), 'clubState');
+      await store.save(updated);
+      const club = updated.clubState!;
+      await interaction.editReply({ content: `Formation Player Club diubah menjadi **${club.formation}**.`, components: playerStrategyControls(interaction.user.id, club.formation, club.tactic) });
+      return;
+    }
+
+    if (action === 'player-tactic-select' && interaction.isStringSelectMenu()) {
+      const updated = setClubTactic(profile, interaction.values[0] as TacticId, new Date(), 'clubState');
+      await store.save(updated);
+      const club = updated.clubState!;
+      await interaction.editReply({ content: `Tactic Player Club diubah menjadi **${TACTICS[club.tactic].name}**.`, components: playerStrategyControls(interaction.user.id, club.formation, club.tactic) });
+      return;
+    }
+
+    if (action === 'player-culture') {
+      await interaction.editReply({ content: 'Culture Study adalah aktivitas terpisah dari daily reward dan career incident. Pilih subjek untuk memulai.', components: playerCultureControls(interaction.user.id) });
+      return;
+    }
+
+    if (action === 'culture-select' && interaction.isStringSelectMenu()) {
+      const result = startCultureStudy(profile, interaction.values[0] as CultureSubject);
+      await store.save(result.profile);
+      await interaction.editReply({ content: result.message, components: trainingControls(interaction.user.id) });
+      return;
+    }
+
+    if (action === 'player-tricks') {
+      const enriched = ensureGameplayState(profile);
+      await store.save(enriched);
+      const list = Object.values(TRICK_CATALOG).map((trick) => `${enriched.unlockedTricks?.includes(trick.id) ? 'UNLOCKED' : 'LOCKED'} · ${trick.name}`).join('\n');
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle('Player · Tricks').setDescription(list)], components: trainingControls(interaction.user.id) });
+      return;
+    }
+
+    if (action === 'player-trainer') {
+      const list = listTrainerCatalog().map((trainer) => `${trainer.id} · ${trainer.tier} ${trainer.type} · weekly cost ${formatMoney(trainer.weeklyCost)} · ratio ${Math.round(trainer.ratio * 100)}%`).join('\n');
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle('Player · Trainer').setDescription(list)], components: trainingControls(interaction.user.id) });
+      return;
+    }
+
+    if (action === 'coach-exp') {
+      if (!profile.coach) throw new Error('Karier Coach belum dibuat. Pilih Coach Mode dari Game Home.');
+      const remaining = profile.coach.unassignedExp;
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle('Coach · EXP Allocation').setDescription(`Pending Coach EXP: **${remaining}**. Pilih satu ability untuk mengalokasikan seluruh pending EXP.`)], components: remaining > 0 ? coachExpControls(interaction.user.id, remaining) : coachControls(interaction.user.id) });
+      return;
+    }
+
+    if (action === 'coach-exp-select' && interaction.isStringSelectMenu()) {
+      if (!profile.coach) throw new Error('Karier Coach belum dibuat.');
+      const remaining = profile.coach.unassignedExp;
+      if (remaining <= 0) throw new Error('Tidak ada Coach EXP yang menunggu.');
+      const ability = interaction.values[0] as CoachAbilityId;
+      const result = assignCoachExp(profile, { [ability]: remaining });
+      await store.save(result.profile);
+      await interaction.editReply({ embeds: [coachHomeEmbed(result.profile).setTitle('Coach EXP Allocated').setDescription(`${remaining} EXP dialokasikan ke **${COACH_ABILITY_LABELS[ability]}**.`)], components: coachControls(interaction.user.id) });
+      return;
+    }
+
+    if (action === 'coach-strategy') {
+      if (!profile.coach) throw new Error('Karier Coach belum dibuat.');
+      const club = ensureClubState(profile, new Date(), undefined, 'coachClubState').coachClubState!;
+      await store.save({ ...profile, coachClubState: club });
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle('Coach · Formation & Tactic').setDescription(`Formation **${club.formation}**\nTactic **${TACTICS[club.tactic].name}**\n${TACTICS[club.tactic].description}`)], components: coachStrategyControls(interaction.user.id, club.formation, club.tactic) });
+      return;
+    }
+
+    if ((action === 'coach-formation-select' || action === 'coach-tactic-select') && interaction.isStringSelectMenu()) {
+      if (!profile.coach) throw new Error('Karier Coach belum dibuat.');
+      const club = ensureClubState(profile, new Date(), undefined, 'coachClubState').coachClubState!;
+      const updated = action === 'coach-formation-select' ? setClubFormation({ ...profile, coachClubState: club }, interaction.values[0] as FormationId, new Date(), 'coachClubState') : setClubTactic({ ...profile, coachClubState: club }, interaction.values[0] as TacticId, new Date(), 'coachClubState');
+      await store.save(updated);
+      const nextClub = updated.coachClubState!;
+      await interaction.editReply({ content: `Coach strategy diperbarui: formation **${nextClub.formation}**, tactic **${TACTICS[nextClub.tactic].name}**.`, components: coachStrategyControls(interaction.user.id, nextClub.formation, nextClub.tactic) });
+      return;
+    }
+
+    if (action === 'coach-job') {
+      if (!profile.coach) throw new Error('Karier Coach belum dibuat.');
+      const offers = profile.coach.jobOffers.filter((offer) => offer.status === 'OPEN');
+      const text = offers.length ? offers.map((offer) => `${offer.clubName} · salary ${formatMoney(offer.salary)} · target rank ${offer.targetRank}`).join('\n') : 'Belum ada job offer terbuka. Gunakan Generate Offer untuk meminta tawaran baru.';
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle('Coach · Job Offers').setDescription(text)], components: coachJobControls(interaction.user.id, offers) });
+      return;
+    }
+
+    if (action === 'coach-job-generate') {
+      if (!profile.coach) throw new Error('Karier Coach belum dibuat.');
+      const result = generateJobOffer(profile);
+      await store.save(result.profile);
+      const offers = result.profile.coach!.jobOffers.filter((offer) => offer.status === 'OPEN');
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle('Coach · New Job Offer').setDescription(`${result.offer.clubName} membuka kontrak Coach.`).addFields({ name: 'Salary', value: formatMoney(result.offer.salary), inline: true }, { name: 'Target', value: `Rank ${result.offer.targetRank}`, inline: true }, { name: 'Duration', value: `${result.offer.durationYears} season`, inline: true })], components: coachJobControls(interaction.user.id, offers) });
+      return;
+    }
+
+    if (action === 'coach-job-accept-select' && interaction.isStringSelectMenu()) {
+      if (!profile.coach) throw new Error('Karier Coach belum dibuat.');
+      const updated = acceptJobOffer(profile, interaction.values[0]);
+      await store.save(updated);
+      await interaction.editReply({ embeds: [coachHomeEmbed(updated).setTitle('Coach · Job Accepted').setDescription(`Coach sekarang memimpin **${updated.coachClubState?.name ?? updated.club}**.`)], components: coachControls(interaction.user.id) });
+      return;
+    }
+
+    if (action === 'coach-champions' || action === 'coach-champions-status') {
+      if (!profile.coach) throw new Error('Karier Coach belum dibuat.');
+      const enriched = startChampionsLeague(profile, new Date(), 'COACH');
+      await store.save(enriched);
+      const state = enriched.coach?.championsLeague;
+      if (!state) throw new Error('Coach Champions League state tidak tersedia.');
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle('Champions League · Coach · Status').setDescription(`Status **${state.status}**\nSeason **${state.season}**\nRound **${state.round}**\nOpponent **${state.opponent}**\nAggregate **${state.aggregate}**`)], components: championsControls(interaction.user.id, 'COACH') });
+      return;
+    }
+
+    if (action === 'coach-champions-play') {
+      if (!profile.coach) throw new Error('Karier Coach belum dibuat.');
+      const result = playChampionsLeague(profile, new Date(), undefined, 'COACH');
+      await store.save(result.profile);
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`Champions League · Coach · ${result.status}`).setDescription(result.commentary.join('\n'))], components: championsControls(interaction.user.id, 'COACH') });
+      return;
+    }
+
     if (action === 'profile') {
       const enriched = ensureClubState(recoverPlayer(profile));
       await store.save(enriched);
@@ -1412,7 +1633,7 @@ export async function handleComponent(interaction: ButtonInteraction | StringSel
       const enriched = ensureClubState(profile);
       await store.save(enriched);
       const club = enriched.clubState!;
-      await interaction.editReply({ content: `**${club.name} · Club Office**\nRating ${getClubRating(enriched)} · Level ${club.level}\nFormation ${club.formation} · Tactic ${TACTICS[club.tactic].name}\nPrestige ${club.prestige} · Assets ${formatMoney(club.assets)}`, components: careerControls(interaction.user.id) });
+      await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND_COLOR).setTitle(`${club.name} · Club Office`).setDescription(`Club rating **${getClubRating(enriched)}** · Level **${club.level}**`).addFields({ name: 'Resources', value: `Prestige **${club.prestige}**\nAssets **${formatMoney(club.assets)}**\nSalary budget **${formatMoney(club.salaryBudget)}`, inline: true }, { name: 'Strategy', value: `Formation **${club.formation}**\nTactic **${TACTICS[club.tactic].name}`, inline: true })], components: playerClubControls(interaction.user.id) });
       return;
     }
 

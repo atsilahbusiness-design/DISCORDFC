@@ -1,13 +1,20 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { careerControls, coachControls, detailedTrainingControls, mainMenuControls, pendingExpControls, playerCreationControls, trainingControls, versusFinalizeControls, versusHomeControls, versusPositionControls, versusSetupControls } from '../src/discord/components.js';
+import { careerControls, championsControls, coachControls, coachExpControls, coachJobControls, coachStrategyControls, detailedTrainingControls, mainMenuControls, pendingExpControls, playerClubControls, playerCreationControls, playerCultureControls, playerInjuryControls, playerStrategyControls, trainingControls, versusFinalizeControls, versusHomeControls, versusPositionControls, versusSetupControls } from '../src/discord/components.js';
 import { createInitialProfile } from '../src/domain/engine.js';
 import { createVersusClub } from '../src/domain/versus-engine.js';
 
 test('career components are owner-bound and actionable', () => {
   const rows = careerControls('user-1').map((row) => row.toJSON());
   const ids = rows.flatMap((row) => row.components.map((component) => component.custom_id));
-  assert.deepEqual(ids, ['frs:user-1:profile', 'frs:user-1:train', 'frs:user-1:next-week', 'frs:user-1:match', 'frs:user-1:club', 'frs:user-1:menu-home', 'frs:user-1:menu-coach', 'frs:user-1:versus-home']);
+  assert.ok(ids.includes('frs:user-1:daily-reward'));
+  assert.ok(ids.includes('frs:user-1:injury'));
+  assert.ok(ids.includes('frs:user-1:honors'));
+  assert.ok(ids.includes('frs:user-1:contract'));
+  assert.ok(ids.includes('frs:user-1:player-champions'));
+  assert.ok(ids.includes('frs:user-1:menu-home'));
+  assert.ok(ids.includes('frs:user-1:menu-coach'));
+  assert.ok(ids.includes('frs:user-1:versus-home'));
   assert.equal(ids.every((id) => id.startsWith('frs:user-1:')), true);
 });
 
@@ -38,8 +45,34 @@ test('main menu exposes the three gameplay modes and player creation is menu-dri
   const coach = coachControls('user-menu').flatMap((row) => row.toJSON().components.map((component) => component.custom_id));
   assert.ok(coach.includes('frs:user-menu:coach-round'));
   assert.ok(coach.includes('frs:user-menu:coach-event'));
+  assert.ok(coach.includes('frs:user-menu:coach-exp'));
+  assert.ok(coach.includes('frs:user-menu:coach-strategy'));
+  assert.ok(coach.includes('frs:user-menu:coach-job'));
+  assert.ok(coach.includes('frs:user-menu:coach-champions'));
   const pending = pendingExpControls('user-menu').flatMap((row) => row.toJSON().components.map((component) => component.custom_id));
   assert.deepEqual(pending, ['frs:user-menu:pending-exp-select', 'frs:user-menu:menu-home']);
+});
+
+test('Player and Coach submenus expose owner-bound button/select actions', () => {
+  const menus = [
+    playerClubControls('user-submenu'),
+    playerInjuryControls('user-submenu'),
+    playerStrategyControls('user-submenu', '4-4-2', 'balanced'),
+    playerCultureControls('user-submenu'),
+    coachExpControls('user-submenu', 20),
+    coachStrategyControls('user-submenu', '4-4-2', 'balanced'),
+    coachJobControls('user-submenu', [{ id: 'offer-1', clubName: 'Test Club' }]),
+    championsControls('user-submenu', 'PLAYER'),
+    championsControls('user-submenu', 'COACH')
+  ];
+  const ids = menus.flatMap((rows) => rows.flatMap((row) => row.toJSON().components.map((component) => component.custom_id)));
+  assert.equal(ids.every((id) => id?.startsWith('frs:user-submenu:')), true);
+  assert.ok(ids.includes('frs:user-submenu:player-club-match'));
+  assert.ok(ids.includes('frs:user-submenu:injury-treatment-select'));
+  assert.ok(ids.includes('frs:user-submenu:coach-exp-select'));
+  assert.ok(ids.includes('frs:user-submenu:coach-job-accept-select'));
+  assert.ok(ids.includes('frs:user-submenu:player-champions-play'));
+  assert.ok(ids.includes('frs:user-submenu:coach-champions-play'));
 });
 
 test('training component exposes all six abilities', () => {

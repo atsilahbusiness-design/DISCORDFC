@@ -5,7 +5,7 @@ import {
   StringSelectMenuBuilder,
   StringSelectMenuOptionBuilder
 } from 'discord.js';
-import { DETAILED_SKILLS, DETAILED_SKILL_LABELS, FORMATIONS, TACTICS, type FormationId, type TacticId, type VersusPlayer } from '../domain/types.js';
+import { COACH_ABILITIES, COACH_ABILITY_LABELS, DETAILED_SKILLS, DETAILED_SKILL_LABELS, FORMATIONS, TACTICS, type FormationId, type TacticId, type VersusPlayer } from '../domain/types.js';
 
 function modeControls(userId: string): ActionRowBuilder<ButtonBuilder> {
   return new ActionRowBuilder<ButtonBuilder>().addComponents(
@@ -49,10 +49,18 @@ export function coachControls(userId: string): ActionRowBuilder<ButtonBuilder>[]
       new ButtonBuilder().setCustomId(`frs:${userId}:coach-profile`).setLabel('Coach Profile').setStyle(ButtonStyle.Primary),
       new ButtonBuilder().setCustomId(`frs:${userId}:coach-round`).setLabel('Play Round').setStyle(ButtonStyle.Success),
       new ButtonBuilder().setCustomId(`frs:${userId}:coach-club`).setLabel('Club Office').setStyle(ButtonStyle.Secondary),
-      new ButtonBuilder().setCustomId(`frs:${userId}:coach-event`).setLabel('Board/Event').setStyle(ButtonStyle.Secondary),
-      new ButtonBuilder().setCustomId(`frs:${userId}:menu-home`).setLabel('Game Home').setStyle(ButtonStyle.Secondary)
+      new ButtonBuilder().setCustomId(`frs:${userId}:coach-event`).setLabel('Decision').setStyle(ButtonStyle.Secondary)
     ),
-    new ActionRowBuilder<ButtonBuilder>().addComponents(new ButtonBuilder().setCustomId(`frs:${userId}:versus-home`).setLabel('Versus Mode').setStyle(ButtonStyle.Success))
+    new ActionRowBuilder<ButtonBuilder>().addComponents(
+      new ButtonBuilder().setCustomId(`frs:${userId}:coach-exp`).setLabel('Coach EXP').setStyle(ButtonStyle.Primary),
+      new ButtonBuilder().setCustomId(`frs:${userId}:coach-strategy`).setLabel('Formation/Tactic').setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId(`frs:${userId}:coach-job`).setLabel('Job Offers').setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId(`frs:${userId}:coach-champions`).setLabel('Champions').setStyle(ButtonStyle.Secondary)
+    ),
+    new ActionRowBuilder<ButtonBuilder>().addComponents(
+      new ButtonBuilder().setCustomId(`frs:${userId}:menu-home`).setLabel('Game Home').setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId(`frs:${userId}:versus-home`).setLabel('Versus Mode').setStyle(ButtonStyle.Success)
+    )
   ];
 }
 
@@ -76,7 +84,14 @@ export function careerControls(userId: string): ActionRowBuilder<ButtonBuilder>[
       new ButtonBuilder().setCustomId(`frs:${userId}:train`).setLabel('Train').setStyle(ButtonStyle.Secondary),
       new ButtonBuilder().setCustomId(`frs:${userId}:next-week`).setLabel('Weekly Update').setStyle(ButtonStyle.Success),
       new ButtonBuilder().setCustomId(`frs:${userId}:match`).setLabel('Play match').setStyle(ButtonStyle.Success),
-      new ButtonBuilder().setCustomId(`frs:${userId}:club`).setLabel('Club office').setStyle(ButtonStyle.Secondary)
+      new ButtonBuilder().setCustomId(`frs:${userId}:club`).setLabel('Club Office').setStyle(ButtonStyle.Secondary)
+    ),
+    new ActionRowBuilder<ButtonBuilder>().addComponents(
+      new ButtonBuilder().setCustomId(`frs:${userId}:daily-reward`).setLabel('Daily Reward').setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId(`frs:${userId}:injury`).setLabel('Injury/Recovery').setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId(`frs:${userId}:honors`).setLabel('Honors').setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId(`frs:${userId}:contract`).setLabel('Contract').setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId(`frs:${userId}:player-champions`).setLabel('Champions').setStyle(ButtonStyle.Secondary)
     ),
     modeControls(userId)
   ];
@@ -95,11 +110,15 @@ export function gameplayControls(userId: string): ActionRowBuilder<ButtonBuilder
   ];
 }
 
-export function detailedTrainingControls(userId: string): ActionRowBuilder<StringSelectMenuBuilder>[] {
+export function detailedTrainingControls(userId: string): ActionRowBuilder<StringSelectMenuBuilder | ButtonBuilder>[] {
   const options = DETAILED_SKILLS.map((skill) => new StringSelectMenuOptionBuilder().setValue(skill).setLabel(DETAILED_SKILL_LABELS[skill]));
   return [
     new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
       new StringSelectMenuBuilder().setCustomId(`frs:${userId}:detailed-train-select`).setPlaceholder('Pilih detailed skill untuk dilatih').addOptions(options)
+    ),
+    new ActionRowBuilder<ButtonBuilder>().addComponents(
+      new ButtonBuilder().setCustomId(`frs:${userId}:train`).setLabel('Back to Training').setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId(`frs:${userId}:menu-player`).setLabel('Player Home').setStyle(ButtonStyle.Primary)
     )
   ];
 }
@@ -232,7 +251,7 @@ export function versusFinalizeControls(userId: string, battleId: string, rosterV
   ];
 }
 
-export function trainingControls(userId: string): ActionRowBuilder<StringSelectMenuBuilder>[] {
+export function trainingControls(userId: string): ActionRowBuilder<StringSelectMenuBuilder | ButtonBuilder>[] {
   const options = [
     ['atk', 'Attack'],
     ['def', 'Defence'],
@@ -247,6 +266,144 @@ export function trainingControls(userId: string): ActionRowBuilder<StringSelectM
         .setCustomId(`frs:${userId}:train-select`)
         .setPlaceholder('Pilih ability untuk dilatih')
         .addOptions(options)
+    ),
+    new ActionRowBuilder<ButtonBuilder>().addComponents(
+      new ButtonBuilder().setCustomId(`frs:${userId}:detailed-train`).setLabel('Detailed Skills').setStyle(ButtonStyle.Primary),
+      new ButtonBuilder().setCustomId(`frs:${userId}:player-tricks`).setLabel('Tricks').setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId(`frs:${userId}:player-trainer`).setLabel('Trainer').setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId(`frs:${userId}:player-culture`).setLabel('Culture Study').setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId(`frs:${userId}:menu-player`).setLabel('Player Home').setStyle(ButtonStyle.Secondary)
+    )
+  ];
+}
+
+export function playerInjuryControls(userId: string): ActionRowBuilder<StringSelectMenuBuilder | ButtonBuilder>[] {
+  const selector = new StringSelectMenuBuilder()
+    .setCustomId(`frs:${userId}:injury-treatment-select`)
+    .setPlaceholder('Pilih recovery action')
+    .setMinValues(1)
+    .setMaxValues(1)
+    .addOptions(
+      new StringSelectMenuOptionBuilder().setValue('view').setLabel('Lihat status cedera'),
+      new StringSelectMenuOptionBuilder().setValue('basic-treatment').setLabel('Basic treatment'),
+      new StringSelectMenuOptionBuilder().setValue('expert-treatment').setLabel('Expert treatment')
+    );
+  return [
+    new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selector),
+    new ActionRowBuilder<ButtonBuilder>().addComponents(
+      new ButtonBuilder().setCustomId(`frs:${userId}:menu-player`).setLabel('Player Home').setStyle(ButtonStyle.Primary)
+    )
+  ];
+}
+
+export function playerClubControls(userId: string): ActionRowBuilder<ButtonBuilder>[] {
+  return [
+    new ActionRowBuilder<ButtonBuilder>().addComponents(
+      new ButtonBuilder().setCustomId(`frs:${userId}:player-club-match`).setLabel('Play Club Match').setStyle(ButtonStyle.Success),
+      new ButtonBuilder().setCustomId(`frs:${userId}:player-league`).setLabel('League Table').setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId(`frs:${userId}:player-squad`).setLabel('Squad').setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId(`frs:${userId}:player-strategy`).setLabel('Formation/Tactic').setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId(`frs:${userId}:player-market`).setLabel('Market').setStyle(ButtonStyle.Secondary)
+    ),
+    new ActionRowBuilder<ButtonBuilder>().addComponents(
+      new ButtonBuilder().setCustomId(`frs:${userId}:menu-player`).setLabel('Player Home').setStyle(ButtonStyle.Primary),
+      new ButtonBuilder().setCustomId(`frs:${userId}:menu-home`).setLabel('Game Home').setStyle(ButtonStyle.Secondary)
+    )
+  ];
+}
+
+export function playerStrategyControls(userId: string, formation: FormationId, tactic: TacticId): ActionRowBuilder<StringSelectMenuBuilder | ButtonBuilder>[] {
+  const formationSelect = new StringSelectMenuBuilder()
+    .setCustomId(`frs:${userId}:player-formation-select`)
+    .setPlaceholder(`Formation: ${formation}`)
+    .addOptions(Object.values(FORMATIONS).map((item) => new StringSelectMenuOptionBuilder().setValue(item.id).setLabel(`${item.id} · ${item.name}`).setDescription(`${item.slots.GK} GK · ${item.slots.DF} DF · ${item.slots.MF} MF · ${item.slots.FW} FW`).setDefault(item.id === formation)));
+  const tacticSelect = new StringSelectMenuBuilder()
+    .setCustomId(`frs:${userId}:player-tactic-select`)
+    .setPlaceholder(`Tactic: ${TACTICS[tactic].name}`)
+    .addOptions(Object.entries(TACTICS).map(([id, item]) => new StringSelectMenuOptionBuilder().setValue(id).setLabel(item.name).setDescription(item.description).setDefault(id === tactic)));
+  return [
+    new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(formationSelect),
+    new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(tacticSelect),
+    new ActionRowBuilder<ButtonBuilder>().addComponents(
+      new ButtonBuilder().setCustomId(`frs:${userId}:club`).setLabel('Back to Club Office').setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId(`frs:${userId}:menu-player`).setLabel('Player Home').setStyle(ButtonStyle.Primary)
+    )
+  ];
+}
+
+export function playerCultureControls(userId: string): ActionRowBuilder<StringSelectMenuBuilder | ButtonBuilder>[] {
+  const selector = new StringSelectMenuBuilder()
+    .setCustomId(`frs:${userId}:culture-select`)
+    .setPlaceholder('Pilih subjek Culture Study')
+    .addOptions(
+      new StringSelectMenuOptionBuilder().setValue('science').setLabel('Science'),
+      new StringSelectMenuOptionBuilder().setValue('arts').setLabel('Arts'),
+      new StringSelectMenuOptionBuilder().setValue('history').setLabel('History')
+    );
+  return [
+    new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selector),
+    new ActionRowBuilder<ButtonBuilder>().addComponents(
+      new ButtonBuilder().setCustomId(`frs:${userId}:train`).setLabel('Back to Training').setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId(`frs:${userId}:menu-player`).setLabel('Player Home').setStyle(ButtonStyle.Primary)
+    )
+  ];
+}
+
+export function coachExpControls(userId: string, remaining: number): ActionRowBuilder<StringSelectMenuBuilder | ButtonBuilder>[] {
+  const options = COACH_ABILITIES.map((ability) => new StringSelectMenuOptionBuilder().setValue(ability).setLabel(COACH_ABILITY_LABELS[ability]).setDescription(`Assign seluruh pending EXP (${remaining})`));
+  return [
+    new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+      new StringSelectMenuBuilder().setCustomId(`frs:${userId}:coach-exp-select`).setPlaceholder(`Pilih ability · pending ${remaining} EXP`).addOptions(options)
+    ),
+    new ActionRowBuilder<ButtonBuilder>().addComponents(
+      new ButtonBuilder().setCustomId(`frs:${userId}:menu-coach`).setLabel('Coach Home').setStyle(ButtonStyle.Primary),
+      new ButtonBuilder().setCustomId(`frs:${userId}:menu-home`).setLabel('Game Home').setStyle(ButtonStyle.Secondary)
+    )
+  ];
+}
+
+export function coachStrategyControls(userId: string, formation: FormationId, tactic: TacticId): ActionRowBuilder<StringSelectMenuBuilder | ButtonBuilder>[] {
+  const formationSelect = new StringSelectMenuBuilder()
+    .setCustomId(`frs:${userId}:coach-formation-select`)
+    .setPlaceholder(`Formation: ${formation}`)
+    .addOptions(Object.values(FORMATIONS).map((item) => new StringSelectMenuOptionBuilder().setValue(item.id).setLabel(`${item.id} · ${item.name}`).setDescription(`${item.slots.GK} GK · ${item.slots.DF} DF · ${item.slots.MF} MF · ${item.slots.FW} FW`).setDefault(item.id === formation)));
+  const tacticSelect = new StringSelectMenuBuilder()
+    .setCustomId(`frs:${userId}:coach-tactic-select`)
+    .setPlaceholder(`Tactic: ${TACTICS[tactic].name}`)
+    .addOptions(Object.entries(TACTICS).map(([id, item]) => new StringSelectMenuOptionBuilder().setValue(id).setLabel(item.name).setDescription(item.description).setDefault(id === tactic)));
+  return [
+    new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(formationSelect),
+    new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(tacticSelect),
+    new ActionRowBuilder<ButtonBuilder>().addComponents(
+      new ButtonBuilder().setCustomId(`frs:${userId}:menu-coach`).setLabel('Coach Home').setStyle(ButtonStyle.Primary),
+      new ButtonBuilder().setCustomId(`frs:${userId}:menu-home`).setLabel('Game Home').setStyle(ButtonStyle.Secondary)
+    )
+  ];
+}
+
+export function coachJobControls(userId: string, offers: Array<{ id: string; clubName: string }>): ActionRowBuilder<StringSelectMenuBuilder | ButtonBuilder>[] {
+  const rows: ActionRowBuilder<StringSelectMenuBuilder | ButtonBuilder>[] = [];
+  if (offers.length > 0) {
+    rows.push(new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+      new StringSelectMenuBuilder().setCustomId(`frs:${userId}:coach-job-accept-select`).setPlaceholder('Pilih job offer untuk diterima').addOptions(offers.map((offer) => new StringSelectMenuOptionBuilder().setValue(offer.id).setLabel(`${offer.clubName} · ${offer.id}`.slice(0, 100))))
+    ));
+  }
+  rows.push(new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder().setCustomId(`frs:${userId}:coach-job-generate`).setLabel('Generate Offer').setStyle(ButtonStyle.Success),
+    new ButtonBuilder().setCustomId(`frs:${userId}:menu-coach`).setLabel('Coach Home').setStyle(ButtonStyle.Primary),
+    new ButtonBuilder().setCustomId(`frs:${userId}:menu-home`).setLabel('Game Home').setStyle(ButtonStyle.Secondary)
+  ));
+  return rows;
+}
+
+export function championsControls(userId: string, mode: 'PLAYER' | 'COACH'): ActionRowBuilder<ButtonBuilder>[] {
+  const prefix = mode === 'PLAYER' ? 'player' : 'coach';
+  return [
+    new ActionRowBuilder<ButtonBuilder>().addComponents(
+      new ButtonBuilder().setCustomId(`frs:${userId}:${prefix}-champions-status`).setLabel('Status').setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId(`frs:${userId}:${prefix}-champions-play`).setLabel('Play Round').setStyle(ButtonStyle.Success),
+      new ButtonBuilder().setCustomId(`frs:${userId}:${mode === 'PLAYER' ? 'menu-player' : 'menu-coach'}`).setLabel(`${mode === 'PLAYER' ? 'Player' : 'Coach'} Home`).setStyle(ButtonStyle.Primary),
+      new ButtonBuilder().setCustomId(`frs:${userId}:menu-home`).setLabel('Game Home').setStyle(ButtonStyle.Secondary)
     )
   ];
 }
